@@ -28,6 +28,7 @@ class CBiRRTConfig:
     # Termination
     timeout: float | None = None  # Wall-clock timeout in seconds (None = no timeout)
     goal_tolerance: float = 1e-3  # TSR distance tolerance for goal
+    constraint_tolerance: float = 1e-3  # TSR distance tolerance for path constraints
 
     # Smoothing
     smooth_path: bool = True

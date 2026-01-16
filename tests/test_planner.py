@@ -230,3 +230,91 @@ class TestCBiRRT:
         final_pose = robot.forward_kinematics(result.path[-1])
         dist, _ = goal_tsr.distance(final_pose)
         assert dist < 0.2, f"{variant_name} did not reach goal (dist={dist})"
+
+    def test_start_tsrs(self):
+        """Test planning with start sampled from TSRs."""
+        robot = MockRobotModel()
+        ik = MockIKSolver()
+        collision = MockCollisionChecker()
+
+        planner = CBiRRT(
+            robot=robot,
+            ik_solver=ik,
+            collision_checker=collision,
+            config=CBiRRTConfig(max_iterations=1000),
+        )
+
+        # Start TSR: positions near (1.0, 1.0)
+        T0_w_start = np.eye(4)
+        T0_w_start[0, 3] = 1.0
+        T0_w_start[1, 3] = 1.0
+
+        start_tsr = TSR(
+            T0_w=T0_w_start,
+            Tw_e=np.eye(4),
+            Bw=np.array([
+                [-0.1, 0.1],
+                [-0.1, 0.1],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+            ]),
+        )
+
+        # Goal TSR: positions near (1.5, 0.5)
+        T0_w_goal = np.eye(4)
+        T0_w_goal[0, 3] = 1.5
+        T0_w_goal[1, 3] = 0.5
+
+        goal_tsr = TSR(
+            T0_w=T0_w_goal,
+            Tw_e=np.eye(4),
+            Bw=np.array([
+                [-0.1, 0.1],
+                [-0.1, 0.1],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+            ]),
+        )
+
+        # Plan with start=None, using start_tsrs
+        result = planner.plan(
+            start=None,
+            goal_tsrs=[goal_tsr],
+            start_tsrs=[start_tsr],
+            seed=42,
+            return_details=True,
+        )
+
+        assert result.success
+        assert len(result.path) >= 2
+
+        # Verify start is in start TSR region
+        start_pose = robot.forward_kinematics(result.path[0])
+        start_dist, _ = start_tsr.distance(start_pose)
+        assert start_dist < 0.2
+
+        # Verify goal is reached
+        final_pose = robot.forward_kinematics(result.path[-1])
+        goal_dist, _ = goal_tsr.distance(final_pose)
+        assert goal_dist < 0.2
+
+    def test_no_start_raises(self):
+        """Test that providing neither start nor start_tsrs raises error."""
+        planner = CBiRRT(
+            robot=MockRobotModel(),
+            ik_solver=MockIKSolver(),
+            collision_checker=MockCollisionChecker(),
+        )
+
+        goal_tsr = TSR(
+            T0_w=np.eye(4),
+            Tw_e=np.eye(4),
+            Bw=np.zeros((6, 2)),
+        )
+
+        with pytest.raises(ValueError, match="Either start or start_tsrs must be provided"):
+            planner.plan(start=None, goal_tsrs=[goal_tsr])
