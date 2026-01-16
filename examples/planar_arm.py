@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 from tsr import TSR
 
-from pycbirrt import CBiRRT, CBiRRTConfig
+from pycbirrt import CBiRRT, CBiRRTConfig, PlanResult
+from pycbirrt.tree import RRTree
 
 
 class PlanarArmRobot:
@@ -201,6 +202,73 @@ def visualize_path(
     plt.show()
 
 
+def visualize_trees(
+    tree_start: RRTree,
+    tree_goal: RRTree,
+    path: list[np.ndarray] | None,
+    collision_checker: CircleObstacleChecker,
+):
+    """Visualize the RRT trees in configuration space."""
+    fig, ax = plt.subplots(figsize=(10, 10))
+
+    # Draw collision regions in C-space by sampling
+    q1_range = np.linspace(-np.pi, np.pi, 100)
+    q2_range = np.linspace(-np.pi, np.pi, 100)
+    Q1, Q2 = np.meshgrid(q1_range, q2_range)
+    collision_map = np.zeros_like(Q1)
+
+    for i in range(Q1.shape[0]):
+        for j in range(Q1.shape[1]):
+            q = np.array([Q1[i, j], Q2[i, j]])
+            collision_map[i, j] = 0 if collision_checker.is_valid(q) else 1
+
+    ax.contourf(Q1, Q2, collision_map, levels=[0.5, 1.5], colors=["red"], alpha=0.3)
+
+    # Draw tree edges
+    def draw_tree(tree: RRTree, color: str, label: str):
+        for node in tree.nodes:
+            if node.parent is not None:
+                parent = tree.nodes[node.parent]
+                ax.plot(
+                    [parent.config[0], node.config[0]],
+                    [parent.config[1], node.config[1]],
+                    color=color,
+                    alpha=0.4,
+                    linewidth=0.5,
+                )
+        # Draw nodes
+        configs = np.array([n.config for n in tree.nodes])
+        ax.scatter(configs[:, 0], configs[:, 1], c=color, s=5, alpha=0.6, label=label)
+
+    draw_tree(tree_start, "blue", f"Start tree ({len(tree_start)} nodes)")
+    draw_tree(tree_goal, "green", f"Goal tree ({len(tree_goal)} nodes)")
+
+    # Draw path
+    if path is not None:
+        path_arr = np.array(path)
+        ax.plot(path_arr[:, 0], path_arr[:, 1], "k-", linewidth=2, label="Path")
+        ax.scatter(path_arr[:, 0], path_arr[:, 1], c="black", s=30, zorder=5)
+
+    # Mark start and goal
+    ax.scatter([tree_start.nodes[0].config[0]], [tree_start.nodes[0].config[1]],
+               c="blue", s=200, marker="*", edgecolors="black", linewidths=2, zorder=10, label="Start")
+    ax.scatter([tree_goal.nodes[0].config[0]], [tree_goal.nodes[0].config[1]],
+               c="green", s=200, marker="*", edgecolors="black", linewidths=2, zorder=10, label="Goal")
+
+    ax.set_xlim(-np.pi, np.pi)
+    ax.set_ylim(-np.pi, np.pi)
+    ax.set_xlabel("q1 (rad)")
+    ax.set_ylabel("q2 (rad)")
+    ax.set_aspect("equal")
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc="upper right")
+    ax.set_title("CBiRRT Trees in Configuration Space")
+
+    plt.savefig("planar_arm_trees.png", dpi=150)
+    print("Saved tree visualization to planar_arm_trees.png")
+    plt.show()
+
+
 def main():
     # Create robot
     robot = PlanarArmRobot(l1=1.0, l2=1.0)
@@ -255,22 +323,29 @@ def main():
     print(f"  Goal region: ({goal_pos[0]}, {goal_pos[1]}) ± 0.1")
     print(f"  Obstacles: {len(obstacles)}")
 
-    path = planner.plan(start, goal_tsrs=[goal_tsr], seed=42)
+    result = planner.plan(start, goal_tsrs=[goal_tsr], seed=42, return_details=True)
 
-    if path is None:
+    print(f"  Iterations: {result.iterations}")
+    print(f"  Start tree nodes: {len(result.tree_start)}")
+    print(f"  Goal tree nodes: {len(result.tree_goal)}")
+
+    if not result.success:
         print("No path found!")
+        # Still visualize trees to see what happened
+        visualize_trees(result.tree_start, result.tree_goal, None, collision_checker)
         return
 
-    print(f"Found path with {len(path)} waypoints")
+    print(f"Found path with {len(result.path)} waypoints")
 
     # Verify goal reached
-    final_pose = robot.forward_kinematics(path[-1])
+    final_pose = robot.forward_kinematics(result.path[-1])
     final_pos = final_pose[:2, 3]
     print(f"  Final position: ({final_pos[0]:.3f}, {final_pos[1]:.3f})")
     print(f"  Distance to goal: {np.linalg.norm(final_pos - goal_pos):.4f}")
 
-    # Visualize
-    visualize_path(robot, path, obstacles, goal_pos)
+    # Visualize both the path and the trees
+    visualize_path(robot, result.path, obstacles, goal_pos)
+    visualize_trees(result.tree_start, result.tree_goal, result.path, collision_checker)
 
 
 if __name__ == "__main__":

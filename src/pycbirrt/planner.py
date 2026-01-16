@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import numpy as np
 from tsr import TSR
 from tsr.sampling import sample_from_tsrs
@@ -5,6 +6,17 @@ from tsr.sampling import sample_from_tsrs
 from pycbirrt.config import CBiRRTConfig
 from pycbirrt.tree import RRTree
 from pycbirrt.interfaces import RobotModel, IKSolver, CollisionChecker
+
+
+@dataclass
+class PlanResult:
+    """Result of a planning query."""
+
+    path: list[np.ndarray] | None
+    tree_start: RRTree
+    tree_goal: RRTree
+    iterations: int
+    success: bool
 
 
 class CBiRRT:
@@ -37,16 +49,19 @@ class CBiRRT:
         start: np.ndarray,
         goal_tsrs: list[TSR],
         seed: int | None = None,
-    ) -> list[np.ndarray] | None:
+        return_details: bool = False,
+    ) -> list[np.ndarray] | None | PlanResult:
         """Plan a path from start configuration to a goal TSR.
 
         Args:
             start: Start joint configuration
             goal_tsrs: List of TSRs defining the goal region
             seed: Random seed for reproducibility
+            return_details: If True, return PlanResult with trees; otherwise just path
 
         Returns:
-            List of joint configurations forming the path, or None if no path found
+            If return_details=False: List of joint configurations or None
+            If return_details=True: PlanResult with path, trees, and debug info
         """
         if seed is not None:
             self._rng = np.random.default_rng(seed)
@@ -58,7 +73,12 @@ class CBiRRT:
         # Sample a goal configuration from the TSRs
         goal_config = self._sample_goal_config(goal_tsrs)
         if goal_config is None:
-            return None  # Could not find valid goal config
+            if return_details:
+                # Return empty trees for debugging
+                tree_start = RRTree(start)
+                tree_goal = RRTree(start)  # Dummy
+                return PlanResult(None, tree_start, tree_goal, 0, False)
+            return None
 
         # Initialize trees
         tree_start = RRTree(start)
@@ -80,25 +100,29 @@ class CBiRRT:
             else:
                 q_sample = self._sample_random_config()
 
-            # Extend tree_a toward sample
-            new_idx = self._extend(tree_a, q_sample)
-            if new_idx is None:
-                continue
+            # Both trees use same extension behavior (CON if extension_steps=None, else EXT)
+            # 1. Grow tree_a toward random sample
+            grow_idx, _ = self._grow(tree_a, q_sample)
 
-            # Try to connect tree_b to the new node
-            q_new = tree_a.nodes[new_idx].config
-            connect_idx = self._connect(tree_b, q_new)
+            # 2. Grow tree_b toward where tree_a reached
+            q_reached = tree_a.nodes[grow_idx].config
+            connect_idx, connected = self._grow(tree_b, q_reached)
 
-            if connect_idx is not None:
+            if connected:
                 # Found a path - extract and return it
                 path = self._extract_path(
-                    tree_start, tree_goal, tree_a, tree_b, new_idx, connect_idx
+                    tree_start, tree_goal, tree_a, tree_b, grow_idx, connect_idx
                 )
                 if self.config.smooth_path:
                     path = self._smooth_path(path)
+
+                if return_details:
+                    return PlanResult(path, tree_start, tree_goal, iteration + 1, True)
                 return path
 
-        return None  # No path found within iteration limit
+        if return_details:
+            return PlanResult(None, tree_start, tree_goal, self.config.max_iterations, False)
+        return None
 
     def _sample_goal_config(self, goal_tsrs: list[TSR]) -> np.ndarray | None:
         """Sample a valid configuration from goal TSRs.
@@ -135,80 +159,59 @@ class CBiRRT:
         lower, upper = self.robot.joint_limits
         return bool(np.all(q >= lower) and np.all(q <= upper))
 
-    def _extend(self, tree: RRTree, q_target: np.ndarray) -> int | None:
-        """Extend tree toward target configuration.
+    def _grow(self, tree: RRTree, q_target: np.ndarray) -> tuple[int, bool]:
+        """Grow tree toward target using EXT or CON behavior.
+
+        Extension behavior depends on config.extension_steps:
+        - None (CON): Keep stepping until blocked or target reached
+        - int X (EXT): Take at most X steps toward target
 
         Args:
-            tree: Tree to extend
-            q_target: Target configuration
+            tree: Tree to grow
+            q_target: Target configuration to grow toward
 
         Returns:
-            Index of new node, or None if extension failed
+            Tuple of (node_index, reached) where:
+            - node_index: Index of the furthest node reached toward target
+            - reached: True if we reached the target within goal_tolerance
         """
         # Find nearest node
-        nearest_idx = tree.nearest(q_target)
-        q_near = tree.nodes[nearest_idx].config
+        current_idx = tree.nearest(q_target)
+        steps_taken = 0
+        max_steps = self.config.extension_steps  # None = unlimited (CON)
 
-        # Compute direction and step
-        direction = q_target - q_near
-        distance = np.linalg.norm(direction)
+        while True:
+            q_current = tree.nodes[current_idx].config
 
-        if distance < 1e-6:
-            return None
-
-        # Limit step size
-        if distance > self.config.step_size:
-            direction = direction / distance * self.config.step_size
-
-        q_new = q_near + direction
-
-        # Check validity
-        if not self._is_within_limits(q_new):
-            return None
-        if not self.collision.is_valid(q_new):
-            return None
-        if not self._is_edge_valid(q_near, q_new):
-            return None
-
-        return tree.add_node(q_new, nearest_idx)
-
-    def _connect(self, tree: RRTree, q_target: np.ndarray) -> int | None:
-        """Try to connect tree to target configuration.
-
-        Args:
-            tree: Tree to connect from
-            q_target: Target configuration to connect to
-
-        Returns:
-            Index of node that reached target, or None if connection failed
-        """
-        nearest_idx = tree.nearest(q_target)
-
-        for _ in range(self.config.max_connect_attempts):
-            q_near = tree.nodes[nearest_idx].config
-            direction = q_target - q_near
+            # Compute direction and remaining distance
+            direction = q_target - q_current
             distance = np.linalg.norm(direction)
 
+            # Check if we've reached the target
             if distance < self.config.goal_tolerance:
-                return nearest_idx  # Close enough
+                return current_idx, True
 
-            # Step toward target
-            if distance > self.config.connect_step_size:
-                direction = direction / distance * self.config.connect_step_size
+            # Check if we've hit EXT step limit
+            if max_steps is not None and steps_taken >= max_steps:
+                break
 
-            q_new = q_near + direction
+            # Normalize and limit step size
+            step = direction / distance * min(distance, self.config.step_size)
+            q_new = q_current + step
 
-            # Check validity
+            # Check validity - if any check fails, we're blocked
             if not self._is_within_limits(q_new):
-                return None
+                break
             if not self.collision.is_valid(q_new):
-                return None
-            if not self._is_edge_valid(q_near, q_new):
-                return None
+                break
+            if not self._is_edge_valid(q_current, q_new):
+                break
 
-            nearest_idx = tree.add_node(q_new, nearest_idx)
+            # Add node and continue marching
+            current_idx = tree.add_node(q_new, current_idx)
+            steps_taken += 1
 
-        return None
+        return current_idx, False
 
     def _is_edge_valid(
         self, q_from: np.ndarray, q_to: np.ndarray, resolution: float = 0.02

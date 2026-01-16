@@ -7,12 +7,9 @@ class CBiRRTConfig:
 
     # Tree growth parameters
     max_iterations: int = 5000
-    step_size: float = 0.1  # Maximum joint space step per extension
+    step_size: float = 0.1  # Maximum joint space step for both extend and connect
     goal_bias: float = 0.1  # Probability of sampling from goal TSR
-
-    # Connection parameters
-    connect_step_size: float = 0.05  # Step size when connecting trees
-    max_connect_attempts: int = 50  # Max steps when connecting trees
+    extension_steps: int | None = None  # None = CON (march until blocked), int = EXT (max X steps)
 
     # Convergence
     goal_tolerance: float = 1e-3  # TSR distance tolerance for goal
