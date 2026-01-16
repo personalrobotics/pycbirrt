@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import time
+
 import numpy as np
 from tsr import TSR
 from tsr.sampling import sample_from_tsrs
@@ -84,8 +86,18 @@ class CBiRRT:
         tree_start = RRTree(start)
         tree_goal = RRTree(goal_config)
 
+        # Track start time for timeout
+        start_time = time.monotonic()
+
         # Main planning loop
         for iteration in range(self.config.max_iterations):
+            # Check timeout
+            if self.config.timeout is not None:
+                if time.monotonic() - start_time > self.config.timeout:
+                    if return_details:
+                        return PlanResult(None, tree_start, tree_goal, iteration, False)
+                    return None
+
             # Alternate which tree we extend
             if iteration % 2 == 0:
                 tree_a, tree_b = tree_start, tree_goal

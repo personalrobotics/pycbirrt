@@ -11,7 +11,8 @@ class CBiRRTConfig:
     goal_bias: float = 0.1  # Probability of sampling from goal TSR
     extension_steps: int | None = None  # None = CON (march until blocked), int = EXT (max X steps)
 
-    # Convergence
+    # Termination
+    timeout: float | None = None  # Wall-clock timeout in seconds (None = no timeout)
     goal_tolerance: float = 1e-3  # TSR distance tolerance for goal
 
     # Smoothing
