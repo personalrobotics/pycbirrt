@@ -1,0 +1,173 @@
+"""Tests for CBiRRT planner."""
+
+import numpy as np
+import pytest
+from tsr import TSR
+
+from pycbirrt import CBiRRT, CBiRRTConfig
+from pycbirrt.tree import RRTree
+
+
+class MockRobotModel:
+    """Simple 2-DOF planar arm for testing."""
+
+    def __init__(self):
+        self.l1 = 1.0  # Link 1 length
+        self.l2 = 1.0  # Link 2 length
+
+    @property
+    def dof(self) -> int:
+        return 2
+
+    @property
+    def joint_limits(self) -> tuple[np.ndarray, np.ndarray]:
+        return np.array([-np.pi, -np.pi]), np.array([np.pi, np.pi])
+
+    def forward_kinematics(self, q: np.ndarray) -> np.ndarray:
+        """2D planar FK embedded in 3D."""
+        x = self.l1 * np.cos(q[0]) + self.l2 * np.cos(q[0] + q[1])
+        y = self.l1 * np.sin(q[0]) + self.l2 * np.sin(q[0] + q[1])
+
+        T = np.eye(4)
+        T[0, 3] = x
+        T[1, 3] = y
+        return T
+
+
+class MockIKSolver:
+    """Analytical IK for 2-DOF planar arm."""
+
+    def __init__(self, l1: float = 1.0, l2: float = 1.0):
+        self.l1 = l1
+        self.l2 = l2
+
+    def solve(self, pose: np.ndarray) -> list[np.ndarray]:
+        x, y = pose[0, 3], pose[1, 3]
+        d = np.sqrt(x**2 + y**2)
+
+        # Check reachability
+        if d > self.l1 + self.l2 or d < abs(self.l1 - self.l2):
+            return []
+
+        # Elbow angle
+        cos_q2 = (d**2 - self.l1**2 - self.l2**2) / (2 * self.l1 * self.l2)
+        cos_q2 = np.clip(cos_q2, -1, 1)
+
+        solutions = []
+        for sign in [1, -1]:
+            q2 = sign * np.arccos(cos_q2)
+            q1 = np.arctan2(y, x) - np.arctan2(
+                self.l2 * np.sin(q2), self.l1 + self.l2 * np.cos(q2)
+            )
+            solutions.append(np.array([q1, q2]))
+
+        return solutions
+
+    def solve_batch(self, poses: np.ndarray) -> list[list[np.ndarray]]:
+        return [self.solve(p) for p in poses]
+
+
+class MockCollisionChecker:
+    """Always returns valid (no obstacles)."""
+
+    def is_valid(self, q: np.ndarray) -> bool:
+        return True
+
+    def is_valid_batch(self, qs: np.ndarray) -> np.ndarray:
+        return np.ones(len(qs), dtype=bool)
+
+
+class TestRRTree:
+    def test_init(self):
+        root = np.array([0.0, 0.0])
+        tree = RRTree(root)
+        assert len(tree) == 1
+        assert np.allclose(tree.nodes[0].config, root)
+
+    def test_add_node(self):
+        tree = RRTree(np.array([0.0, 0.0]))
+        idx = tree.add_node(np.array([1.0, 1.0]), parent_idx=0)
+        assert idx == 1
+        assert len(tree) == 2
+        assert tree.nodes[1].parent == 0
+
+    def test_nearest(self):
+        tree = RRTree(np.array([0.0, 0.0]))
+        tree.add_node(np.array([1.0, 0.0]), 0)
+        tree.add_node(np.array([0.0, 1.0]), 0)
+
+        assert tree.nearest(np.array([0.9, 0.1])) == 1
+        assert tree.nearest(np.array([0.1, 0.9])) == 2
+
+    def test_path_to_root(self):
+        tree = RRTree(np.array([0.0, 0.0]))
+        idx1 = tree.add_node(np.array([1.0, 0.0]), 0)
+        idx2 = tree.add_node(np.array([2.0, 0.0]), idx1)
+
+        path = tree.get_path_to_root(idx2)
+        assert len(path) == 3
+        assert np.allclose(path[0], [0.0, 0.0])
+        assert np.allclose(path[1], [1.0, 0.0])
+        assert np.allclose(path[2], [2.0, 0.0])
+
+
+class TestCBiRRT:
+    def test_plan_simple(self):
+        robot = MockRobotModel()
+        ik = MockIKSolver()
+        collision = MockCollisionChecker()
+
+        planner = CBiRRT(
+            robot=robot,
+            ik_solver=ik,
+            collision_checker=collision,
+            config=CBiRRTConfig(max_iterations=1000),
+        )
+
+        start = np.array([0.0, 0.0])
+
+        # Goal: reach position (1.5, 0.5)
+        T0_w = np.eye(4)
+        T0_w[0, 3] = 1.5
+        T0_w[1, 3] = 0.5
+
+        goal_tsr = TSR(
+            T0_w=T0_w,
+            Tw_e=np.eye(4),
+            Bw=np.array([
+                [-0.1, 0.1],
+                [-0.1, 0.1],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+            ]),
+        )
+
+        path = planner.plan(start, goal_tsrs=[goal_tsr], seed=42)
+
+        assert path is not None
+        assert len(path) >= 2
+        assert np.allclose(path[0], start)
+
+        # Check goal reached
+        final_pose = robot.forward_kinematics(path[-1])
+        dist, _ = goal_tsr.distance(final_pose)
+        assert dist < 0.2  # Within tolerance
+
+    def test_start_in_collision_raises(self):
+        class BlockingCollisionChecker:
+            def is_valid(self, q):
+                return False
+
+            def is_valid_batch(self, qs):
+                return np.zeros(len(qs), dtype=bool)
+
+        planner = CBiRRT(
+            robot=MockRobotModel(),
+            ik_solver=MockIKSolver(),
+            collision_checker=BlockingCollisionChecker(),
+        )
+
+        with pytest.raises(ValueError, match="Start configuration is in collision"):
+            planner.plan(np.array([0.0, 0.0]), goal_tsrs=[])

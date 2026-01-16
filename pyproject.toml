@@ -1,0 +1,30 @@
+[project]
+name = "pycbirrt"
+version = "0.1.0"
+description = "CBiRRT motion planner with TSR constraints"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Siddhartha Srinivasa"},
+]
+dependencies = [
+    "numpy>=1.24",
+    "tsr @ git+https://github.com/personalrobotics/tsr.git",
+]
+
+[project.optional-dependencies]
+mujoco = ["mujoco>=3.0"]
+eaik = ["eaik"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+]
+all = ["pycbirrt[mujoco,eaik,dev]"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
