@@ -112,13 +112,12 @@ class CBiRRT:
             else:
                 q_sample = self._sample_random_config()
 
-            # Both trees use same extension behavior (CON if extension_steps=None, else EXT)
-            # 1. Grow tree_a toward random sample
-            grow_idx, _ = self._grow(tree_a, q_sample)
+            # Extend tree_a toward random sample (uses extend_steps)
+            grow_idx, _ = self._grow(tree_a, q_sample, self.config.extend_steps)
 
-            # 2. Grow tree_b toward where tree_a reached
+            # Connect tree_b toward where tree_a reached (uses connect_steps)
             q_reached = tree_a.nodes[grow_idx].config
-            connect_idx, connected = self._grow(tree_b, q_reached)
+            connect_idx, connected = self._grow(tree_b, q_reached, self.config.connect_steps)
 
             if connected:
                 # Found a path - extract and return it
@@ -171,16 +170,15 @@ class CBiRRT:
         lower, upper = self.robot.joint_limits
         return bool(np.all(q >= lower) and np.all(q <= upper))
 
-    def _grow(self, tree: RRTree, q_target: np.ndarray) -> tuple[int, bool]:
+    def _grow(
+        self, tree: RRTree, q_target: np.ndarray, max_steps: int | None = None
+    ) -> tuple[int, bool]:
         """Grow tree toward target using EXT or CON behavior.
-
-        Extension behavior depends on config.extension_steps:
-        - None (CON): Keep stepping until blocked or target reached
-        - int X (EXT): Take at most X steps toward target
 
         Args:
             tree: Tree to grow
             q_target: Target configuration to grow toward
+            max_steps: Maximum steps (None = CON/unlimited, int = EXT/limited)
 
         Returns:
             Tuple of (node_index, reached) where:
@@ -190,7 +188,6 @@ class CBiRRT:
         # Find nearest node
         current_idx = tree.nearest(q_target)
         steps_taken = 0
-        max_steps = self.config.extension_steps  # None = unlimited (CON)
 
         while True:
             q_current = tree.nodes[current_idx].config

@@ -171,3 +171,62 @@ class TestCBiRRT:
 
         with pytest.raises(ValueError, match="Start configuration is in collision"):
             planner.plan(np.array([0.0, 0.0]), goal_tsrs=[])
+
+    @pytest.mark.parametrize(
+        "extend_steps,connect_steps,variant_name",
+        [
+            (None, None, "CON-CON"),
+            (5, 5, "EXT-EXT"),
+            (5, None, "EXT-CON"),
+            (None, 5, "CON-EXT"),
+        ],
+    )
+    def test_all_variants(self, extend_steps, connect_steps, variant_name):
+        """Test all 4 BiRRT variants: CON-CON, EXT-EXT, EXT-CON, CON-EXT."""
+        robot = MockRobotModel()
+        ik = MockIKSolver()
+        collision = MockCollisionChecker()
+
+        config = CBiRRTConfig(
+            max_iterations=2000,
+            step_size=0.2,
+            extend_steps=extend_steps,
+            connect_steps=connect_steps,
+        )
+        planner = CBiRRT(
+            robot=robot,
+            ik_solver=ik,
+            collision_checker=collision,
+            config=config,
+        )
+
+        start = np.array([0.0, 0.0])
+
+        # Goal: reach position (1.5, 0.5)
+        T0_w = np.eye(4)
+        T0_w[0, 3] = 1.5
+        T0_w[1, 3] = 0.5
+
+        goal_tsr = TSR(
+            T0_w=T0_w,
+            Tw_e=np.eye(4),
+            Bw=np.array([
+                [-0.1, 0.1],
+                [-0.1, 0.1],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+            ]),
+        )
+
+        result = planner.plan(start, goal_tsrs=[goal_tsr], seed=42, return_details=True)
+
+        assert result.success, f"{variant_name} failed to find path"
+        assert len(result.path) >= 2
+        assert np.allclose(result.path[0], start)
+
+        # Check goal reached
+        final_pose = robot.forward_kinematics(result.path[-1])
+        dist, _ = goal_tsr.distance(final_pose)
+        assert dist < 0.2, f"{variant_name} did not reach goal (dist={dist})"
