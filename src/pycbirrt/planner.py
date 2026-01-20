@@ -79,12 +79,16 @@ class CBiRRT:
         if seed is not None:
             self._rng = np.random.default_rng(seed)
 
-        # Store constraint TSRs for use during planning
+        # Store TSRs for use during planning
         self._constraint_tsrs = constraint_tsrs
+        self._start_tsrs = start_tsrs
+        self._goal_tsrs = goal_tsrs
 
         # Determine start configuration
         if start_tsrs is not None:
-            start_config = self._sample_from_tsrs(start_tsrs)
+            # If we have constraint TSRs, sample start that also satisfies them
+            must_satisfy = constraint_tsrs is not None
+            start_config = self._sample_from_tsrs(start_tsrs, must_satisfy_constraints=must_satisfy)
             if start_config is None:
                 if return_details:
                     dummy_tree = RRTree(np.zeros(self.robot.dof))
@@ -123,11 +127,10 @@ class CBiRRT:
         # Main planning loop
         for iteration in range(self.config.max_iterations):
             # Check timeout
-            if self.config.timeout is not None:
-                if time.monotonic() - start_time > self.config.timeout:
-                    if return_details:
-                        return PlanResult(None, tree_start, tree_goal, iteration, False)
-                    return None
+            if time.monotonic() - start_time > self.config.timeout:
+                if return_details:
+                    return PlanResult(None, tree_start, tree_goal, iteration, False)
+                return None
 
             # Alternate which tree we extend
             if iteration % 2 == 0:
@@ -135,12 +138,13 @@ class CBiRRT:
             else:
                 tree_a, tree_b = tree_goal, tree_start
 
-            # Sample configuration (with goal bias for start tree)
+            # Sample configuration (with bias toward opposite tree's TSR)
+            q_sample = None
             if tree_a is tree_start and self._rng.random() < self.config.goal_bias:
-                q_sample = self._sample_from_tsrs(goal_tsrs, must_satisfy_constraints=True)
-                if q_sample is None:
-                    q_sample = self._sample_random_config()
-            else:
+                q_sample = self._sample_from_tsrs(self._goal_tsrs, must_satisfy_constraints=True)
+            elif tree_a is tree_goal and self._start_tsrs is not None and self._rng.random() < self.config.start_bias:
+                q_sample = self._sample_from_tsrs(self._start_tsrs, must_satisfy_constraints=True)
+            if q_sample is None:
                 q_sample = self._sample_random_config()
 
             # Extend tree_a toward random sample (uses extend_steps)
@@ -178,24 +182,17 @@ class CBiRRT:
         Returns:
             Valid joint configuration or None
         """
-        for _ in range(100):  # Max attempts
-            # Sample pose from TSRs
-            pose = sample_from_tsrs(tsrs)
+        # Sample pose from TSRs
+        pose = sample_from_tsrs(tsrs)
 
-            # Solve IK
-            solutions = self.ik.solve(pose)
-            if not solutions:
+        # Solve IK - returns only valid (collision-free, within limits) solutions
+        solutions = self.ik.solve_valid(pose)
+
+        # Check path constraints if required
+        for q in solutions:
+            if must_satisfy_constraints and not self._satisfies_constraints(q):
                 continue
-
-            # Check each solution for validity
-            for q in solutions:
-                if not self._is_within_limits(q):
-                    continue
-                if not self.collision.is_valid(q):
-                    continue
-                if must_satisfy_constraints and not self._satisfies_constraints(q):
-                    continue
-                return q
+            return q
 
         return None
 
@@ -214,15 +211,16 @@ class CBiRRT:
         pose = self.robot.forward_kinematics(q)
         for tsr in self._constraint_tsrs:
             dist, _ = tsr.distance(pose)
-            if dist > self.config.constraint_tolerance:
+            if dist > self.config.tsr_tolerance:
                 return False
         return True
 
     def _project_to_constraint(self, q: np.ndarray) -> np.ndarray | None:
         """Project configuration onto the constraint manifold.
 
-        Uses iterative IK to find a nearby configuration that satisfies
-        all path constraint TSRs.
+        Uses iterative projection: repeatedly compute the constraint violation,
+        project the end-effector pose onto the TSR, solve IK, and repeat until
+        the configuration satisfies all constraints or we give up.
 
         Args:
             q: Configuration to project
@@ -233,42 +231,69 @@ class CBiRRT:
         if self._constraint_tsrs is None:
             return q
 
-        # Get current end-effector pose
-        pose = self.robot.forward_kinematics(q)
+        q_current = q.copy()
+        prev_dist = float("inf")
 
-        # Check if already on manifold
-        max_dist = 0.0
-        for tsr in self._constraint_tsrs:
-            dist, _ = tsr.distance(pose)
-            max_dist = max(max_dist, dist)
+        for _ in range(self.config.max_projection_iters):
+            # Get current end-effector pose
+            pose = self.robot.forward_kinematics(q_current)
 
-        if max_dist <= self.config.constraint_tolerance:
-            return q
+            # Find the TSR with the largest violation
+            max_dist = 0.0
+            worst_tsr = None
+            for tsr in self._constraint_tsrs:
+                dist, _ = tsr.distance(pose)
+                if dist > max_dist:
+                    max_dist = dist
+                    worst_tsr = tsr
 
-        # Project pose onto TSR and solve IK
-        # Use the TSR's project method to get the nearest valid pose
-        for tsr in self._constraint_tsrs:
-            projected_pose = tsr.project(pose)
+            # Check if we're on the manifold
+            if max_dist <= self.config.tsr_tolerance:
+                return q_current
 
-            # Try to find IK solution close to current config
+            # Check if we're making progress
+            if prev_dist - max_dist < self.config.progress_tolerance:
+                return None  # Not converging
+            prev_dist = max_dist
+
+            # Project pose onto the worst TSR by clamping to bounds
+            tsr = worst_tsr
+            T0_w_inv = np.linalg.inv(tsr.T0_w)
+            pose_in_tsr = T0_w_inv @ pose
+
+            # Clamp position to TSR bounds
+            xyz_in_tsr = pose_in_tsr[:3, 3]
+            xyz_clamped = np.clip(xyz_in_tsr, tsr.Bw[:3, 0], tsr.Bw[:3, 1])
+
+            # Create projected pose
+            projected_in_tsr = pose_in_tsr.copy()
+            projected_in_tsr[:3, 3] = xyz_clamped
+
+            # Transform back to world frame
+            projected_pose = tsr.T0_w @ projected_in_tsr
+
+            # Solve IK for the projected pose
             solutions = self.ik.solve(projected_pose)
             if not solutions:
-                continue
+                return None  # Can't reach projected pose
 
-            # Find solution closest to q
+            # Find solution closest to current config that's within limits
             best_q = None
             best_dist = float("inf")
             for sol in solutions:
                 if not self._is_within_limits(sol):
                     continue
-                dist = np.linalg.norm(sol - q)
-                if dist < best_dist:
-                    best_dist = dist
+                d = self._angular_distance(q_current, sol)
+                if d < best_dist:
+                    best_dist = d
                     best_q = sol
 
-            if best_q is not None and self.collision.is_valid(best_q):
-                return best_q
+            if best_q is None:
+                return None  # No valid IK solution within joint limits
 
+            q_current = best_q
+
+        # Exceeded max iterations
         return None
 
     def _sample_random_config(self) -> np.ndarray:
@@ -280,6 +305,60 @@ class CBiRRT:
         """Check if configuration is within joint limits."""
         lower, upper = self.robot.joint_limits
         return bool(np.all(q >= lower) and np.all(q <= upper))
+
+    def _angular_distance(self, q1: np.ndarray, q2: np.ndarray) -> float:
+        """Compute distance between configurations, handling angular wraparound.
+
+        For angular joints, the distance accounts for the 2*pi wraparound.
+        """
+        diff = q2 - q1
+
+        if self.config.angular_joints is not None:
+            # Wrap angular differences to [-pi, pi]
+            for i, is_angular in enumerate(self.config.angular_joints):
+                if is_angular:
+                    diff[i] = np.arctan2(np.sin(diff[i]), np.cos(diff[i]))
+
+        return float(np.linalg.norm(diff))
+
+    def _nearest_node(self, tree: RRTree, q_target: np.ndarray) -> int:
+        """Find nearest node in tree using angular-aware distance.
+
+        Args:
+            tree: Tree to search
+            q_target: Target configuration
+
+        Returns:
+            Index of nearest node
+        """
+        if self.config.angular_joints is None:
+            # Use tree's built-in nearest (faster)
+            return tree.nearest(q_target)
+
+        # Compute angular-aware distances
+        best_idx = 0
+        best_dist = float("inf")
+        for i, node in enumerate(tree.nodes):
+            dist = self._angular_distance(node.config, q_target)
+            if dist < best_dist:
+                best_dist = dist
+                best_idx = i
+        return best_idx
+
+    def _angular_direction(self, q_from: np.ndarray, q_to: np.ndarray) -> np.ndarray:
+        """Compute direction from q_from to q_to, handling angular wraparound.
+
+        Returns the shortest path direction for angular joints.
+        """
+        diff = q_to - q_from
+
+        if self.config.angular_joints is not None:
+            # Wrap angular differences to [-pi, pi]
+            for i, is_angular in enumerate(self.config.angular_joints):
+                if is_angular:
+                    diff[i] = np.arctan2(np.sin(diff[i]), np.cos(diff[i]))
+
+        return diff
 
     def _grow(
         self, tree: RRTree, q_target: np.ndarray, max_steps: int | None = None
@@ -297,26 +376,34 @@ class CBiRRT:
         Returns:
             Tuple of (node_index, reached) where:
             - node_index: Index of the furthest node reached toward target
-            - reached: True if we reached the target within goal_tolerance
+            - reached: True if we reached the target within tsr_tolerance
         """
-        # Find nearest node
-        current_idx = tree.nearest(q_target)
-        steps_taken = 0
+        # Find nearest node (using angular-aware distance)
+        current_idx = self._nearest_node(tree, q_target)
+        start_idx = current_idx
+        prev_distance = float("inf")
 
         while True:
             q_current = tree.nodes[current_idx].config
 
-            # Compute direction and remaining distance
-            direction = q_target - q_current
+            # Compute direction and remaining distance (angular-aware)
+            direction = self._angular_direction(q_current, q_target)
             distance = np.linalg.norm(direction)
 
             # Check if we've reached the target
-            if distance < self.config.goal_tolerance:
+            if distance < self.config.tsr_tolerance:
                 return current_idx, True
 
-            # Check if we've hit EXT step limit
-            if max_steps is not None and steps_taken >= max_steps:
+            # Check if we're making progress toward the target
+            if prev_distance - distance < self.config.progress_tolerance:
                 break
+            prev_distance = distance
+
+            # Check if we've hit EXT step limit
+            if max_steps is not None:
+                steps_taken = current_idx - start_idx
+                if steps_taken >= max_steps:
+                    break
 
             # Normalize and limit step size
             step = direction / distance * min(distance, self.config.step_size)
@@ -333,41 +420,56 @@ class CBiRRT:
                     break
                 q_new = q_projected
 
-            # Check collision validity
+            # Check collision validity of endpoint
             if not self.collision.is_valid(q_new):
                 break
-            if not self._is_edge_valid(q_current, q_new):
-                break
 
-            # Add node and continue marching
-            current_idx = tree.add_node(q_new, current_idx)
-            steps_taken += 1
+            # Check edge validity and add intermediate nodes
+            edge_result = self._extend_along_edge(tree, current_idx, q_new)
+            current_idx = edge_result[0]
+            if not edge_result[1]:
+                # Edge check failed partway through
+                break
 
         return current_idx, False
 
-    def _is_edge_valid(
-        self, q_from: np.ndarray, q_to: np.ndarray, resolution: float = 0.02
-    ) -> bool:
-        """Check if edge between two configurations is collision-free.
+    def _extend_along_edge(
+        self, tree: RRTree, start_idx: int, q_target: np.ndarray
+    ) -> tuple[int, bool]:
+        """Extend tree along edge, adding intermediate nodes.
+
+        Checks collision and constraint satisfaction at each step. Adds valid
+        intermediate configurations to the tree. Stops at the first invalid
+        configuration but keeps all valid ones added so far.
 
         Args:
-            q_from: Start configuration
-            q_to: End configuration
-            resolution: Interpolation resolution
+            tree: Tree to extend
+            start_idx: Index of starting node in tree
+            q_target: Target configuration to extend toward
 
         Returns:
-            True if edge is collision-free
+            Tuple of (final_idx, reached_target) where:
+            - final_idx: Index of the last valid node added (or start_idx if none added)
+            - reached_target: True if we reached q_target
         """
-        distance = np.linalg.norm(q_to - q_from)
-        n_steps = max(2, int(np.ceil(distance / resolution)))
+        q_from = tree.nodes[start_idx].config
+        distance = np.linalg.norm(q_target - q_from)
+        n_steps = max(2, int(np.ceil(distance / self.config.step_size)))
 
-        for i in range(1, n_steps):
+        current_idx = start_idx
+        for i in range(1, n_steps + 1):
             t = i / n_steps
-            q = q_from + t * (q_to - q_from)
-            if not self.collision.is_valid(q):
-                return False
+            q = q_from + t * (q_target - q_from)
 
-        return True
+            if not self.collision.is_valid(q):
+                return current_idx, False
+            if not self._satisfies_constraints(q):
+                return current_idx, False
+
+            # Add this valid intermediate node
+            current_idx = tree.add_node(q, current_idx)
+
+        return current_idx, True
 
     def _extract_path(
         self,
@@ -408,10 +510,11 @@ class CBiRRT:
             return path_from_start + list(reversed(path_from_goal))
 
     def _smooth_path(self, path: list[np.ndarray]) -> list[np.ndarray]:
-        """Smooth path using shortcutting.
+        """Smooth path using shortcutting with the grow function.
 
-        When path constraints are active, shortcuts must also satisfy
-        the constraint TSRs along the interpolated edge.
+        Picks two random points on the path and attempts to grow from one
+        to the other. If successful, replaces the intermediate waypoints
+        with the new shorter path segment.
 
         Args:
             path: Original path
@@ -428,40 +531,44 @@ class CBiRRT:
             if len(smoothed) <= 2:
                 break
 
-            # Pick two random points
-            i = self._rng.integers(0, len(smoothed) - 1)
-            j = self._rng.integers(i + 1, len(smoothed))
+            # Pick two random points (need at least one point between them)
+            i = self._rng.integers(0, len(smoothed) - 2)
+            j = self._rng.integers(i + 2, len(smoothed))
 
-            # Try to shortcut (must be collision-free and satisfy constraints)
-            if self._is_edge_valid(smoothed[i], smoothed[j]):
-                if self._constraint_tsrs is None or self._is_edge_constrained(
-                    smoothed[i], smoothed[j]
-                ):
-                    # Remove intermediate points
-                    smoothed = smoothed[: i + 1] + smoothed[j:]
+            # Try to grow from i to j
+            shortcut = self._try_shortcut(smoothed[i], smoothed[j])
+            if shortcut is not None:
+                # Replace path[i:j+1] with the shortcut
+                smoothed = smoothed[:i] + shortcut + smoothed[j + 1 :]
 
         return smoothed
 
-    def _is_edge_constrained(
-        self, q_from: np.ndarray, q_to: np.ndarray, resolution: float = 0.02
-    ) -> bool:
-        """Check if edge satisfies path constraints along its length.
+    def _try_shortcut(
+        self, q_from: np.ndarray, q_to: np.ndarray
+    ) -> list[np.ndarray] | None:
+        """Try to find a shorter path between two configurations using grow.
 
         Args:
             q_from: Start configuration
-            q_to: End configuration
-            resolution: Interpolation resolution
+            q_to: Target configuration
 
         Returns:
-            True if all interpolated points satisfy constraints
+            List of configurations from q_from to q_to (inclusive), or None if failed
         """
-        distance = np.linalg.norm(q_to - q_from)
-        n_steps = max(2, int(np.ceil(distance / resolution)))
+        # Create a temporary tree rooted at q_from
+        temp_tree = RRTree(q_from)
 
-        for i in range(1, n_steps):
-            t = i / n_steps
-            q = q_from + t * (q_to - q_from)
-            if not self._satisfies_constraints(q):
-                return False
+        # Try to grow toward q_to
+        final_idx, reached = self._grow(temp_tree, q_to, max_steps=None)
 
-        return True
+        if not reached:
+            return None
+
+        # Extract path from root to final node
+        # get_path_to_root returns root->leaf order
+        shortcut = temp_tree.get_path_to_root(final_idx)
+
+        # Replace last point with exact target (grow reaches within tolerance)
+        shortcut[-1] = q_to
+
+        return shortcut

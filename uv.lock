@@ -1141,7 +1141,7 @@ wheels = [
 [[package]]
 name = "tsr"
 version = "1.0.0"
-source = { git = "https://github.com/personalrobotics/tsr.git#4ea68d3773a05cfd96cbe3a78412d4301e5bea44" }
+source = { git = "https://github.com/personalrobotics/tsr.git#f5676b089a7350feade7f460208f105bc9739d00" }
 dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },

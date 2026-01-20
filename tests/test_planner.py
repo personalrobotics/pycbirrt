@@ -34,39 +34,6 @@ class MockRobotModel:
         return T
 
 
-class MockIKSolver:
-    """Analytical IK for 2-DOF planar arm."""
-
-    def __init__(self, l1: float = 1.0, l2: float = 1.0):
-        self.l1 = l1
-        self.l2 = l2
-
-    def solve(self, pose: np.ndarray) -> list[np.ndarray]:
-        x, y = pose[0, 3], pose[1, 3]
-        d = np.sqrt(x**2 + y**2)
-
-        # Check reachability
-        if d > self.l1 + self.l2 or d < abs(self.l1 - self.l2):
-            return []
-
-        # Elbow angle
-        cos_q2 = (d**2 - self.l1**2 - self.l2**2) / (2 * self.l1 * self.l2)
-        cos_q2 = np.clip(cos_q2, -1, 1)
-
-        solutions = []
-        for sign in [1, -1]:
-            q2 = sign * np.arccos(cos_q2)
-            q1 = np.arctan2(y, x) - np.arctan2(
-                self.l2 * np.sin(q2), self.l1 + self.l2 * np.cos(q2)
-            )
-            solutions.append(np.array([q1, q2]))
-
-        return solutions
-
-    def solve_batch(self, poses: np.ndarray) -> list[list[np.ndarray]]:
-        return [self.solve(p) for p in poses]
-
-
 class MockCollisionChecker:
     """Always returns valid (no obstacles)."""
 
@@ -75,6 +42,58 @@ class MockCollisionChecker:
 
     def is_valid_batch(self, qs: np.ndarray) -> np.ndarray:
         return np.ones(len(qs), dtype=bool)
+
+
+class MockIKSolver:
+    """Analytical IK for 2-DOF planar arm."""
+
+    def __init__(
+        self,
+        robot: MockRobotModel | None = None,
+        collision_checker: MockCollisionChecker | None = None,
+    ):
+        self.robot = robot or MockRobotModel()
+        self.collision = collision_checker or MockCollisionChecker()
+
+    def solve(self, pose: np.ndarray) -> list[np.ndarray]:
+        """Return all kinematic IK solutions (unvalidated)."""
+        x, y = pose[0, 3], pose[1, 3]
+        d = np.sqrt(x**2 + y**2)
+
+        # Check reachability
+        if d > self.robot.l1 + self.robot.l2 or d < abs(self.robot.l1 - self.robot.l2):
+            return []
+
+        # Elbow angle
+        cos_q2 = (d**2 - self.robot.l1**2 - self.robot.l2**2) / (2 * self.robot.l1 * self.robot.l2)
+        cos_q2 = np.clip(cos_q2, -1, 1)
+
+        solutions = []
+        for sign in [1, -1]:
+            q2 = sign * np.arccos(cos_q2)
+            q1 = np.arctan2(y, x) - np.arctan2(
+                self.robot.l2 * np.sin(q2), self.robot.l1 + self.robot.l2 * np.cos(q2)
+            )
+            solutions.append(np.array([q1, q2]))
+
+        return solutions
+
+    def solve_valid(self, pose: np.ndarray) -> list[np.ndarray]:
+        """Return only valid IK solutions (within limits, collision-free)."""
+        solutions = self.solve(pose)
+        lower, upper = self.robot.joint_limits
+
+        valid = []
+        for q in solutions:
+            # Check joint limits
+            if not (np.all(q >= lower) and np.all(q <= upper)):
+                continue
+            # Check collisions
+            if not self.collision.is_valid(q):
+                continue
+            valid.append(q)
+
+        return valid
 
 
 class TestRRTree:
@@ -114,14 +133,13 @@ class TestRRTree:
 class TestCBiRRT:
     def test_plan_simple(self):
         robot = MockRobotModel()
-        ik = MockIKSolver()
         collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
 
         planner = CBiRRT(
             robot=robot,
             ik_solver=ik,
             collision_checker=collision,
-            config=CBiRRTConfig(max_iterations=1000),
         )
 
         start = np.array([0.0, 0.0])
@@ -184,11 +202,10 @@ class TestCBiRRT:
     def test_all_variants(self, extend_steps, connect_steps, variant_name):
         """Test all 4 BiRRT variants: CON-CON, EXT-EXT, EXT-CON, CON-EXT."""
         robot = MockRobotModel()
-        ik = MockIKSolver()
         collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
 
         config = CBiRRTConfig(
-            max_iterations=2000,
             step_size=0.2,
             extend_steps=extend_steps,
             connect_steps=connect_steps,
@@ -234,14 +251,13 @@ class TestCBiRRT:
     def test_start_tsrs(self):
         """Test planning with start sampled from TSRs."""
         robot = MockRobotModel()
-        ik = MockIKSolver()
         collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
 
         planner = CBiRRT(
             robot=robot,
             ik_solver=ik,
             collision_checker=collision,
-            config=CBiRRTConfig(max_iterations=1000),
         )
 
         # Start TSR: positions near (1.0, 1.0)

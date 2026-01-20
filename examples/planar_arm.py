@@ -1,14 +1,20 @@
 """Example: Simple 2-DOF planar arm planning with CBiRRT.
 
+This example demonstrates three planning scenarios:
+1. Basic planning with fixed start and goal TSR
+2. Planning with both start and goal TSRs (no fixed configurations)
+3. Constrained planning with a trajectory-wide constraint TSR
+
 This example requires only numpy and TSR - no MuJoCo or EAIK needed.
 
 Run with:
     python examples/planar_arm.py
 """
 
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Rectangle
 from tsr import TSR
 
 from pycbirrt import CBiRRT, CBiRRTConfig, PlanResult
@@ -57,34 +63,53 @@ class PlanarArmRobot:
 class PlanarArmIK:
     """Analytical IK for 2-DOF planar arm."""
 
-    def __init__(self, l1: float = 1.0, l2: float = 1.0):
-        self.l1 = l1
-        self.l2 = l2
+    def __init__(
+        self,
+        robot: PlanarArmRobot,
+        collision_checker: "CircleObstacleChecker",
+    ):
+        self.robot = robot
+        self.collision = collision_checker
 
     def solve(self, pose: np.ndarray) -> list[np.ndarray]:
+        """Return all kinematic IK solutions (unvalidated)."""
         x, y = pose[0, 3], pose[1, 3]
         d = np.sqrt(x**2 + y**2)
 
         # Check reachability
-        if d > self.l1 + self.l2 - 1e-6 or d < abs(self.l1 - self.l2) + 1e-6:
+        if d > self.robot.l1 + self.robot.l2 - 1e-6 or d < abs(self.robot.l1 - self.robot.l2) + 1e-6:
             return []
 
         # Elbow angle via law of cosines
-        cos_q2 = (d**2 - self.l1**2 - self.l2**2) / (2 * self.l1 * self.l2)
+        cos_q2 = (d**2 - self.robot.l1**2 - self.robot.l2**2) / (2 * self.robot.l1 * self.robot.l2)
         cos_q2 = np.clip(cos_q2, -1, 1)
 
         solutions = []
         for sign in [1, -1]:  # Elbow up / elbow down
             q2 = sign * np.arccos(cos_q2)
             q1 = np.arctan2(y, x) - np.arctan2(
-                self.l2 * np.sin(q2), self.l1 + self.l2 * np.cos(q2)
+                self.robot.l2 * np.sin(q2), self.robot.l1 + self.robot.l2 * np.cos(q2)
             )
             solutions.append(np.array([q1, q2]))
 
         return solutions
 
-    def solve_batch(self, poses: np.ndarray) -> list[list[np.ndarray]]:
-        return [self.solve(p) for p in poses]
+    def solve_valid(self, pose: np.ndarray) -> list[np.ndarray]:
+        """Return only valid IK solutions (within limits, collision-free)."""
+        solutions = self.solve(pose)
+        lower, upper = self.robot.joint_limits
+
+        valid = []
+        for q in solutions:
+            # Check joint limits
+            if not (np.all(q >= lower) and np.all(q <= upper)):
+                continue
+            # Check collisions
+            if not self.collision.is_valid(q):
+                continue
+            valid.append(q)
+
+        return valid
 
 
 class CircleObstacleChecker:
@@ -144,19 +169,51 @@ def visualize_path(
     robot: PlanarArmRobot,
     path: list[np.ndarray],
     obstacles: list[tuple[np.ndarray, float]],
-    goal_pos: np.ndarray,
+    start_region: tuple[np.ndarray, float] | None = None,
+    goal_region: tuple[np.ndarray, float] | None = None,
+    constraint_region: tuple[float, float, float, float] | None = None,
+    title: str = "CBiRRT Path",
+    filename: str = "planar_arm_path.png",
 ):
-    """Visualize the planned path."""
+    """Visualize the planned path.
+
+    Args:
+        robot: The planar arm robot
+        path: List of joint configurations
+        obstacles: List of (center, radius) obstacle tuples
+        start_region: Optional (center, radius) for start TSR visualization
+        goal_region: Optional (center, radius) for goal TSR visualization
+        constraint_region: Optional (x_min, x_max, y_min, y_max) for constraint TSR
+        title: Plot title
+        filename: Output filename
+    """
     fig, ax = plt.subplots(figsize=(10, 10))
+
+    # Draw constraint region first (behind everything)
+    if constraint_region is not None:
+        x_min, x_max, y_min, y_max = constraint_region
+        rect = Rectangle(
+            (x_min, y_min), x_max - x_min, y_max - y_min,
+            color="yellow", alpha=0.2, label="Constraint region"
+        )
+        ax.add_patch(rect)
 
     # Draw obstacles
     for center, radius in obstacles:
         circle = Circle(center, radius, color="red", alpha=0.5)
         ax.add_patch(circle)
 
+    # Draw start region
+    if start_region is not None:
+        center, radius = start_region
+        circle = Circle(center, radius, color="blue", alpha=0.2, label="Start region")
+        ax.add_patch(circle)
+
     # Draw goal region
-    goal_circle = Circle(goal_pos[:2], 0.1, color="green", alpha=0.3, label="Goal")
-    ax.add_patch(goal_circle)
+    if goal_region is not None:
+        center, radius = goal_region
+        circle = Circle(center, radius, color="green", alpha=0.2, label="Goal region")
+        ax.add_patch(circle)
 
     # Draw path (fading from blue to green)
     n_frames = len(path)
@@ -179,7 +236,7 @@ def visualize_path(
         "bo-",
         linewidth=4,
         markersize=10,
-        label="Start",
+        label="Start config",
     )
     ax.plot(
         [p[0] for p in end_positions],
@@ -187,7 +244,7 @@ def visualize_path(
         "go-",
         linewidth=4,
         markersize=10,
-        label="End",
+        label="End config",
     )
 
     ax.set_xlim(-2.5, 2.5)
@@ -195,10 +252,10 @@ def visualize_path(
     ax.set_aspect("equal")
     ax.grid(True, alpha=0.3)
     ax.legend()
-    ax.set_title(f"CBiRRT Path ({len(path)} waypoints)")
+    ax.set_title(f"{title} ({len(path)} waypoints)")
 
-    plt.savefig("planar_arm_path.png", dpi=150)
-    print("Saved visualization to planar_arm_path.png")
+    plt.savefig(filename, dpi=150)
+    print(f"Saved visualization to {filename}")
     plt.show()
 
 
@@ -207,6 +264,8 @@ def visualize_trees(
     tree_goal: RRTree,
     path: list[np.ndarray] | None,
     collision_checker: CircleObstacleChecker,
+    title: str = "CBiRRT Trees in Configuration Space",
+    filename: str = "planar_arm_trees.png",
 ):
     """Visualize the RRT trees in configuration space."""
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -262,32 +321,79 @@ def visualize_trees(
     ax.set_aspect("equal")
     ax.grid(True, alpha=0.3)
     ax.legend(loc="upper right")
-    ax.set_title("CBiRRT Trees in Configuration Space")
+    ax.set_title(title)
 
-    plt.savefig("planar_arm_trees.png", dpi=150)
-    print("Saved tree visualization to planar_arm_trees.png")
+    plt.savefig(filename, dpi=150)
+    print(f"Saved tree visualization to {filename}")
     plt.show()
 
 
-def main():
-    # Create robot
-    robot = PlanarArmRobot(l1=1.0, l2=1.0)
-    ik = PlanarArmIK(l1=1.0, l2=1.0)
+def make_position_tsr(x: float, y: float, tolerance: float = 0.1) -> TSR:
+    """Create a TSR for a position with given tolerance."""
+    T0_w = np.eye(4)
+    T0_w[0, 3] = x
+    T0_w[1, 3] = y
 
-    # Create obstacles (positioned to avoid start config but require planning)
+    return TSR(
+        T0_w=T0_w,
+        Tw_e=np.eye(4),
+        Bw=np.array([
+            [-tolerance, tolerance],  # x tolerance
+            [-tolerance, tolerance],  # y tolerance
+            [0, 0],                   # z (unused in 2D)
+            [0, 0],                   # roll
+            [0, 0],                   # pitch
+            [0, 0],                   # yaw
+        ]),
+    )
+
+
+def make_y_constraint_tsr(y_min: float, y_max: float) -> TSR:
+    """Create a TSR that constrains the end-effector y-coordinate.
+
+    This creates a "horizontal band" constraint where the end-effector
+    must stay within y_min <= y <= y_max.
+    """
+    # Center the TSR at y=(y_min+y_max)/2
+    T0_w = np.eye(4)
+    T0_w[1, 3] = (y_min + y_max) / 2
+
+    y_range = (y_max - y_min) / 2
+
+    return TSR(
+        T0_w=T0_w,
+        Tw_e=np.eye(4),
+        Bw=np.array([
+            [-10, 10],              # x: effectively unconstrained
+            [-y_range, y_range],    # y: constrained to band
+            [0, 0],                 # z
+            [0, 0],                 # roll
+            [0, 0],                 # pitch
+            [0, 0],                 # yaw
+        ]),
+    )
+
+
+def example_basic():
+    """Example 1: Basic planning with fixed start and goal TSR."""
+    print("\n" + "=" * 60)
+    print("Example 1: Basic Planning (fixed start, goal TSR)")
+    print("=" * 60)
+
+    robot = PlanarArmRobot(l1=1.0, l2=1.0)
     obstacles = [
-        (np.array([1.2, 0.5]), 0.2),   # Obstacle forcing path around
-        (np.array([0.5, 1.2]), 0.15),  # Upper obstacle
+        (np.array([1.2, 0.5]), 0.2),
+        (np.array([0.5, 1.2]), 0.15),
     ]
     collision_checker = CircleObstacleChecker(robot, obstacles)
+    ik = PlanarArmIK(robot, collision_checker)
 
-    # Create planner
     config = CBiRRTConfig(
-        max_iterations=2000,
         step_size=0.3,
         goal_bias=0.15,
         smooth_path=True,
         smoothing_iterations=50,
+        angular_joints=(True, True),  # Both joints are rotational
     )
     planner = CBiRRT(
         robot=robot,
@@ -296,31 +402,15 @@ def main():
         config=config,
     )
 
-    # Start configuration
-    start = np.array([0.0, 0.0])  # Arm pointing right
+    # Fixed start configuration
+    start = np.array([0.0, 0.0])
 
-    # Goal: reach position (1.5, 1.0) with some tolerance
+    # Goal TSR at (1.5, 1.0) with tolerance
     goal_pos = np.array([1.5, 1.0])
-    T0_w = np.eye(4)
-    T0_w[0, 3] = goal_pos[0]
-    T0_w[1, 3] = goal_pos[1]
+    goal_tsr = make_position_tsr(goal_pos[0], goal_pos[1], tolerance=0.1)
 
-    goal_tsr = TSR(
-        T0_w=T0_w,
-        Tw_e=np.eye(4),
-        Bw=np.array([
-            [-0.1, 0.1],  # x tolerance
-            [-0.1, 0.1],  # y tolerance
-            [0, 0],       # z (unused in 2D)
-            [0, 0],       # roll
-            [0, 0],       # pitch
-            [0, 0],       # yaw
-        ]),
-    )
-
-    print("Planning path...")
-    print(f"  Start: {start}")
-    print(f"  Goal region: ({goal_pos[0]}, {goal_pos[1]}) ± 0.1")
+    print(f"  Start: {start} (fixed)")
+    print(f"  Goal region: ({goal_pos[0]}, {goal_pos[1]}) +/- 0.1")
     print(f"  Obstacles: {len(obstacles)}")
 
     result = planner.plan(start, goal_tsrs=[goal_tsr], seed=42, return_details=True)
@@ -331,21 +421,235 @@ def main():
 
     if not result.success:
         print("No path found!")
-        # Still visualize trees to see what happened
-        visualize_trees(result.tree_start, result.tree_goal, None, collision_checker)
+        visualize_trees(result.tree_start, result.tree_goal, None, collision_checker,
+                       title="Example 1: Basic Planning (failed)",
+                       filename="example1_trees.png")
         return
 
     print(f"Found path with {len(result.path)} waypoints")
 
-    # Verify goal reached
     final_pose = robot.forward_kinematics(result.path[-1])
     final_pos = final_pose[:2, 3]
     print(f"  Final position: ({final_pos[0]:.3f}, {final_pos[1]:.3f})")
-    print(f"  Distance to goal: {np.linalg.norm(final_pos - goal_pos):.4f}")
 
-    # Visualize both the path and the trees
-    visualize_path(robot, result.path, obstacles, goal_pos)
-    visualize_trees(result.tree_start, result.tree_goal, result.path, collision_checker)
+    visualize_path(
+        robot, result.path, obstacles,
+        goal_region=(goal_pos, 0.1),
+        title="Example 1: Basic Planning",
+        filename="example1_path.png",
+    )
+    visualize_trees(
+        result.tree_start, result.tree_goal, result.path, collision_checker,
+        title="Example 1: Basic Planning (C-space)",
+        filename="example1_trees.png",
+    )
+
+
+def example_start_goal_tsrs():
+    """Example 2: Planning with both start and goal TSRs."""
+    print("\n" + "=" * 60)
+    print("Example 2: Planning with Start and Goal TSRs")
+    print("=" * 60)
+
+    robot = PlanarArmRobot(l1=1.0, l2=1.0)
+    # Small obstacle that doesn't block too much
+    obstacles = [
+        (np.array([1.0, 0.0]), 0.15),
+    ]
+    collision_checker = CircleObstacleChecker(robot, obstacles)
+    ik = PlanarArmIK(robot, collision_checker)
+
+    config = CBiRRTConfig(
+        step_size=0.3,
+        goal_bias=0.15,
+        tsr_tolerance=0.05,  # Larger tolerance for tree connection
+        smooth_path=True,
+        smoothing_iterations=50,
+        angular_joints=(True, True),  # Both joints are rotational
+    )
+    planner = CBiRRT(
+        robot=robot,
+        ik_solver=ik,
+        collision_checker=collision_checker,
+        config=config,
+    )
+
+    # Start TSR: anywhere near (1.5, 0.5) - upper right quadrant
+    start_pos = np.array([1.5, 0.5])
+    start_tsr = make_position_tsr(start_pos[0], start_pos[1], tolerance=0.2)
+
+    # Goal TSR: anywhere near (0.5, 1.5) - upper left quadrant
+    goal_pos = np.array([0.5, 1.5])
+    goal_tsr = make_position_tsr(goal_pos[0], goal_pos[1], tolerance=0.2)
+
+    print(f"  Start region: ({start_pos[0]}, {start_pos[1]}) +/- 0.2")
+    print(f"  Goal region: ({goal_pos[0]}, {goal_pos[1]}) +/- 0.2")
+    print(f"  Obstacles: {len(obstacles)}")
+
+    result = planner.plan(
+        start=None,  # No fixed start - sample from start_tsrs
+        goal_tsrs=[goal_tsr],
+        start_tsrs=[start_tsr],
+        seed=42,
+        return_details=True,
+    )
+
+    print(f"  Iterations: {result.iterations}")
+    print(f"  Start tree nodes: {len(result.tree_start)}")
+    print(f"  Goal tree nodes: {len(result.tree_goal)}")
+
+    if not result.success:
+        print("No path found!")
+        visualize_trees(result.tree_start, result.tree_goal, None, collision_checker,
+                       title="Example 2: Start/Goal TSRs (failed)",
+                       filename="example2_trees.png")
+        return
+
+    print(f"Found path with {len(result.path)} waypoints")
+
+    # Verify start and goal
+    start_pose = robot.forward_kinematics(result.path[0])
+    final_pose = robot.forward_kinematics(result.path[-1])
+    print(f"  Sampled start: ({start_pose[0, 3]:.3f}, {start_pose[1, 3]:.3f})")
+    print(f"  Final position: ({final_pose[0, 3]:.3f}, {final_pose[1, 3]:.3f})")
+
+    visualize_path(
+        robot, result.path, obstacles,
+        start_region=(start_pos, 0.2),
+        goal_region=(goal_pos, 0.2),
+        title="Example 2: Start and Goal TSRs",
+        filename="example2_path.png",
+    )
+    visualize_trees(
+        result.tree_start, result.tree_goal, result.path, collision_checker,
+        title="Example 2: Start/Goal TSRs (C-space)",
+        filename="example2_trees.png",
+    )
+
+
+def example_constrained():
+    """Example 3: Constrained planning with trajectory-wide constraint TSR.
+
+    The end-effector must stay within a horizontal band (y constraint)
+    throughout the entire trajectory.
+    """
+    print("\n" + "=" * 60)
+    print("Example 3: Constrained Planning (y-band constraint)")
+    print("=" * 60)
+
+    robot = PlanarArmRobot(l1=1.0, l2=1.0)
+    # No obstacles for this example - the constraint is the challenge
+    obstacles = []
+    collision_checker = CircleObstacleChecker(robot, obstacles)
+    ik = PlanarArmIK(robot, collision_checker)
+
+    config = CBiRRTConfig(
+        step_size=0.2,
+        goal_bias=0.1,
+        smooth_path=True,
+        smoothing_iterations=50,
+        tsr_tolerance=0.05,
+        angular_joints=(True, True),  # Both joints are rotational
+    )
+    planner = CBiRRT(
+        robot=robot,
+        ik_solver=ik,
+        collision_checker=collision_checker,
+        config=config,
+    )
+
+    # Constraint: end-effector must stay in y-band [0.8, 1.2]
+    y_min, y_max = 0.8, 1.2
+    constraint_tsr = make_y_constraint_tsr(y_min, y_max)
+
+    # Start: left side of the band
+    start_pos = np.array([-1.5, 1.0])
+    start_tsr = make_position_tsr(start_pos[0], start_pos[1], tolerance=0.1)
+
+    # Goal: right side of the band
+    goal_pos = np.array([1.5, 1.0])
+    goal_tsr = make_position_tsr(goal_pos[0], goal_pos[1], tolerance=0.1)
+
+    print(f"  Start region: ({start_pos[0]}, {start_pos[1]}) +/- 0.1")
+    print(f"  Goal region: ({goal_pos[0]}, {goal_pos[1]}) +/- 0.1")
+    print(f"  Constraint: y in [{y_min}, {y_max}] (horizontal band)")
+
+    result = planner.plan(
+        start=None,
+        goal_tsrs=[goal_tsr],
+        start_tsrs=[start_tsr],
+        constraint_tsrs=[constraint_tsr],
+        seed=42,
+        return_details=True,
+    )
+
+    print(f"  Iterations: {result.iterations}")
+    print(f"  Start tree nodes: {len(result.tree_start)}")
+    print(f"  Goal tree nodes: {len(result.tree_goal)}")
+
+    if not result.success:
+        print("No path found!")
+        print("  (Constrained planning is harder - the path must stay on the constraint manifold)")
+        visualize_trees(result.tree_start, result.tree_goal, None, collision_checker,
+                       title="Example 3: Constrained Planning (failed)",
+                       filename="example3_trees.png")
+        return
+
+    print(f"Found path with {len(result.path)} waypoints")
+
+    # Verify constraint satisfaction along path
+    max_violation = 0.0
+    for q in result.path:
+        pose = robot.forward_kinematics(q)
+        y = pose[1, 3]
+        if y < y_min:
+            max_violation = max(max_violation, y_min - y)
+        elif y > y_max:
+            max_violation = max(max_violation, y - y_max)
+
+    print(f"  Max constraint violation: {max_violation:.4f}")
+
+    start_pose = robot.forward_kinematics(result.path[0])
+    final_pose = robot.forward_kinematics(result.path[-1])
+    print(f"  Start position: ({start_pose[0, 3]:.3f}, {start_pose[1, 3]:.3f})")
+    print(f"  Final position: ({final_pose[0, 3]:.3f}, {final_pose[1, 3]:.3f})")
+
+    visualize_path(
+        robot, result.path, obstacles,
+        start_region=(start_pos, 0.1),
+        goal_region=(goal_pos, 0.1),
+        constraint_region=(-2.5, 2.5, y_min, y_max),
+        title="Example 3: Constrained Planning (y-band)",
+        filename="example3_path.png",
+    )
+    visualize_trees(
+        result.tree_start, result.tree_goal, result.path, collision_checker,
+        title="Example 3: Constrained Planning (C-space)",
+        filename="example3_trees.png",
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser(description="CBiRRT planar arm examples")
+    parser.add_argument(
+        "--example", "-e",
+        type=int,
+        choices=[1, 2, 3],
+        help="Run specific example (1=basic, 2=start/goal TSRs, 3=constrained)",
+    )
+    args = parser.parse_args()
+
+    if args.example == 1:
+        example_basic()
+    elif args.example == 2:
+        example_start_goal_tsrs()
+    elif args.example == 3:
+        example_constrained()
+    else:
+        # Run all examples
+        example_basic()
+        example_start_goal_tsrs()
+        example_constrained()
 
 
 if __name__ == "__main__":

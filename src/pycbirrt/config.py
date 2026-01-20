@@ -16,20 +16,29 @@ class CBiRRTConfig:
     - CON-EXT: Extend tree marches, connect tree takes limited steps
     """
 
+    # Termination
+    timeout: float = 30.0  # Wall-clock timeout in seconds
+    max_iterations: int = 100000  # Safety limit (timeout is the primary control)
+    tsr_tolerance: float = 1e-3  # Distance tolerance for TSR satisfaction (tree connection + path constraints)
+    progress_tolerance: float = 1e-6  # Minimum progress required to continue growing
+
     # Tree growth parameters
-    max_iterations: int = 5000
     step_size: float = 0.1  # Maximum joint space step
-    goal_bias: float = 0.1  # Probability of sampling from goal TSR
+    goal_bias: float = 0.1  # Probability of start tree sampling from goal TSR
+    start_bias: float = 0.1  # Probability of goal tree sampling from start TSR
 
     # Extension behavior (None = CON, int = EXT with X steps)
     extend_steps: int | None = None  # Steps when growing toward random sample
     connect_steps: int | None = None  # Steps when growing toward other tree
 
-    # Termination
-    timeout: float | None = None  # Wall-clock timeout in seconds (None = no timeout)
-    goal_tolerance: float = 1e-3  # TSR distance tolerance for goal
-    constraint_tolerance: float = 1e-3  # TSR distance tolerance for path constraints
+    # Constraint projection
+    max_projection_iters: int = 50  # Max iterations for projecting onto constraint manifold
 
     # Smoothing
     smooth_path: bool = True
     smoothing_iterations: int = 100
+
+    # Angular joints (for proper distance calculation with wraparound)
+    # If None, all joints are treated as linear
+    # If provided, boolean array where True = angular joint (handles 2*pi wraparound)
+    angular_joints: tuple[bool, ...] | None = None
