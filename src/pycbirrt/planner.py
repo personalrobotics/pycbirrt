@@ -66,11 +66,19 @@ class CBiRRT:
     ) -> list[np.ndarray] | None | PlanResult:
         """Plan a path from start to goal with optional TSR constraints.
 
+        Multiple TSRs in goal_tsrs or start_tsrs are treated as a union - the
+        planner will find a path to ANY of the goal TSRs. TSRs are sampled
+        proportionally to their volume (sum of Bw bounds), so TSRs with more
+        freedom are explored more frequently.
+
         Args:
             start: Start joint configuration (required if start_tsrs not provided)
-            goal_tsrs: List of TSRs defining the goal region
-            start_tsrs: Optional TSRs defining valid start regions
-            constraint_tsrs: Optional TSRs that constrain the entire path
+            goal_tsrs: List of TSRs defining the goal region (union - path ends
+                in any one). Each TSR is sampled proportionally to its volume.
+            start_tsrs: Optional TSRs defining valid start regions (union).
+                If provided, a valid start configuration is sampled from these.
+            constraint_tsrs: Optional TSRs that constrain the entire path.
+                Every configuration along the path must satisfy ALL of these.
             seed: Random seed for reproducibility
             return_details: If True, return PlanResult with trees; otherwise just path
 
@@ -177,15 +185,19 @@ class CBiRRT:
     ) -> np.ndarray | None:
         """Sample a valid configuration from TSRs.
 
+        Samples from the union of TSRs with probability proportional to each
+        TSR's volume (sum of Bw bounds). This ensures TSRs with more freedom
+        are sampled more frequently.
+
         Args:
-            tsrs: List of TSRs to sample from
+            tsrs: List of TSRs to sample from (union)
             must_satisfy_constraints: If True, also check path constraint TSRs
 
         Returns:
             Valid joint configuration or None
         """
-        # Sample pose from TSRs
-        pose = sample_from_tsrs(tsrs)
+        # Sample pose from TSRs (volume-weighted selection)
+        pose = sample_from_tsrs(tsrs, self._rng)
 
         # Try IK from multiple initial configurations
         # This helps differential IK solvers find solutions from distant targets
