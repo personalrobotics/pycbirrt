@@ -1,4 +1,4 @@
-"""Example: UR5e + Robotiq gripper planning with CBiRRT in MuJoCo.
+"""Example: UR5e planning with CBiRRT in MuJoCo.
 
 Prerequisites:
 1. Clone MuJoCo Menagerie:
@@ -8,7 +8,7 @@ Prerequisites:
    export MUJOCO_MENAGERIE_PATH=/path/to/mujoco_menagerie
 
 3. Install dependencies:
-   pip install pycbirrt[mujoco,eaik]
+   uv pip install pycbirrt[mujoco]
 """
 
 import os
@@ -18,8 +18,11 @@ import mujoco
 import mujoco.viewer
 
 from pycbirrt import CBiRRT, CBiRRTConfig
-from pycbirrt.backends.mujoco import MuJoCoRobotModel, MuJoCoCollisionChecker
-from pycbirrt.backends.eaik import EAIKSolver
+from pycbirrt.backends.mujoco import (
+    MuJoCoRobotModel,
+    MuJoCoCollisionChecker,
+    MuJoCoIKSolver,
+)
 from tsr import TSR
 
 
@@ -136,14 +139,14 @@ def main():
         joint_names=ur5e_joints,
     )
 
-    # Create IK solver
-    urdf_path = menagerie_path / "universal_robots_ur5e" / "ur5e.urdf"
-    if not urdf_path.exists():
-        print(f"Warning: URDF not found at {urdf_path}")
-        print("EAIK requires URDF. You may need to convert the MJCF or find a URDF.")
-        return
-
-    ik_solver = EAIKSolver(str(urdf_path))
+    # Create IK solver using MuJoCo's differential IK
+    ik_solver = MuJoCoIKSolver(
+        model=model,
+        data=data,
+        ee_site="attachment_site",
+        joint_names=ur5e_joints,
+        collision_checker=collision_checker,
+    )
 
     # Create planner
     config = CBiRRTConfig(

@@ -227,13 +227,24 @@ Optional backends for common robotics libraries:
 ### MuJoCo
 
 ```python
-from pycbirrt.backends.mujoco import MuJoCoRobotModel, MuJoCoCollisionChecker
+from pycbirrt.backends.mujoco import (
+    MuJoCoRobotModel,
+    MuJoCoCollisionChecker,
+    MuJoCoIKSolver,
+)
 
 model = mujoco.MjModel.from_xml_path("robot.xml")
 data = mujoco.MjData(model)
 
 robot = MuJoCoRobotModel(model, data, ee_site="end_effector")
 collision = MuJoCoCollisionChecker(model, data)
+
+# Differential IK solver (no external dependencies)
+ik = MuJoCoIKSolver(
+    model, data,
+    ee_site="end_effector",
+    collision_checker=collision,
+)
 ```
 
 ### EAIK (Analytical IK)
