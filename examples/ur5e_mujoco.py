@@ -206,6 +206,10 @@ def create_scene_model(menagerie_path: Path) -> "mujoco.MjModel":
     ur5e_spec = mujoco.MjSpec.from_file(str(ur5e_path))
     gripper_spec = mujoco.MjSpec.from_file(str(robotiq_path))
 
+    # Set offscreen framebuffer size for high-res rendering
+    ur5e_spec.visual.global_.offwidth = 1920
+    ur5e_spec.visual.global_.offheight = 1080
+
     # Find the wrist_3_link body on the UR5e where we'll attach the gripper
     wrist_body = ur5e_spec.body("wrist_3_link")
 
@@ -233,13 +237,13 @@ def create_scene_model(menagerie_path: Path) -> "mujoco.MjModel":
     # Add scene elements (ground, table, cylinder)
     world = ur5e_spec.worldbody
 
-    # Ground plane
+    # Ground plane - light gray for clean look
     floor = world.add_geom()
     floor.name = "floor"
     floor.type = mujoco.mjtGeom.mjGEOM_PLANE
     floor.pos = [0, 0, -0.01]
     floor.size = [0, 0, 0.05]
-    floor.rgba = [0.2, 0.25, 0.3, 1]
+    floor.rgba = [0.95, 0.95, 0.95, 1]  # Light gray / near-white
 
     # Robot base marker (visual only)
     base_marker = world.add_geom()
@@ -247,7 +251,7 @@ def create_scene_model(menagerie_path: Path) -> "mujoco.MjModel":
     base_marker.type = mujoco.mjtGeom.mjGEOM_CYLINDER
     base_marker.pos = [0, 0, 0.01]
     base_marker.size = [0.1, 0.01, 0]
-    base_marker.rgba = [0, 0.5, 1, 0.8]
+    base_marker.rgba = [0.3, 0.5, 0.7, 0.8]  # Subtle blue
     base_marker.contype = 0
     base_marker.conaffinity = 0
 
@@ -312,12 +316,12 @@ def create_simple_scene_file(menagerie_path: Path) -> Path:
   <include file="ur5e.xml"/>
 
   <worldbody>
-    <!-- Ground plane for visual reference -->
-    <geom name="floor" pos="0 0 -0.01" size="0 0 0.05" type="plane" rgba="0.2 0.25 0.3 1"/>
+    <!-- Ground plane - light gray for clean look -->
+    <geom name="floor" pos="0 0 -0.01" size="0 0 0.05" type="plane" rgba="0.95 0.95 0.95 1"/>
 
     <!-- Robot base marker (visual only) -->
     <geom name="base_marker" type="cylinder" pos="0 0 0.01" size="0.1 0.01"
-          rgba="0 0.5 1 0.8" contype="0" conaffinity="0"/>
+          rgba="0.3 0.5 0.7 0.8" contype="0" conaffinity="0"/>
 
     <!-- Table in front of robot -->
     <body name="table" pos="0.5 0 0.4">
@@ -351,9 +355,9 @@ def render_to_video(
     path: list[np.ndarray],
     joint_names: list[str],
     output_path: str,
-    fps: int = 30,
-    width: int = 640,
-    height: int = 480,
+    fps: int = 60,
+    width: int = 1280,
+    height: int = 720,
 ):
     """Render the planned path to a video file."""
     import mediapy as media
@@ -367,8 +371,11 @@ def render_to_video(
     camera.azimuth = 135
     camera.elevation = -25
 
+    # Scene options for white background
+    scene_option = mujoco.MjvOption()
+
     frames = []
-    steps_per_waypoint = 10
+    steps_per_waypoint = 3  # Faster movement (was 10)
 
     for i in range(len(path) - 1):
         for t in np.linspace(0, 1, steps_per_waypoint, endpoint=False):
@@ -381,11 +388,11 @@ def render_to_video(
                 data.qpos[qpos_adr] = q[j]
 
             mujoco.mj_forward(model, data)
-            renderer.update_scene(data, camera=camera)
+            renderer.update_scene(data, camera=camera, scene_option=scene_option)
             frames.append(renderer.render())
 
-    # Hold final frame
-    for _ in range(fps):
+    # Hold final frame briefly
+    for _ in range(fps // 2):
         frames.append(renderer.render())
 
     media.write_video(output_path, frames, fps=fps)
@@ -416,11 +423,11 @@ def visualize_interactive(
 
     with viewer:
         waypoint_idx = 0
-        steps_per_waypoint = 50
+        steps_per_waypoint = 15  # Faster movement (was 50)
 
         while viewer.is_running():
             if waypoint_idx < len(path) - 1:
-                t = (data.time * 10) % steps_per_waypoint / steps_per_waypoint
+                t = (data.time * 30) % steps_per_waypoint / steps_per_waypoint  # Faster (was *10)
                 q = (1 - t) * path[waypoint_idx] + t * path[waypoint_idx + 1]
 
                 if t > 0.99:
