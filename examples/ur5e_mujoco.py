@@ -39,6 +39,13 @@ from pycbirrt.backends.mujoco import (
     MuJoCoIKSolver,
 )
 from tsr import TSR
+
+# Optional EAIK import
+try:
+    from pycbirrt.backends.eaik import EAIKSolver
+    EAIK_AVAILABLE = True
+except ImportError:
+    EAIK_AVAILABLE = False
 from tsr.core.tsr_template import TSRTemplate
 from tsr.schema import EntityClass, TaskCategory
 
@@ -171,7 +178,7 @@ def create_gripper_grasp_cylinder_template() -> TSRTemplate:
         variant="top",
         name="Top-Down Grasp Cylinder",
         description="Grasp a cylinder from above with a parallel jaw gripper",
-        preshape=np.array([0.04]),  # 4cm aperture (cylinder diameter is 6cm)
+        preshape=np.array([0.07]),  # 7cm aperture to approach 6cm diameter cylinder
     )
 
 
@@ -442,7 +449,27 @@ def main():
     parser.add_argument("--render", type=str, help="Render to video file (e.g., output.mp4)")
     parser.add_argument("--no-viz", action="store_true", help="Skip visualization")
     parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
+    parser.add_argument(
+        "--ik",
+        type=str,
+        choices=["mujoco", "eaik"],
+        default="mujoco",
+        help="IK solver to use: 'mujoco' (differential) or 'eaik' (analytical, requires eaik package)",
+    )
+    parser.add_argument(
+        "--compare-ik",
+        action="store_true",
+        help="Compare both IK solvers on the same planning problem",
+    )
     args = parser.parse_args()
+
+    # Check EAIK availability
+    if args.ik == "eaik" and not EAIK_AVAILABLE:
+        print("Error: EAIK not available. Install with: pip install eaik")
+        return
+    if args.compare_ik and not EAIK_AVAILABLE:
+        print("Error: EAIK not available for comparison. Install with: pip install eaik")
+        return
 
     menagerie_path = get_menagerie_path()
 
@@ -482,22 +509,38 @@ def main():
         joint_names=ur5e_joints,
     )
 
-    # Create IK solver
-    ik_solver = MuJoCoIKSolver(
-        model=model,
-        data=data,
-        ee_site="attachment_site",
-        joint_names=ur5e_joints,
-        collision_checker=collision_checker,
-    )
+    # Create IK solver based on selection
+    if args.ik == "eaik":
+        print("Using EAIK (analytical) IK solver")
+        ik_solver = EAIKSolver.for_ur5e(
+            joint_limits=robot.joint_limits,
+            collision_checker=collision_checker,
+        )
+        print(f"  Kinematic family: {ik_solver.get_kinematic_family()}")
+        # EAIK doesn't need multiple seeds - it finds all solutions analytically
+        config = CBiRRTConfig(
+            max_iterations=5000,
+            step_size=0.2,
+            goal_bias=0.1,
+            ik_num_seeds=1,  # EAIK finds all solutions, one seed is enough
+        )
+    else:
+        print("Using MuJoCo (differential) IK solver")
+        ik_solver = MuJoCoIKSolver(
+            model=model,
+            data=data,
+            ee_site="attachment_site",
+            joint_names=ur5e_joints,
+            collision_checker=collision_checker,
+        )
+        config = CBiRRTConfig(
+            max_iterations=5000,
+            step_size=0.2,
+            goal_bias=0.1,
+            ik_num_seeds=20,  # Try more IK seeds for differential solver
+        )
 
     # Create planner
-    config = CBiRRTConfig(
-        max_iterations=5000,
-        step_size=0.2,
-        goal_bias=0.1,
-        ik_num_seeds=20,  # Try more IK seeds for differential solver
-    )
     planner = CBiRRT(
         robot=robot,
         ik_solver=ik_solver,
@@ -548,14 +591,94 @@ def main():
     # Start configuration (home position)
     start = np.array([0, -np.pi / 2, np.pi / 2, -np.pi / 2, -np.pi / 2, 0])
 
+    # =========================================================================
+    # IK Comparison Mode
+    # =========================================================================
+    if args.compare_ik:
+        import time
+
+        print("\n" + "=" * 70)
+        print("IK SOLVER COMPARISON")
+        print("=" * 70)
+
+        # Sample some target poses from the grasp TSR
+        n_samples = 10
+        print(f"\nSampling {n_samples} target poses from grasp TSR...")
+        target_poses = [grasp_tsr.sample() for _ in range(n_samples)]
+
+        # Create both solvers
+        mujoco_solver = MuJoCoIKSolver(
+            model=model,
+            data=data,
+            ee_site="attachment_site",
+            joint_names=ur5e_joints,
+            collision_checker=collision_checker,
+        )
+        eaik_solver = EAIKSolver.for_ur5e(
+            joint_limits=robot.joint_limits,
+            collision_checker=collision_checker,
+        )
+
+        print(f"\nEAIK Kinematic family: {eaik_solver.get_kinematic_family()}")
+
+        # Compare IK solving
+        print(f"\n{'Solver':<15} {'Success':<10} {'Avg Time (ms)':<15} {'Solutions/pose':<15}")
+        print("-" * 55)
+
+        # EAIK benchmark
+        eaik_successes = 0
+        eaik_total_solutions = 0
+        eaik_start = time.perf_counter()
+        for pose in target_poses:
+            solutions = eaik_solver.solve_valid(pose)
+            if solutions:
+                eaik_successes += 1
+                eaik_total_solutions += len(solutions)
+        eaik_time = (time.perf_counter() - eaik_start) * 1000
+
+        # MuJoCo benchmark (with multiple seeds)
+        mujoco_successes = 0
+        mujoco_total_solutions = 0
+        mujoco_start = time.perf_counter()
+        lower, upper = robot.joint_limits
+        rng = np.random.default_rng(args.seed)
+        for pose in target_poses:
+            found = False
+            for _ in range(20):  # Try 20 random seeds
+                q_init = rng.uniform(lower, upper)
+                solutions = mujoco_solver.solve_valid(pose, q_init)
+                if solutions:
+                    mujoco_successes += 1
+                    mujoco_total_solutions += 1  # Differential IK returns at most 1
+                    found = True
+                    break
+        mujoco_time = (time.perf_counter() - mujoco_start) * 1000
+
+        print(f"{'EAIK':<15} {eaik_successes}/{n_samples:<9} {eaik_time:.2f}{'':>10} {eaik_total_solutions/max(1,eaik_successes):.1f}")
+        print(f"{'MuJoCo':<15} {mujoco_successes}/{n_samples:<9} {mujoco_time:.2f}{'':>10} {mujoco_total_solutions/max(1,mujoco_successes):.1f}")
+
+        print("\nNotes:")
+        print("  - EAIK returns all analytical solutions (typically 8 for UR5e)")
+        print("  - MuJoCo differential IK returns at most 1 solution per seed")
+        print("  - EAIK time includes checking all solutions for validity")
+        print("  - MuJoCo time includes trying up to 20 random initial configurations")
+        print("=" * 70 + "\n")
+
+    # =========================================================================
+    # Plan motion to grasp pose
+    # =========================================================================
+
     print("\nPlanning path from home to grasp pose...")
+    import time
+    plan_start = time.perf_counter()
     path = planner.plan(start, goal_tsrs=[grasp_tsr], seed=args.seed)
+    plan_time = time.perf_counter() - plan_start
 
     if path is None:
         print("No path found!")
         return
 
-    print(f"Found path with {len(path)} waypoints")
+    print(f"Found path with {len(path)} waypoints in {plan_time:.2f}s")
 
     # Verify goal reached
     final_pose = robot.forward_kinematics(path[-1])

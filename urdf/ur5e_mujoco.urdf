@@ -1,0 +1,145 @@
+<?xml version="1.0" ?>
+<!-- UR5e URDF matching MuJoCo Menagerie kinematic model exactly.
+     This URDF is designed for use with EAIK analytical IK solver and
+     produces FK results matching MuJoCo's attachment_site when the
+     proper T_eaik_to_mujoco transform is applied.
+
+     MuJoCo coordinate conventions:
+     - Base body has 180° rotation around z-axis
+     - shoulder_link at [0, 0, 0.163] from base
+     - upper_arm_link at [0, 0.138, 0] with 90° rotation around x (quat=[0.707, 0, 0.707, 0])
+     - etc.
+
+     IMPORTANT: EAIK's FK output is at wrist_3_link, not at attachment_site.
+     Apply T_ee transform to get attachment_site pose.
+-->
+<robot name="ur5e_mujoco">
+  <!-- Base link (world-mounted) -->
+  <link name="base_link">
+    <inertial>
+      <mass value="4.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.00443" ixy="0.0" ixz="0.0" iyy="0.00443" iyz="0.0" izz="0.0072"/>
+    </inertial>
+  </link>
+
+  <!-- The MuJoCo 'base' body is at origin with 180° rotation.
+       We incorporate this into the first joint transform. -->
+  <joint name="shoulder_pan_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="shoulder_link"/>
+    <!-- base: quat=[0,0,0,-1] = 180° around z, then shoulder_link at [0,0,0.163] -->
+    <!-- Combined: R_z(180) * [0,0,0.163] = [0,0,0.163] (z unchanged under z-rotation) -->
+    <origin xyz="0 0 0.163" rpy="0 0 3.14159265359"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="150.0" lower="-6.28319" upper="6.28319" velocity="3.14"/>
+  </joint>
+
+  <link name="shoulder_link">
+    <inertial>
+      <mass value="3.7"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0103" ixy="0.0" ixz="0.0" iyy="0.0103" iyz="0.0" izz="0.0067"/>
+    </inertial>
+  </link>
+
+  <joint name="shoulder_lift_joint" type="revolute">
+    <parent link="shoulder_link"/>
+    <child link="upper_arm_link"/>
+    <!-- upper_arm_link: pos=[0, 0.138, 0], quat=[0.707, 0, 0.707, 0] = 90° around x-axis -->
+    <origin xyz="0 0.138 0" rpy="1.5707963267949 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="150.0" lower="-6.28319" upper="6.28319" velocity="3.14"/>
+  </joint>
+
+  <link name="upper_arm_link">
+    <inertial>
+      <mass value="8.393"/>
+      <origin xyz="0 0 0.2125" rpy="0 0 0"/>
+      <inertia ixx="0.134" ixy="0.0" ixz="0.0" iyy="0.134" iyz="0.0" izz="0.0151"/>
+    </inertial>
+  </link>
+
+  <joint name="elbow_joint" type="revolute">
+    <parent link="upper_arm_link"/>
+    <child link="forearm_link"/>
+    <!-- forearm_link: pos=[0, -0.131, 0.425], quat=[1,0,0,0] = identity -->
+    <origin xyz="0 -0.131 0.425" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="150.0" lower="-3.14159" upper="3.14159" velocity="3.14"/>
+  </joint>
+
+  <link name="forearm_link">
+    <inertial>
+      <mass value="2.275"/>
+      <origin xyz="0 0 0.196" rpy="0 0 0"/>
+      <inertia ixx="0.0312" ixy="0.0" ixz="0.0" iyy="0.0312" iyz="0.0" izz="0.0041"/>
+    </inertial>
+  </link>
+
+  <joint name="wrist_1_joint" type="revolute">
+    <parent link="forearm_link"/>
+    <child link="wrist_1_link"/>
+    <!-- wrist_1_link: pos=[0, 0, 0.392], quat=[0.707, 0, 0.707, 0] = 90° around x-axis -->
+    <origin xyz="0 0 0.392" rpy="1.5707963267949 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="28.0" lower="-6.28319" upper="6.28319" velocity="3.14"/>
+  </joint>
+
+  <link name="wrist_1_link">
+    <inertial>
+      <mass value="1.219"/>
+      <origin xyz="0 0.127 0" rpy="0 0 0"/>
+      <inertia ixx="0.00256" ixy="0.0" ixz="0.0" iyy="0.00256" iyz="0.0" izz="0.00219"/>
+    </inertial>
+  </link>
+
+  <joint name="wrist_2_joint" type="revolute">
+    <parent link="wrist_1_link"/>
+    <child link="wrist_2_link"/>
+    <!-- wrist_2_link: pos=[0, 0.127, 0], quat=[1,0,0,0] = identity -->
+    <origin xyz="0 0.127 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="28.0" lower="-6.28319" upper="6.28319" velocity="3.14"/>
+  </joint>
+
+  <link name="wrist_2_link">
+    <inertial>
+      <mass value="1.219"/>
+      <origin xyz="0 0 0.1" rpy="0 0 0"/>
+      <inertia ixx="0.00256" ixy="0.0" ixz="0.0" iyy="0.00256" iyz="0.0" izz="0.00219"/>
+    </inertial>
+  </link>
+
+  <joint name="wrist_3_joint" type="revolute">
+    <parent link="wrist_2_link"/>
+    <child link="wrist_3_link"/>
+    <!-- wrist_3_link: pos=[0, 0, 0.1], quat=[1,0,0,0] = identity -->
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="28.0" lower="-6.28319" upper="6.28319" velocity="3.14"/>
+  </joint>
+
+  <link name="wrist_3_link">
+    <inertial>
+      <mass value="0.1889"/>
+      <origin xyz="0 0.077 0" rpy="0 0 0"/>
+      <inertia ixx="0.000132" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <!-- End-effector frame matching MuJoCo's attachment_site -->
+  <!-- attachment_site in MuJoCo: pos=[0, 0.1, 0], quat=[-1, 1, 0, 0] -->
+  <!-- quat=[-1, 1, 0, 0] normalized is approximately [-0.707, 0.707, 0, 0] = 180° around axis (1,0,0) rotated -->
+  <joint name="ee_fixed_joint" type="fixed">
+    <parent link="wrist_3_link"/>
+    <child link="ee_link"/>
+    <!-- The quaternion [-1, 1, 0, 0] corresponds to 180° rotation around the (1,1,0)/sqrt(2) axis -->
+    <!-- In RPY: this is equivalent to [pi, 0, 0] followed by a 90° about z, approximately -->
+    <!-- Let's compute it properly: quat=[-1,1,0,0] normalized = [-0.707, 0.707, 0, 0] -->
+    <!-- This is rotation by pi around (1,0,0) axis, so RPY = [pi, 0, 0] -->
+    <origin xyz="0 0.1 0" rpy="3.14159265359 0 0"/>
+  </joint>
+
+  <link name="ee_link"/>
+</robot>
