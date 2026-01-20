@@ -21,7 +21,9 @@ class IKSolver(Protocol):
         """
         ...
 
-    def solve_valid(self, pose: np.ndarray) -> list[np.ndarray]:
+    def solve_valid(
+        self, pose: np.ndarray, q_init: np.ndarray | None = None
+    ) -> list[np.ndarray]:
         """Solve IK and return only valid solutions.
 
         Filters solutions to return only those that are:
@@ -30,6 +32,7 @@ class IKSolver(Protocol):
 
         Args:
             pose: 4x4 homogeneous transform of desired end-effector pose
+            q_init: Optional initial configuration for iterative solvers
 
         Returns:
             List of valid joint configurations (may be empty)

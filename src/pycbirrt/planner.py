@@ -187,14 +187,22 @@ class CBiRRT:
         # Sample pose from TSRs
         pose = sample_from_tsrs(tsrs)
 
-        # Solve IK - returns only valid (collision-free, within limits) solutions
-        solutions = self.ik.solve_valid(pose)
+        # Try IK from multiple initial configurations
+        # This helps differential IK solvers find solutions from distant targets
+        lower, upper = self.robot.joint_limits
+        q_inits = [
+            self._rng.uniform(lower, upper) for _ in range(self.config.ik_num_seeds)
+        ]
 
-        # Check path constraints if required
-        for q in solutions:
-            if must_satisfy_constraints and not self._satisfies_constraints(q):
-                continue
-            return q
+        for q_init in q_inits:
+            # Solve IK - returns only valid (collision-free, within limits) solutions
+            solutions = self.ik.solve_valid(pose, q_init)
+
+            # Check path constraints if required
+            for q in solutions:
+                if must_satisfy_constraints and not self._satisfies_constraints(q):
+                    continue
+                return q
 
         return None
 

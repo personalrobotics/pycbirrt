@@ -34,6 +34,9 @@ class CBiRRTConfig:
     # Constraint projection
     max_projection_iters: int = 50  # Max iterations for projecting onto constraint manifold
 
+    # IK solving
+    ik_num_seeds: int = 10  # Number of random initial configurations to try for IK
+
     # Smoothing
     smooth_path: bool = True
     smoothing_iterations: int = 100
