@@ -9,8 +9,17 @@ Prerequisites:
 
 3. Install dependencies:
    uv pip install pycbirrt[mujoco]
+
+Running:
+- Default (interactive viewer):
+    mjpython examples/ur5e_mujoco.py
+- Render to video (no viewer required):
+    python examples/ur5e_mujoco.py --render video.mp4
+- Plan only (no visualization):
+    python examples/ur5e_mujoco.py --no-viz
 """
 
+import argparse
 import os
 from pathlib import Path
 import numpy as np
@@ -115,7 +124,106 @@ def create_scene_file(menagerie_path: Path) -> Path:
     return scene_path
 
 
+def render_to_video(
+    model: "mujoco.MjModel",
+    data: "mujoco.MjData",
+    path: list[np.ndarray],
+    ur5e_joints: list[str],
+    output_path: str,
+    fps: int = 30,
+    width: int = 640,
+    height: int = 480,
+):
+    """Render the path to a video file."""
+    import mediapy as media
+
+    renderer = mujoco.Renderer(model, width=width, height=height)
+
+    # Set up camera - use default free camera with a good viewpoint
+    camera = mujoco.MjvCamera()
+    camera.lookat[:] = [0.3, 0.0, 0.4]  # Look at robot workspace
+    camera.distance = 1.5
+    camera.azimuth = 135
+    camera.elevation = -20
+
+    frames = []
+    steps_per_waypoint = 10
+
+    for i in range(len(path) - 1):
+        for t in np.linspace(0, 1, steps_per_waypoint, endpoint=False):
+            q = (1 - t) * path[i] + t * path[i + 1]
+
+            # Set joint positions
+            for j, jnt_name in enumerate(ur5e_joints):
+                jnt_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, jnt_name)
+                qpos_adr = model.jnt_qposadr[jnt_id]
+                data.qpos[qpos_adr] = q[j]
+
+            mujoco.mj_forward(model, data)
+            renderer.update_scene(data, camera=camera)
+            frames.append(renderer.render())
+
+    # Hold final frame
+    for _ in range(fps):
+        frames.append(renderer.render())
+
+    media.write_video(output_path, frames, fps=fps)
+    print(f"Saved video to {output_path}")
+
+
+def visualize_interactive(
+    model: "mujoco.MjModel",
+    data: "mujoco.MjData",
+    path: list[np.ndarray],
+    ur5e_joints: list[str],
+):
+    """Visualize the path in an interactive viewer."""
+    print("Opening viewer. Press ESC to close.")
+    print("(On macOS, run with: mjpython examples/ur5e_mujoco.py)")
+
+    try:
+        viewer = mujoco.viewer.launch_passive(model, data)
+    except RuntimeError as e:
+        if "mjpython" in str(e):
+            print(f"Viewer not available: {e}")
+            print("Path planning succeeded!")
+            print("Options:")
+            print("  - On macOS: run with mjpython")
+            print("  - Any platform: use --render video.mp4 to save a video")
+            return
+        raise
+
+    with viewer:
+        waypoint_idx = 0
+        steps_per_waypoint = 50
+
+        while viewer.is_running():
+            if waypoint_idx < len(path) - 1:
+                t = (data.time * 10) % steps_per_waypoint / steps_per_waypoint
+                q = (1 - t) * path[waypoint_idx] + t * path[waypoint_idx + 1]
+
+                if t > 0.99:
+                    waypoint_idx += 1
+            else:
+                q = path[-1]
+
+            for i, jnt_name in enumerate(ur5e_joints):
+                jnt_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, jnt_name)
+                qpos_adr = model.jnt_qposadr[jnt_id]
+                data.qpos[qpos_adr] = q[i]
+
+            mujoco.mj_forward(model, data)
+            viewer.sync()
+            data.time += 0.01
+
+
 def main():
+    parser = argparse.ArgumentParser(description="UR5e CBiRRT planning example")
+    parser.add_argument("--render", type=str, help="Render to video file (e.g., output.mp4)")
+    parser.add_argument("--no-viz", action="store_true", help="Skip visualization")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
+    args = parser.parse_args()
+
     menagerie_path = get_menagerie_path()
 
     # Create scene file
@@ -200,7 +308,7 @@ def main():
     start = np.array([0, -np.pi / 2, np.pi / 2, -np.pi / 2, -np.pi / 2, 0])
 
     print("Planning path from home to target...")
-    path = planner.plan(start, goal_tsrs=[goal_tsr], seed=42)
+    path = planner.plan(start, goal_tsrs=[goal_tsr], seed=args.seed)
 
     if path is None:
         print("No path found!")
@@ -213,46 +321,13 @@ def main():
     print(f"Final EE position: {final_pose[:3, 3]}")
     print(f"Target position: {target_pos}")
 
-    # Visualize in MuJoCo viewer
-    # Note: On macOS, must run with `mjpython` instead of `python`
-    print("Opening viewer. Press ESC to close.")
-    print("(On macOS, run with: mjpython examples/ur5e_mujoco.py)")
-    try:
-        viewer = mujoco.viewer.launch_passive(model, data)
-    except RuntimeError as e:
-        if "mjpython" in str(e):
-            print(f"Viewer not available: {e}")
-            print("Path planning succeeded! Run with mjpython to see visualization.")
-            return
-        raise
-
-    with viewer:
-        # Animate the path
-        waypoint_idx = 0
-        steps_per_waypoint = 50
-
-        while viewer.is_running():
-            # Interpolate between waypoints
-            if waypoint_idx < len(path) - 1:
-                t = (data.time * 10) % steps_per_waypoint / steps_per_waypoint
-                q = (1 - t) * path[waypoint_idx] + t * path[waypoint_idx + 1]
-
-                if t > 0.99:
-                    waypoint_idx += 1
-            else:
-                q = path[-1]
-
-            # Set joint positions
-            for i, jnt_name in enumerate(ur5e_joints):
-                jnt_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, jnt_name)
-                qpos_adr = model.jnt_qposadr[jnt_id]
-                data.qpos[qpos_adr] = q[i]
-
-            mujoco.mj_forward(model, data)
-            viewer.sync()
-
-            # Step time
-            data.time += 0.01
+    # Visualization
+    if args.no_viz:
+        print("Skipping visualization (--no-viz)")
+    elif args.render:
+        render_to_video(model, data, path, ur5e_joints, args.render)
+    else:
+        visualize_interactive(model, data, path, ur5e_joints)
 
 
 if __name__ == "__main__":

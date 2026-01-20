@@ -221,8 +221,9 @@ class CBiRRT:
         """Project configuration onto the constraint manifold.
 
         Uses iterative projection: repeatedly compute the constraint violation,
-        project the end-effector pose onto the TSR, solve IK, and repeat until
-        the configuration satisfies all constraints or we give up.
+        project the end-effector pose onto the TSR (both position and orientation),
+        solve IK, and repeat until the configuration satisfies all constraints
+        or we give up.
 
         Args:
             q: Configuration to project
@@ -243,11 +244,13 @@ class CBiRRT:
             # Find the TSR with the largest violation
             max_dist = 0.0
             worst_tsr = None
+            worst_bwopt = None
             for tsr in self._constraint_tsrs:
-                dist, _ = tsr.distance(pose)
+                dist, bwopt = tsr.distance(pose)
                 if dist > max_dist:
                     max_dist = dist
                     worst_tsr = tsr
+                    worst_bwopt = bwopt
 
             # Check if we're on the manifold
             if max_dist <= self.config.tsr_tolerance:
@@ -258,21 +261,10 @@ class CBiRRT:
                 return None  # Not converging
             prev_dist = max_dist
 
-            # Project pose onto the worst TSR by clamping to bounds
-            tsr = worst_tsr
-            T0_w_inv = np.linalg.inv(tsr.T0_w)
-            pose_in_tsr = T0_w_inv @ pose
-
-            # Clamp position to TSR bounds
-            xyz_in_tsr = pose_in_tsr[:3, 3]
-            xyz_clamped = np.clip(xyz_in_tsr, tsr.Bw[:3, 0], tsr.Bw[:3, 1])
-
-            # Create projected pose
-            projected_in_tsr = pose_in_tsr.copy()
-            projected_in_tsr[:3, 3] = xyz_clamped
-
-            # Transform back to world frame
-            projected_pose = tsr.T0_w @ projected_in_tsr
+            # Project pose onto the worst TSR using bwopt (handles both position and orientation)
+            # bwopt is the closest point in Bw space (xyzrpy) to the current pose
+            # xyzrpy_to_trans converts it back to a 4x4 transform in the TSR's frame
+            projected_pose = worst_tsr.xyzrpy_to_trans(worst_bwopt)
 
             # Solve IK for the projected pose
             solutions = self.ik.solve(projected_pose)
