@@ -13,13 +13,13 @@ A Python implementation of the Constrained Bi-directional Rapidly-exploring Rand
 ## Installation
 
 ```bash
-pip install -e ".[all]"
+uv pip install -e ".[all]"
 ```
 
 Or install with specific backends:
 
 ```bash
-pip install -e ".[mujoco,eaik]"
+uv pip install -e ".[mujoco,eaik]"
 ```
 
 ## Quick Start
