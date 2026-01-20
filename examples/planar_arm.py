@@ -277,11 +277,15 @@ def visualize_result(
 
     ax_cs.contourf(Q1, Q2, collision_map, levels=[0.5, 1.5], colors=["red"], alpha=0.3)
 
-    # Draw tree edges
+    # Draw tree edges (handling angular wraparound)
     def draw_tree(tree: RRTree, color: str, label: str):
         for node in tree.nodes:
             if node.parent is not None:
                 parent = tree.nodes[node.parent]
+                # Skip edges that wrap around ±π (would draw long lines across plot)
+                diff = np.abs(node.config - parent.config)
+                if diff[0] > np.pi or diff[1] > np.pi:
+                    continue
                 ax_cs.plot(
                     [parent.config[0], node.config[0]],
                     [parent.config[1], node.config[1]],
@@ -296,9 +300,18 @@ def visualize_result(
     draw_tree(tree_start, "blue", f"Start tree ({len(tree_start)} nodes)")
     draw_tree(tree_goal, "green", f"Goal tree ({len(tree_goal)} nodes)")
 
-    # Draw path
+    # Draw path (handling angular wraparound)
     path_arr = np.array(path)
-    ax_cs.plot(path_arr[:, 0], path_arr[:, 1], "k-", linewidth=2, label="Path")
+    for i in range(len(path_arr) - 1):
+        diff = np.abs(path_arr[i + 1] - path_arr[i])
+        if diff[0] > np.pi or diff[1] > np.pi:
+            continue  # Skip segments that wrap around
+        ax_cs.plot(
+            [path_arr[i, 0], path_arr[i + 1, 0]],
+            [path_arr[i, 1], path_arr[i + 1, 1]],
+            "k-", linewidth=2,
+        )
+    ax_cs.plot([], [], "k-", linewidth=2, label="Path")  # For legend
     ax_cs.scatter(path_arr[:, 0], path_arr[:, 1], c="black", s=30, zorder=5)
 
     # Mark start and goal
