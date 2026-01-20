@@ -165,30 +165,37 @@ class CircleObstacleChecker:
         return np.array([self.is_valid(q) for q in qs])
 
 
-def visualize_path(
+def visualize_result(
     robot: PlanarArmRobot,
     path: list[np.ndarray],
     obstacles: list[tuple[np.ndarray, float]],
+    tree_start: RRTree,
+    tree_goal: RRTree,
+    collision_checker: CircleObstacleChecker,
     start_region: tuple[np.ndarray, float] | None = None,
     goal_region: tuple[np.ndarray, float] | None = None,
     constraint_region: tuple[float, float, float, float] | None = None,
-    title: str = "CBiRRT Path",
-    filename: str = "planar_arm_path.png",
+    title: str = "CBiRRT Planning Result",
+    filename: str = "planar_arm_result.png",
 ):
-    """Visualize the planned path.
+    """Visualize planning result with workspace path and C-space trees side by side.
 
     Args:
         robot: The planar arm robot
         path: List of joint configurations
         obstacles: List of (center, radius) obstacle tuples
+        tree_start: RRT tree rooted at start
+        tree_goal: RRT tree rooted at goal
+        collision_checker: Collision checker for C-space visualization
         start_region: Optional (center, radius) for start TSR visualization
         goal_region: Optional (center, radius) for goal TSR visualization
         constraint_region: Optional (x_min, x_max, y_min, y_max) for constraint TSR
         title: Plot title
         filename: Output filename
     """
-    fig, ax = plt.subplots(figsize=(10, 10))
+    fig, (ax_ws, ax_cs) = plt.subplots(1, 2, figsize=(16, 7))
 
+    # === Left panel: Workspace visualization ===
     # Draw constraint region first (behind everything)
     if constraint_region is not None:
         x_min, x_max, y_min, y_max = constraint_region
@@ -196,24 +203,24 @@ def visualize_path(
             (x_min, y_min), x_max - x_min, y_max - y_min,
             color="yellow", alpha=0.2, label="Constraint region"
         )
-        ax.add_patch(rect)
+        ax_ws.add_patch(rect)
 
     # Draw obstacles
     for center, radius in obstacles:
         circle = Circle(center, radius, color="red", alpha=0.5)
-        ax.add_patch(circle)
+        ax_ws.add_patch(circle)
 
     # Draw start region
     if start_region is not None:
         center, radius = start_region
         circle = Circle(center, radius, color="blue", alpha=0.2, label="Start region")
-        ax.add_patch(circle)
+        ax_ws.add_patch(circle)
 
     # Draw goal region
     if goal_region is not None:
         center, radius = goal_region
         circle = Circle(center, radius, color="green", alpha=0.2, label="Goal region")
-        ax.add_patch(circle)
+        ax_ws.add_patch(circle)
 
     # Draw path (fading from blue to green)
     n_frames = len(path)
@@ -224,13 +231,13 @@ def visualize_path(
         ys = [p[1] for p in positions]
 
         color = plt.cm.viridis(i / n_frames)
-        ax.plot(xs, ys, "o-", color=color, alpha=alpha, linewidth=2, markersize=5)
+        ax_ws.plot(xs, ys, "o-", color=color, alpha=alpha, linewidth=2, markersize=5)
 
     # Draw start and end prominently
     start_positions = robot.get_joint_positions(path[0])
     end_positions = robot.get_joint_positions(path[-1])
 
-    ax.plot(
+    ax_ws.plot(
         [p[0] for p in start_positions],
         [p[1] for p in start_positions],
         "bo-",
@@ -238,7 +245,7 @@ def visualize_path(
         markersize=10,
         label="Start config",
     )
-    ax.plot(
+    ax_ws.plot(
         [p[0] for p in end_positions],
         [p[1] for p in end_positions],
         "go-",
@@ -247,29 +254,16 @@ def visualize_path(
         label="End config",
     )
 
-    ax.set_xlim(-2.5, 2.5)
-    ax.set_ylim(-2.5, 2.5)
-    ax.set_aspect("equal")
-    ax.grid(True, alpha=0.3)
-    ax.legend()
-    ax.set_title(f"{title} ({len(path)} waypoints)")
+    ax_ws.set_xlim(-2.5, 2.5)
+    ax_ws.set_ylim(-2.5, 2.5)
+    ax_ws.set_aspect("equal")
+    ax_ws.grid(True, alpha=0.3)
+    ax_ws.legend(loc="upper left")
+    ax_ws.set_title(f"Workspace ({len(path)} waypoints)")
+    ax_ws.set_xlabel("x")
+    ax_ws.set_ylabel("y")
 
-    plt.savefig(filename, dpi=150)
-    print(f"Saved visualization to {filename}")
-    plt.show()
-
-
-def visualize_trees(
-    tree_start: RRTree,
-    tree_goal: RRTree,
-    path: list[np.ndarray] | None,
-    collision_checker: CircleObstacleChecker,
-    title: str = "CBiRRT Trees in Configuration Space",
-    filename: str = "planar_arm_trees.png",
-):
-    """Visualize the RRT trees in configuration space."""
-    fig, ax = plt.subplots(figsize=(10, 10))
-
+    # === Right panel: Configuration space visualization ===
     # Draw collision regions in C-space by sampling
     q1_range = np.linspace(-np.pi, np.pi, 100)
     q2_range = np.linspace(-np.pi, np.pi, 100)
@@ -281,14 +275,14 @@ def visualize_trees(
             q = np.array([Q1[i, j], Q2[i, j]])
             collision_map[i, j] = 0 if collision_checker.is_valid(q) else 1
 
-    ax.contourf(Q1, Q2, collision_map, levels=[0.5, 1.5], colors=["red"], alpha=0.3)
+    ax_cs.contourf(Q1, Q2, collision_map, levels=[0.5, 1.5], colors=["red"], alpha=0.3)
 
     # Draw tree edges
     def draw_tree(tree: RRTree, color: str, label: str):
         for node in tree.nodes:
             if node.parent is not None:
                 parent = tree.nodes[node.parent]
-                ax.plot(
+                ax_cs.plot(
                     [parent.config[0], node.config[0]],
                     [parent.config[1], node.config[1]],
                     color=color,
@@ -297,34 +291,35 @@ def visualize_trees(
                 )
         # Draw nodes
         configs = np.array([n.config for n in tree.nodes])
-        ax.scatter(configs[:, 0], configs[:, 1], c=color, s=5, alpha=0.6, label=label)
+        ax_cs.scatter(configs[:, 0], configs[:, 1], c=color, s=5, alpha=0.6, label=label)
 
     draw_tree(tree_start, "blue", f"Start tree ({len(tree_start)} nodes)")
     draw_tree(tree_goal, "green", f"Goal tree ({len(tree_goal)} nodes)")
 
     # Draw path
-    if path is not None:
-        path_arr = np.array(path)
-        ax.plot(path_arr[:, 0], path_arr[:, 1], "k-", linewidth=2, label="Path")
-        ax.scatter(path_arr[:, 0], path_arr[:, 1], c="black", s=30, zorder=5)
+    path_arr = np.array(path)
+    ax_cs.plot(path_arr[:, 0], path_arr[:, 1], "k-", linewidth=2, label="Path")
+    ax_cs.scatter(path_arr[:, 0], path_arr[:, 1], c="black", s=30, zorder=5)
 
     # Mark start and goal
-    ax.scatter([tree_start.nodes[0].config[0]], [tree_start.nodes[0].config[1]],
+    ax_cs.scatter([tree_start.nodes[0].config[0]], [tree_start.nodes[0].config[1]],
                c="blue", s=200, marker="*", edgecolors="black", linewidths=2, zorder=10, label="Start")
-    ax.scatter([tree_goal.nodes[0].config[0]], [tree_goal.nodes[0].config[1]],
+    ax_cs.scatter([tree_goal.nodes[0].config[0]], [tree_goal.nodes[0].config[1]],
                c="green", s=200, marker="*", edgecolors="black", linewidths=2, zorder=10, label="Goal")
 
-    ax.set_xlim(-np.pi, np.pi)
-    ax.set_ylim(-np.pi, np.pi)
-    ax.set_xlabel("q1 (rad)")
-    ax.set_ylabel("q2 (rad)")
-    ax.set_aspect("equal")
-    ax.grid(True, alpha=0.3)
-    ax.legend(loc="upper right")
-    ax.set_title(title)
+    ax_cs.set_xlim(-np.pi, np.pi)
+    ax_cs.set_ylim(-np.pi, np.pi)
+    ax_cs.set_xlabel("q1 (rad)")
+    ax_cs.set_ylabel("q2 (rad)")
+    ax_cs.set_aspect("equal")
+    ax_cs.grid(True, alpha=0.3)
+    ax_cs.legend(loc="upper right")
+    ax_cs.set_title("Configuration Space")
 
+    fig.suptitle(title, fontsize=14, fontweight="bold")
+    plt.tight_layout()
     plt.savefig(filename, dpi=150)
-    print(f"Saved tree visualization to {filename}")
+    print(f"Saved visualization to {filename}")
     plt.show()
 
 
@@ -421,9 +416,6 @@ def example_basic():
 
     if not result.success:
         print("No path found!")
-        visualize_trees(result.tree_start, result.tree_goal, None, collision_checker,
-                       title="Example 1: Basic Planning (failed)",
-                       filename="example1_trees.png")
         return
 
     print(f"Found path with {len(result.path)} waypoints")
@@ -432,16 +424,12 @@ def example_basic():
     final_pos = final_pose[:2, 3]
     print(f"  Final position: ({final_pos[0]:.3f}, {final_pos[1]:.3f})")
 
-    visualize_path(
+    visualize_result(
         robot, result.path, obstacles,
+        result.tree_start, result.tree_goal, collision_checker,
         goal_region=(goal_pos, 0.1),
         title="Example 1: Basic Planning",
-        filename="example1_path.png",
-    )
-    visualize_trees(
-        result.tree_start, result.tree_goal, result.path, collision_checker,
-        title="Example 1: Basic Planning (C-space)",
-        filename="example1_trees.png",
+        filename="example1_result.png",
     )
 
 
@@ -500,9 +488,6 @@ def example_start_goal_tsrs():
 
     if not result.success:
         print("No path found!")
-        visualize_trees(result.tree_start, result.tree_goal, None, collision_checker,
-                       title="Example 2: Start/Goal TSRs (failed)",
-                       filename="example2_trees.png")
         return
 
     print(f"Found path with {len(result.path)} waypoints")
@@ -513,17 +498,13 @@ def example_start_goal_tsrs():
     print(f"  Sampled start: ({start_pose[0, 3]:.3f}, {start_pose[1, 3]:.3f})")
     print(f"  Final position: ({final_pose[0, 3]:.3f}, {final_pose[1, 3]:.3f})")
 
-    visualize_path(
+    visualize_result(
         robot, result.path, obstacles,
+        result.tree_start, result.tree_goal, collision_checker,
         start_region=(start_pos, 0.2),
         goal_region=(goal_pos, 0.2),
         title="Example 2: Start and Goal TSRs",
-        filename="example2_path.png",
-    )
-    visualize_trees(
-        result.tree_start, result.tree_goal, result.path, collision_checker,
-        title="Example 2: Start/Goal TSRs (C-space)",
-        filename="example2_trees.png",
+        filename="example2_result.png",
     )
 
 
@@ -590,9 +571,6 @@ def example_constrained():
     if not result.success:
         print("No path found!")
         print("  (Constrained planning is harder - the path must stay on the constraint manifold)")
-        visualize_trees(result.tree_start, result.tree_goal, None, collision_checker,
-                       title="Example 3: Constrained Planning (failed)",
-                       filename="example3_trees.png")
         return
 
     print(f"Found path with {len(result.path)} waypoints")
@@ -614,18 +592,14 @@ def example_constrained():
     print(f"  Start position: ({start_pose[0, 3]:.3f}, {start_pose[1, 3]:.3f})")
     print(f"  Final position: ({final_pose[0, 3]:.3f}, {final_pose[1, 3]:.3f})")
 
-    visualize_path(
+    visualize_result(
         robot, result.path, obstacles,
+        result.tree_start, result.tree_goal, collision_checker,
         start_region=(start_pos, 0.1),
         goal_region=(goal_pos, 0.1),
         constraint_region=(-2.5, 2.5, y_min, y_max),
         title="Example 3: Constrained Planning (y-band)",
-        filename="example3_path.png",
-    )
-    visualize_trees(
-        result.tree_start, result.tree_goal, result.path, collision_checker,
-        title="Example 3: Constrained Planning (C-space)",
-        filename="example3_trees.png",
+        filename="example3_result.png",
     )
 
 
