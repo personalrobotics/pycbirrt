@@ -80,16 +80,21 @@ def create_scene_xml(menagerie_path: Path) -> str:
 """
 
 
-def create_simple_scene_xml(menagerie_path: Path) -> str:
-    """Create a simpler scene with just UR5e (no gripper attachment complexity)."""
-    ur5e_path = menagerie_path / "universal_robots_ur5e" / "ur5e.xml"
+def create_scene_file(menagerie_path: Path) -> Path:
+    """Create a scene file with UR5e and obstacles.
+
+    We need to write the scene file in the UR5e directory because MuJoCo
+    resolves meshdir paths relative to the including file, not the included file.
+    """
+    ur5e_dir = menagerie_path / "universal_robots_ur5e"
+    ur5e_path = ur5e_dir / "ur5e.xml"
 
     if not ur5e_path.exists():
         raise FileNotFoundError(f"UR5e model not found at {ur5e_path}")
 
-    return f"""
+    scene_xml = """
 <mujoco model="ur5e_scene">
-  <include file="{ur5e_path}"/>
+  <include file="ur5e.xml"/>
 
   <worldbody>
     <!-- Table -->
@@ -104,16 +109,20 @@ def create_simple_scene_xml(menagerie_path: Path) -> str:
   </worldbody>
 </mujoco>
 """
+    # Write scene file in the UR5e directory so relative mesh paths work
+    scene_path = ur5e_dir / "pycbirrt_scene.xml"
+    scene_path.write_text(scene_xml)
+    return scene_path
 
 
 def main():
     menagerie_path = get_menagerie_path()
 
-    # Create scene XML
-    scene_xml = create_simple_scene_xml(menagerie_path)
+    # Create scene file
+    scene_path = create_scene_file(menagerie_path)
 
-    # Load MuJoCo model
-    model = mujoco.MjModel.from_xml_string(scene_xml)
+    # Load MuJoCo model from file (needed for mesh path resolution)
+    model = mujoco.MjModel.from_xml_path(str(scene_path))
     data = mujoco.MjData(model)
 
     # UR5e joint names
@@ -199,9 +208,25 @@ def main():
 
     print(f"Found path with {len(path)} waypoints")
 
+    # Verify goal reached
+    final_pose = robot.forward_kinematics(path[-1])
+    print(f"Final EE position: {final_pose[:3, 3]}")
+    print(f"Target position: {target_pos}")
+
     # Visualize in MuJoCo viewer
+    # Note: On macOS, must run with `mjpython` instead of `python`
     print("Opening viewer. Press ESC to close.")
-    with mujoco.viewer.launch_passive(model, data) as viewer:
+    print("(On macOS, run with: mjpython examples/ur5e_mujoco.py)")
+    try:
+        viewer = mujoco.viewer.launch_passive(model, data)
+    except RuntimeError as e:
+        if "mjpython" in str(e):
+            print(f"Viewer not available: {e}")
+            print("Path planning succeeded! Run with mjpython to see visualization.")
+            return
+        raise
+
+    with viewer:
         # Animate the path
         waypoint_idx = 0
         steps_per_waypoint = 50

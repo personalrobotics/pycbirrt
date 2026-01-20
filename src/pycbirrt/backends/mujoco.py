@@ -181,9 +181,9 @@ class MuJoCoIKSolver:
         joint_names: list[str] | None = None,
         joint_limits: tuple[np.ndarray, np.ndarray] | None = None,
         collision_checker: CollisionChecker | None = None,
-        damping: float = 1e-4,
-        max_iterations: int = 100,
-        tolerance: float = 1e-4,
+        damping: float = 0.1,
+        max_iterations: int = 200,
+        tolerance: float = 1e-3,
     ):
         """Initialize MuJoCo IK solver.
 
