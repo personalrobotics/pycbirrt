@@ -52,6 +52,8 @@ class CBiRRT:
 
         self._rng = np.random.default_rng()
         self._constraint_tsrs: list[TSR] | None = None
+        self._start_tsrs: list[TSR] | None = None
+        self._goal_tsrs: list[TSR] | None = None
 
     def plan(
         self,
@@ -380,7 +382,7 @@ class CBiRRT:
         """
         # Find nearest node (using angular-aware distance)
         current_idx = self._nearest_node(tree, q_target)
-        start_idx = current_idx
+        steps_taken = 0
         prev_distance = float("inf")
 
         while True:
@@ -400,10 +402,8 @@ class CBiRRT:
             prev_distance = distance
 
             # Check if we've hit EXT step limit
-            if max_steps is not None:
-                steps_taken = current_idx - start_idx
-                if steps_taken >= max_steps:
-                    break
+            if max_steps is not None and steps_taken >= max_steps:
+                break
 
             # Normalize and limit step size
             step = direction / distance * min(distance, self.config.step_size)
@@ -420,13 +420,14 @@ class CBiRRT:
                     break
                 q_new = q_projected
 
-            # Check collision validity of endpoint
+            # Check collision validity of endpoint (fail-fast before edge check)
             if not self.collision.is_valid(q_new):
                 break
 
             # Check edge validity and add intermediate nodes
             edge_result = self._extend_along_edge(tree, current_idx, q_new)
             current_idx = edge_result[0]
+            steps_taken += 1
             if not edge_result[1]:
                 # Edge check failed partway through
                 break
@@ -442,6 +443,10 @@ class CBiRRT:
         intermediate configurations to the tree. Stops at the first invalid
         configuration but keeps all valid ones added so far.
 
+        Note: This uses linear interpolation which is correct for the small
+        step sizes used (already within step_size from _grow). Angular
+        wraparound is handled at the direction/distance level in _grow.
+
         Args:
             tree: Tree to extend
             start_idx: Index of starting node in tree
@@ -453,13 +458,16 @@ class CBiRRT:
             - reached_target: True if we reached q_target
         """
         q_from = tree.nodes[start_idx].config
-        distance = np.linalg.norm(q_target - q_from)
-        n_steps = max(2, int(np.ceil(distance / self.config.step_size)))
+        distance = self._angular_distance(q_from, q_target)
+        n_steps = max(1, int(np.ceil(distance / self.config.step_size)))
+
+        # Use angular-aware direction for interpolation
+        direction = self._angular_direction(q_from, q_target)
 
         current_idx = start_idx
         for i in range(1, n_steps + 1):
             t = i / n_steps
-            q = q_from + t * (q_target - q_from)
+            q = q_from + t * direction
 
             if not self.collision.is_valid(q):
                 return current_idx, False
