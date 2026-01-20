@@ -31,3 +31,4 @@ Thumbs.db
 
 # Generated files
 *.png
+!docs/images/*.png
