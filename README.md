@@ -2,6 +2,12 @@
 
 A Python implementation of the Constrained Bi-directional Rapidly-exploring Random Tree (CBiRRT) algorithm for robot motion planning with Task Space Region (TSR) constraints.
 
+<p align="center">
+  <img src="docs/images/tsr_union_demo.gif" alt="UR5e + Robotiq 2F85 gripper planning to grasp a cylinder" width="400">
+  <br>
+  <em>UR5e arm with Robotiq 2F85 gripper planning side grasps using TSR constraints</em>
+</p>
+
 ## Features
 
 - **Bidirectional search**: Grows trees from both start and goal for faster convergence
@@ -132,6 +138,21 @@ TSRs can be used for:
 - **Goal regions**: Where the end-effector should reach
 - **Start regions**: Valid starting poses (planner samples from these)
 - **Path constraints**: Constraints that must hold along the entire trajectory
+
+### TSR Unions
+
+When multiple grasp approaches are valid (e.g., top-down vs side grasp), you can provide multiple TSRs as goals. The planner will find a path to **any** TSR in the set, automatically selecting the most reachable one:
+
+```python
+# Define multiple grasp approaches
+top_grasp = TSR(T0_w=top_pose, Tw_e=np.eye(4), Bw=top_bounds)
+side_grasp = TSR(T0_w=side_pose, Tw_e=side_offset, Bw=side_bounds)
+
+# Planner finds path to whichever grasp is reachable
+path = planner.plan(start_config, goal_tsrs=[top_grasp, side_grasp])
+```
+
+TSRs are sampled proportionally to their volume, so larger regions (more flexibility) are more likely to be explored.
 
 ## Configuration Options
 
@@ -268,6 +289,12 @@ python examples/planar_arm.py           # Run all examples
 python examples/planar_arm.py -e 1      # Basic planning
 python examples/planar_arm.py -e 2      # Start/goal TSRs
 python examples/planar_arm.py -e 3      # Constrained planning
+```
+
+Run the UR5e + Robotiq gripper demo (requires MuJoCo):
+
+```bash
+python examples/tsr_union_demo.py       # TSR union with multiple grasp approaches
 ```
 
 ## References
