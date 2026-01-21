@@ -1,11 +1,12 @@
-"""Demo: TSR Union planning with multiple goal locations.
+"""Demo: TSR Union planning with multiple grasp approaches.
 
 This example demonstrates planning to a union of goal TSRs - the planner
-finds a path to ANY goal in the set. We create two targets on opposite
-sides of the robot (left and right), making it roughly equally likely
-for the planner to reach either one depending on the random seed.
+finds a path to ANY goal in the set. We create two grasp approaches for
+a single target cylinder:
+1. TOP-DOWN: gripper pointing down from above
+2. SIDE: gripper pointing horizontally from the front
 
-The video loops between start and goal, showing which target the planner chose.
+The video loops between start and goal, showing which grasp the planner chose.
 
 Prerequisites:
     export MUJOCO_MENAGERIE_PATH=/path/to/mujoco_menagerie
@@ -52,8 +53,8 @@ def get_menagerie_path() -> Path:
     return Path(path)
 
 
-def create_scene(menagerie_path: Path, target_left: np.ndarray, target_right: np.ndarray) -> "mujoco.MjModel":
-    """Create scene with UR5e and two target objects."""
+def create_scene(menagerie_path: Path, target_pos: np.ndarray) -> "mujoco.MjModel":
+    """Create scene with UR5e and a target cylinder."""
     ur5e_path = menagerie_path / "universal_robots_ur5e" / "ur5e.xml"
     spec = mujoco.MjSpec.from_file(str(ur5e_path))
 
@@ -81,19 +82,19 @@ def create_scene(menagerie_path: Path, target_left: np.ndarray, target_right: np
     base.contype = 0
     base.conaffinity = 0
 
-    # Table (wide enough for both targets)
+    # Table
     table = world.add_body()
     table.name = "table"
-    table.pos = [0.45, 0, 0.30]
+    table.pos = [0.5, 0, 0.30]
 
     table_top = table.add_geom()
     table_top.name = "table_top"
     table_top.type = mujoco.mjtGeom.mjGEOM_BOX
-    table_top.size = [0.25, 0.5, 0.02]
+    table_top.size = [0.25, 0.35, 0.02]
     table_top.rgba = [0.45, 0.4, 0.35, 1]
 
     # Table legs
-    for i, (x, y) in enumerate([(0.2, 0.45), (0.2, -0.45), (-0.2, 0.45), (-0.2, -0.45)]):
+    for i, (x, y) in enumerate([(0.2, 0.30), (0.2, -0.30), (-0.2, 0.30), (-0.2, -0.30)]):
         leg = table.add_geom()
         leg.name = f"leg_{i}"
         leg.type = mujoco.mjtGeom.mjGEOM_CYLINDER
@@ -103,103 +104,94 @@ def create_scene(menagerie_path: Path, target_left: np.ndarray, target_right: np
         leg.contype = 0
         leg.conaffinity = 0
 
-    # Left target (blue)
-    left = world.add_body()
-    left.name = "target_left"
-    left.pos = list(target_left)
+    # Target cylinder (red)
+    target = world.add_body()
+    target.name = "target"
+    target.pos = list(target_pos)
 
-    left_geom = left.add_geom()
-    left_geom.name = "target_left_geom"
-    left_geom.type = mujoco.mjtGeom.mjGEOM_CYLINDER
-    left_geom.size = [0.025, 0.05, 0]
-    left_geom.rgba = [0.2, 0.4, 0.9, 1]  # Blue
-
-    # Right target (red)
-    right = world.add_body()
-    right.name = "target_right"
-    right.pos = list(target_right)
-
-    right_geom = right.add_geom()
-    right_geom.name = "target_right_geom"
-    right_geom.type = mujoco.mjtGeom.mjGEOM_CYLINDER
-    right_geom.size = [0.025, 0.05, 0]
-    right_geom.rgba = [0.9, 0.2, 0.2, 1]  # Red
+    target_geom = target.add_geom()
+    target_geom.name = "target_geom"
+    target_geom.type = mujoco.mjtGeom.mjGEOM_CYLINDER
+    target_geom.size = [0.03, 0.06, 0]  # radius=3cm, half-height=6cm
+    target_geom.rgba = [0.85, 0.2, 0.15, 1]  # Red
 
     return spec.compile()
 
 
-def create_goal_tsrs(target_left: np.ndarray, target_right: np.ndarray) -> tuple[TSR, TSR]:
-    """Create two goal TSRs for top-down grasps at each target location.
-
-    Both are top-down grasps (gripper pointing down), but at different
-    positions on opposite sides of the robot.
+def create_grasp_tsrs(target_pos: np.ndarray) -> tuple[TSR, TSR]:
+    """Create two grasp TSRs: top-down and side approach.
 
     Args:
-        target_left: Position of left target (negative Y)
-        target_right: Position of right target (positive Y)
+        target_pos: Center position of the target cylinder
 
     Returns:
-        (left_tsr, right_tsr)
+        (top_tsr, side_tsr) - two different grasp approaches
     """
-    standoff = 0.12  # Height above target
+    # Cylinder half-height is 0.06m, so top is at target_pos[2] + 0.06
 
-    # Gripper rotation for top-down: z points DOWN
-    R_top_down = np.array([
+    # === TOP-DOWN GRASP ===
+    # Gripper approaches from above, z-axis pointing DOWN
+    standoff_top = 0.12  # Height above cylinder center
+    T_top = np.eye(4)
+    T_top[:3, 3] = target_pos + np.array([0, 0, standoff_top])
+    # Rotation: gripper z points DOWN (180 deg rotation around x)
+    T_top[:3, :3] = np.array([
         [1, 0, 0],
         [0, -1, 0],
         [0, 0, -1]
     ])
 
-    # Left target TSR
-    T_left = np.eye(4)
-    T_left[:3, 3] = target_left + np.array([0, 0, standoff])
-    T_left[:3, :3] = R_top_down
-
-    left_tsr = TSR(
-        T0_w=T_left,
+    top_tsr = TSR(
+        T0_w=T_top,
         Tw_e=np.eye(4),
         Bw=np.array([
-            [-0.02, 0.02],   # x
-            [-0.02, 0.02],   # y
-            [0, 0.03],       # z (can be slightly higher)
-            [0, 0],          # roll
-            [0, 0],          # pitch
-            [-np.pi, np.pi]  # yaw (any rotation around vertical)
+            [-0.02, 0.02],   # x tolerance
+            [-0.02, 0.02],   # y tolerance
+            [0, 0.03],       # z: can be slightly higher
+            [0, 0],          # roll fixed
+            [0, 0],          # pitch fixed
+            [-0.5, 0.5]      # yaw: limited rotation (was -pi to pi)
         ])
     )
 
-    # Right target TSR
-    T_right = np.eye(4)
-    T_right[:3, 3] = target_right + np.array([0, 0, standoff])
-    T_right[:3, :3] = R_top_down
+    # === SIDE GRASP ===
+    # Gripper approaches from the front (-X direction), z-axis pointing along +X toward cylinder
+    standoff_side = 0.12  # Distance from cylinder center
+    T_side = np.eye(4)
+    T_side[:3, 3] = target_pos + np.array([-standoff_side, 0, 0])
+    # Rotation: gripper z points along +X (toward cylinder)
+    # gripper x -> world -z (points up), gripper y -> world +y, gripper z -> world +x
+    T_side[:3, :3] = np.array([
+        [0, 0, 1],    # world x: gx=0, gy=0, gz=1
+        [0, 1, 0],    # world y: gx=0, gy=1, gz=0
+        [-1, 0, 0]    # world z: gx=-1, gy=0, gz=0
+    ])
 
-    right_tsr = TSR(
-        T0_w=T_right,
+    side_tsr = TSR(
+        T0_w=T_side,
         Tw_e=np.eye(4),
         Bw=np.array([
-            [-0.02, 0.02],
-            [-0.02, 0.02],
-            [0, 0.03],
-            [0, 0],
-            [0, 0],
-            [-np.pi, np.pi]
+            [0, 0.03],       # x: can be slightly further back
+            [-0.02, 0.02],   # y tolerance
+            [-0.02, 0.02],   # z tolerance
+            [0, 0],          # roll fixed
+            [0, 0],          # pitch fixed
+            [-0.5, 0.5]      # yaw: similar freedom as top-down
         ])
     )
 
-    return left_tsr, right_tsr
+    return top_tsr, side_tsr
 
 
-def identify_reached_goal(
-    ee_pose: np.ndarray, left_tsr: TSR, right_tsr: TSR
-) -> str:
-    """Identify which goal TSR was reached."""
-    left_dist, _ = left_tsr.distance(ee_pose)
-    right_dist, _ = right_tsr.distance(ee_pose)
+def identify_grasp_type(ee_pose: np.ndarray, top_tsr: TSR, side_tsr: TSR) -> str:
+    """Identify which grasp approach was used."""
+    top_dist, _ = top_tsr.distance(ee_pose)
+    side_dist, _ = side_tsr.distance(ee_pose)
 
-    if left_dist < right_dist:
-        return "LEFT (blue)"
+    if top_dist < side_dist:
+        return "TOP-DOWN"
     else:
-        return "RIGHT (red)"
+        return "SIDE"
 
 
 def render_loop_video(
@@ -220,10 +212,10 @@ def render_loop_video(
     renderer = mujoco.Renderer(model, width=width, height=height)
 
     camera = mujoco.MjvCamera()
-    camera.lookat[:] = [0.35, 0.0, 0.30]
-    camera.distance = 1.4
-    camera.azimuth = 160  # More front view to see both sides
-    camera.elevation = -25
+    camera.lookat[:] = [0.35, 0.0, 0.35]
+    camera.distance = 1.3
+    camera.azimuth = 135  # Angle to see both top and side approaches
+    camera.elevation = -20
 
     scene_option = mujoco.MjvOption()
 
@@ -256,7 +248,7 @@ def render_loop_video(
     media.write_video(output_path, frames, fps=fps)
     print(f"Saved looping video to {output_path}")
     print(f"  {num_loops} loops, {len(frames)} frames, ~{len(frames)/fps:.1f}s")
-    print(f"  Planner chose: {goal_label}")
+    print(f"  Planner chose: {goal_label} grasp")
 
 
 def visualize_interactive(
@@ -269,7 +261,7 @@ def visualize_interactive(
     """Interactive viewer with looping playback."""
     import mujoco.viewer
 
-    print(f"Opening viewer (planner chose {goal_label})")
+    print(f"Opening viewer (planner chose {goal_label} grasp)")
     print("Press ESC to close")
 
     path_backward = list(reversed(path_forward))
@@ -313,7 +305,7 @@ def visualize_interactive(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="TSR Union demo with looping video")
+    parser = argparse.ArgumentParser(description="TSR Union demo: multiple grasp approaches")
     parser.add_argument("--output", "-o", default="/tmp/tsr_union_demo.mp4",
                         help="Output video path")
     parser.add_argument("--loops", type=int, default=4,
@@ -323,16 +315,15 @@ def main():
     parser.add_argument("--interactive", "-i", action="store_true",
                         help="Use interactive viewer instead of video")
     parser.add_argument("--runs", type=int, default=1,
-                        help="Number of planning runs (to see different goals)")
+                        help="Number of planning runs (to see different grasps)")
     args = parser.parse_args()
 
     menagerie = get_menagerie_path()
 
-    # Target positions: symmetric on left (-Y) and right (+Y)
-    target_left = np.array([0.45, -0.25, 0.37])   # On table, left side
-    target_right = np.array([0.45, 0.25, 0.37])   # On table, right side
+    # Target cylinder position (on table)
+    target_pos = np.array([0.45, 0.0, 0.38])
 
-    model = create_scene(menagerie, target_left, target_right)
+    model = create_scene(menagerie, target_pos)
     data = mujoco.MjData(model)
 
     joints = [
@@ -370,20 +361,21 @@ def main():
     # Start configuration (home)
     start = np.array([0, -np.pi/2, np.pi/2, -np.pi/2, -np.pi/2, 0])
 
-    # Create goal TSRs
-    left_tsr, right_tsr = create_goal_tsrs(target_left, target_right)
+    # Create grasp TSRs for the target
+    top_tsr, side_tsr = create_grasp_tsrs(target_pos)
 
     print("\n" + "=" * 60)
-    print("TSR UNION PLANNING DEMO")
+    print("TSR UNION DEMO: Multiple Grasp Approaches")
     print("=" * 60)
-    print(f"Two targets on opposite sides of the robot:")
-    print(f"  LEFT (blue):  {target_left}")
-    print(f"  RIGHT (red):  {target_right}")
-    print(f"\nPlanner will find a path to ANY target in the union.")
-    print(f"Different random seeds may lead to different targets!")
+    print(f"Target cylinder at: {target_pos}")
+    print(f"Two grasp approaches:")
+    print(f"  1. TOP-DOWN: gripper pointing down from above")
+    print(f"  2. SIDE: gripper pointing horizontally from front")
+    print(f"\nPlanner will find a path to ANY valid grasp.")
+    print(f"Different random seeds may lead to different approaches!")
     print("=" * 60)
 
-    results = {"LEFT (blue)": 0, "RIGHT (red)": 0}
+    results = {"TOP-DOWN": 0, "SIDE": 0}
 
     for run in range(args.runs):
         seed = args.seed if args.seed is not None else np.random.randint(0, 10000)
@@ -391,35 +383,36 @@ def main():
         print(f"\nRun {run + 1}/{args.runs} (seed={seed})")
         print("-" * 40)
 
-        # Plan to TSR union
+        # Plan to TSR union (either grasp)
         import time
         t0 = time.perf_counter()
-        path = planner.plan(start, [left_tsr, right_tsr], seed=seed)
+        path = planner.plan(start, [top_tsr, side_tsr], seed=seed)
         plan_time = time.perf_counter() - t0
 
         if path is None:
             print("No path found!")
             continue
 
-        # Identify which goal was reached
+        # Identify which grasp was chosen
         final_pose = robot.forward_kinematics(path[-1])
-        goal_label = identify_reached_goal(final_pose, left_tsr, right_tsr)
-        results[goal_label] += 1
+        grasp_type = identify_grasp_type(final_pose, top_tsr, side_tsr)
+        results[grasp_type] += 1
 
         print(f"Found path: {len(path)} waypoints in {plan_time:.2f}s")
-        print(f"Reached: {goal_label}")
+        print(f"Grasp type: {grasp_type}")
         print(f"Final EE pos: {final_pose[:3, 3]}")
+        print(f"Final EE z-axis: {final_pose[:3, 2]}")
 
         # Visualize (only on last run if multiple)
         if run == args.runs - 1:
             if args.interactive:
-                visualize_interactive(model, data, path, joints, goal_label)
+                visualize_interactive(model, data, path, joints, grasp_type)
             else:
                 render_loop_video(
                     model, data, path, joints,
                     num_loops=args.loops,
                     output_path=args.output,
-                    goal_label=goal_label,
+                    goal_label=grasp_type,
                 )
 
     # Summary for multiple runs
