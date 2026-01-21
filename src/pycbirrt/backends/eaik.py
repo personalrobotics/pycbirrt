@@ -144,11 +144,18 @@ class EAIKSolver:
         """
         return self.robot.fwdKin(q)
 
-    def solve(self, pose: np.ndarray) -> list[np.ndarray]:
+    def solve(
+        self, pose: np.ndarray, q_init: np.ndarray | None = None
+    ) -> list[np.ndarray]:
         """Solve IK for a single end-effector pose (raw, unvalidated).
+
+        Note: q_init is accepted for interface compatibility but ignored,
+        as EAIK is an analytical solver that finds all solutions regardless
+        of initial configuration.
 
         Args:
             pose: 4x4 homogeneous transform
+            q_init: Ignored (for interface compatibility with iterative solvers)
 
         Returns:
             List of all kinematic solutions (may include invalid ones)

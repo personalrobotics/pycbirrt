@@ -286,8 +286,8 @@ class CBiRRT:
             # xyzrpy_to_trans converts it back to a 4x4 transform in the TSR's frame
             projected_pose = worst_tsr.xyzrpy_to_trans(worst_bwopt)
 
-            # Solve IK for the projected pose
-            solutions = self.ik.solve(projected_pose)
+            # Solve IK for the projected pose (pass q_current as hint for iterative solvers)
+            solutions = self.ik.solve(projected_pose, q_init=q_current)
             if not solutions:
                 return None  # Can't reach projected pose
 

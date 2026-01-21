@@ -10,11 +10,15 @@ class IKSolver(Protocol):
     The `solve_valid()` filters for collision-free solutions within joint limits.
     """
 
-    def solve(self, pose: np.ndarray) -> list[np.ndarray]:
+    def solve(
+        self, pose: np.ndarray, q_init: np.ndarray | None = None
+    ) -> list[np.ndarray]:
         """Solve IK for a single end-effector pose (raw, unvalidated).
 
         Args:
             pose: 4x4 homogeneous transform of desired end-effector pose
+            q_init: Optional initial configuration hint for iterative solvers.
+                Analytical solvers may ignore this parameter.
 
         Returns:
             List of joint configurations (may include invalid ones)
