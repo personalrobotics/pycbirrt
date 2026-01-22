@@ -13,14 +13,26 @@ class Node:
 class RRTree:
     """Rapidly-exploring Random Tree data structure."""
 
-    def __init__(self, root_config: np.ndarray):
-        """Initialize tree with root node.
+    def __init__(self, root_config: np.ndarray | list[np.ndarray]):
+        """Initialize tree with one or more root nodes.
 
         Args:
-            root_config: Joint configuration for root node
+            root_config: Single configuration or list of configurations.
+                        All provided configs become roots (parent=None).
         """
-        self.nodes: list[Node] = [Node(config=root_config.copy(), parent=None)]
-        self._configs: list[np.ndarray] = [root_config.copy()]
+        # Normalize to list
+        if isinstance(root_config, np.ndarray):
+            configs = [root_config]
+        else:
+            configs = root_config
+
+        self.nodes: list[Node] = []
+        self._configs: list[np.ndarray] = []
+
+        # Add all configs as roots
+        for config in configs:
+            self.nodes.append(Node(config=config.copy(), parent=None))
+            self._configs.append(config.copy())
 
     def add_node(self, config: np.ndarray, parent_idx: int) -> int:
         """Add a new node to the tree.
@@ -68,3 +80,8 @@ class RRTree:
 
     def __len__(self) -> int:
         return len(self.nodes)
+
+    @property
+    def num_roots(self) -> int:
+        """Number of root nodes in the tree."""
+        return sum(1 for node in self.nodes if node.parent is None)

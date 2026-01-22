@@ -71,8 +71,11 @@ class PlanarArmIK:
         self.robot = robot
         self.collision = collision_checker
 
-    def solve(self, pose: np.ndarray) -> list[np.ndarray]:
-        """Return all kinematic IK solutions (unvalidated)."""
+    def solve(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
+        """Return all kinematic IK solutions (unvalidated).
+
+        Note: q_init is ignored for analytical solver.
+        """
         x, y = pose[0, 3], pose[1, 3]
         d = np.sqrt(x**2 + y**2)
 
@@ -94,9 +97,12 @@ class PlanarArmIK:
 
         return solutions
 
-    def solve_valid(self, pose: np.ndarray) -> list[np.ndarray]:
-        """Return only valid IK solutions (within limits, collision-free)."""
-        solutions = self.solve(pose)
+    def solve_valid(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
+        """Return only valid IK solutions (within limits, collision-free).
+
+        Note: q_init is ignored for analytical solver.
+        """
+        solutions = self.solve(pose, q_init)
         lower, upper = self.robot.joint_limits
 
         valid = []

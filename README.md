@@ -154,6 +154,56 @@ path = planner.plan(start_config, goal_tsrs=[top_grasp, side_grasp])
 
 TSRs are sampled proportionally to their volume, so larger regions (more flexibility) are more likely to be explored.
 
+## Multiple Start and Goal Configurations
+
+In addition to TSRs (continuous regions), you can provide multiple discrete configurations as lists. The planner will grow trees from all configurations simultaneously, connecting whichever start-goal pair is most reachable:
+
+### Multiple Starting Positions
+
+```python
+# Robot can start from multiple "home" positions
+home_positions = [
+    np.array([0, -np.pi/2, 0, -np.pi/2, 0, 0]),  # Home 1
+    np.array([0, -np.pi/3, 0, -np.pi/3, 0, 0]),  # Home 2
+]
+path = planner.plan(start=home_positions, goal_tsrs=[grasp_tsr])
+```
+
+### Multiple Goal Configurations
+
+```python
+# Plan to any of several goal configurations (e.g., different IK solutions)
+goal_configs = compute_ik_solutions(target_pose)  # Returns multiple IK solutions
+path = planner.plan(start=current_config, goal=goal_configs)
+```
+
+### Symmetric Multi-Start and Multi-Goal
+
+```python
+# Multiple starts to multiple goals
+pick_configs = [q1, q2]  # Multiple grasp configs
+place_configs = [q3, q4]  # Multiple place configs
+path = planner.plan(start=pick_configs, goal=place_configs)
+```
+
+### Combining Configs and TSRs
+
+```python
+# Mix fixed configs with continuous regions
+path = planner.plan(
+    start=[home_config],      # One fixed start
+    start_tsrs=[start_tsr],   # Plus region to sample from
+    goal=[goal1, goal2],      # Two fixed goals
+    goal_tsrs=[goal_tsr]      # Plus goal region
+)
+```
+
+**Use cases:**
+- Multiple robot "home" positions
+- Pre-computed IK solutions to choose from
+- Multiple discrete grasping configurations
+- Symmetric pick-and-place with multiple valid poses
+
 ## Configuration Options
 
 ```python

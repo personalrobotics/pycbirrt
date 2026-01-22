@@ -57,8 +57,9 @@ class CBiRRT:
 
     def plan(
         self,
-        start: np.ndarray | None,
-        goal_tsrs: list[TSR],
+        start: np.ndarray | list[np.ndarray] | None = None,
+        goal: np.ndarray | list[np.ndarray] | None = None,
+        goal_tsrs: list[TSR] | None = None,
         start_tsrs: list[TSR] | None = None,
         constraint_tsrs: list[TSR] | None = None,
         seed: int | None = None,
@@ -71,20 +72,39 @@ class CBiRRT:
         proportionally to their volume (sum of Bw bounds), so TSRs with more
         freedom are explored more frequently.
 
+        Multiple discrete configurations can be provided as lists - all become
+        tree roots and are explored simultaneously.
+
         Args:
-            start: Start joint configuration (required if start_tsrs not provided)
-            goal_tsrs: List of TSRs defining the goal region (union - path ends
-                in any one). Each TSR is sampled proportionally to its volume.
+            start: Start configuration(s). Can be:
+                   - Single config: np.ndarray
+                   - Multiple configs: list[np.ndarray]
+                   - None (must provide start_tsrs)
+            goal: Goal configuration(s). Can be:
+                  - Single config: np.ndarray
+                  - Multiple configs: list[np.ndarray]
+                  - None (must provide goal_tsrs)
+            goal_tsrs: Optional TSRs defining goal region(s) (union).
+                      Each TSR is sampled proportionally to its volume.
             start_tsrs: Optional TSRs defining valid start regions (union).
-                If provided, a valid start configuration is sampled from these.
             constraint_tsrs: Optional TSRs that constrain the entire path.
-                Every configuration along the path must satisfy ALL of these.
+                            Every configuration along the path must satisfy ALL of these.
             seed: Random seed for reproducibility
             return_details: If True, return PlanResult with trees; otherwise just path
 
         Returns:
             If return_details=False: List of joint configurations or None
             If return_details=True: PlanResult with path, trees, and debug info
+
+        Examples:
+            # Single to single
+            path = planner.plan(start=q1, goal=q2)
+
+            # Multiple starts to single goal
+            path = planner.plan(start=[q1, q2, q3], goal=q_goal)
+
+            # Mix configs and TSRs
+            path = planner.plan(start=[q1], goal_tsrs=[tsr1, tsr2])
         """
         if seed is not None:
             self._rng = np.random.default_rng(seed)
@@ -94,42 +114,30 @@ class CBiRRT:
         self._start_tsrs = start_tsrs
         self._goal_tsrs = goal_tsrs
 
-        # Determine start configuration
-        if start_tsrs is not None:
-            # If we have constraint TSRs, sample start that also satisfies them
-            must_satisfy = constraint_tsrs is not None
-            start_config = self._sample_from_tsrs(start_tsrs, must_satisfy_constraints=must_satisfy)
-            if start_config is None:
-                if return_details:
-                    dummy_tree = RRTree(np.zeros(self.robot.dof))
-                    return PlanResult(None, dummy_tree, dummy_tree, 0, False)
-                return None
-        elif start is not None:
-            start_config = start
-        else:
-            raise ValueError("Either start or start_tsrs must be provided")
+        # Normalize start/goal to lists
+        start_configs = None
+        if start is not None:
+            start_configs = [start] if isinstance(start, np.ndarray) else start
 
-        # Validate start
-        if not self.collision.is_valid(start_config):
-            raise ValueError("Start configuration is in collision")
+        goal_configs = None
+        if goal is not None:
+            goal_configs = [goal] if isinstance(goal, np.ndarray) else goal
 
-        # If we have constraint TSRs, verify start satisfies them
-        if constraint_tsrs is not None:
-            if not self._satisfies_constraints(start_config):
-                raise ValueError("Start configuration does not satisfy path constraints")
+        # Initialize start configurations
+        # Validation errors (invalid configs) should propagate up
+        # Only sampling failures return None
+        start_roots = self._initialize_tree_configs(
+            start_configs, start_tsrs, "Start"
+        )
 
-        # Sample a goal configuration from the TSRs
-        goal_config = self._sample_from_tsrs(goal_tsrs, must_satisfy_constraints=True)
-        if goal_config is None:
-            if return_details:
-                tree_start = RRTree(start_config)
-                tree_goal = RRTree(start_config)  # Dummy
-                return PlanResult(None, tree_start, tree_goal, 0, False)
-            return None
+        # Initialize goal configurations
+        goal_roots = self._initialize_tree_configs(
+            goal_configs, goal_tsrs, "Goal"
+        )
 
-        # Initialize trees
-        tree_start = RRTree(start_config)
-        tree_goal = RRTree(goal_config)
+        # Initialize trees with multiple roots
+        tree_start = RRTree(start_roots if len(start_roots) > 1 else start_roots[0])
+        tree_goal = RRTree(goal_roots if len(goal_roots) > 1 else goal_roots[0])
 
         # Track start time for timeout
         start_time = time.monotonic()
@@ -236,6 +244,67 @@ class CBiRRT:
             if dist > self.config.tsr_tolerance:
                 return False
         return True
+
+    def _validate_config(self, q: np.ndarray, context: str) -> None:
+        """Validate a single configuration.
+
+        Args:
+            q: Configuration to validate
+            context: Description for error messages (e.g., "Start[0]")
+
+        Raises:
+            ValueError: If config is invalid
+        """
+        if not self.collision.is_valid(q):
+            raise ValueError(f"{context} configuration is in collision")
+
+        if self._constraint_tsrs is not None:
+            if not self._satisfies_constraints(q):
+                raise ValueError(
+                    f"{context} configuration does not satisfy path constraints"
+                )
+
+    def _initialize_tree_configs(
+        self,
+        fixed_configs: list[np.ndarray] | None,
+        tsrs: list[TSR] | None,
+        config_type: str,  # "Start" or "Goal"
+    ) -> list[np.ndarray]:
+        """Initialize tree with fixed configs and TSR samples.
+
+        Args:
+            fixed_configs: List of fixed configurations (or None)
+            tsrs: List of TSRs to sample from (or None)
+            config_type: "Start" or "Goal" for error messages
+
+        Returns:
+            List of valid root configurations
+
+        Raises:
+            ValueError: If no configs available or any fixed config is invalid
+        """
+        configs = []
+
+        # Add and validate fixed configs
+        if fixed_configs is not None:
+            for i, q in enumerate(fixed_configs):
+                self._validate_config(q, f"{config_type}[{i}]")
+                configs.append(q)
+
+        # Sample from TSRs
+        if tsrs is not None:
+            must_satisfy = self._constraint_tsrs is not None
+            q_sampled = self._sample_from_tsrs(tsrs, must_satisfy)
+            if q_sampled is not None:
+                configs.append(q_sampled)
+
+        if not configs:
+            raise ValueError(
+                f"No valid {config_type.lower()} configurations available. "
+                f"Provide either {config_type.lower()} or {config_type.lower()}_tsrs."
+            )
+
+        return configs
 
     def _project_to_constraint(self, q: np.ndarray) -> np.ndarray | None:
         """Project configuration onto the constraint manifold.

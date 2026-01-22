@@ -139,6 +139,31 @@ class TestRRTree:
         assert np.allclose(path[1], [1.0, 0.0])
         assert np.allclose(path[2], [2.0, 0.0])
 
+    def test_rrtree_multiple_roots(self):
+        """Test RRTree with multiple root configurations."""
+        configs = [np.array([0.0, 0.0]), np.array([1.0, 1.0])]
+        tree = RRTree(configs)
+        assert len(tree) == 2
+        assert tree.nodes[0].parent is None
+        assert tree.nodes[1].parent is None
+        assert tree.num_roots == 2
+
+    def test_rrtree_backward_compatibility(self):
+        """Test RRTree still accepts single config."""
+        tree = RRTree(np.array([0.0, 0.0]))
+        assert len(tree) == 1
+        assert tree.num_roots == 1
+
+    def test_rrtree_nearest_with_multiple_roots(self):
+        """Test nearest neighbor search works with multiple roots."""
+        configs = [np.array([0.0, 0.0]), np.array([2.0, 2.0])]
+        tree = RRTree(configs)
+
+        # Query closer to first root
+        assert tree.nearest(np.array([0.1, 0.1])) == 0
+        # Query closer to second root
+        assert tree.nearest(np.array([1.9, 1.9])) == 1
+
 
 class TestCBiRRT:
     def test_plan_simple(self):
@@ -197,7 +222,7 @@ class TestCBiRRT:
             collision_checker=BlockingCollisionChecker(),
         )
 
-        with pytest.raises(ValueError, match="Start configuration is in collision"):
+        with pytest.raises(ValueError, match="Start\\[0\\].*configuration is in collision"):
             planner.plan(np.array([0.0, 0.0]), goal_tsrs=[])
 
     @pytest.mark.parametrize(
@@ -342,5 +367,174 @@ class TestCBiRRT:
             Bw=np.zeros((6, 2)),
         )
 
-        with pytest.raises(ValueError, match="Either start or start_tsrs must be provided"):
+        with pytest.raises(ValueError, match="No valid start configurations available"):
             planner.plan(start=None, goal_tsrs=[goal_tsr])
+
+    def test_plan_multiple_starts(self):
+        """Test planning from multiple start configs."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+
+        planner = CBiRRT(
+            robot=robot,
+            ik_solver=ik,
+            collision_checker=collision,
+        )
+
+        starts = [np.array([0.0, 0.0]), np.array([0.1, 0.1])]
+
+        # Goal TSR at (1.5, 0.5)
+        T0_w = np.eye(4)
+        T0_w[0, 3] = 1.5
+        T0_w[1, 3] = 0.5
+        goal_tsr = TSR(
+            T0_w=T0_w,
+            Tw_e=np.eye(4),
+            Bw=np.array([
+                [-0.1, 0.1],
+                [-0.1, 0.1],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+            ]),
+        )
+
+        result = planner.plan(
+            start=starts, goal_tsrs=[goal_tsr], seed=42, return_details=True
+        )
+
+        assert result.success
+        # Path starts from one of the provided starts
+        assert any(np.allclose(result.path[0], s) for s in starts)
+
+    def test_plan_multiple_goals(self):
+        """Test planning to multiple goal configs."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+
+        planner = CBiRRT(
+            robot=robot,
+            ik_solver=ik,
+            collision_checker=collision,
+        )
+
+        start = np.array([0.0, 0.0])
+        # Two valid goal configurations
+        goals = [np.array([np.pi / 2, 0.0]), np.array([np.pi / 2, np.pi / 4])]
+
+        path = planner.plan(start=start, goal=goals, seed=42)
+
+        assert path is not None
+        # Path ends at one of the provided goals (within tolerance)
+        assert any(np.allclose(path[-1], g, atol=0.05) for g in goals)
+
+    def test_plan_multiple_to_multiple(self):
+        """Test planning with multiple starts and goals."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+
+        planner = CBiRRT(
+            robot=robot,
+            ik_solver=ik,
+            collision_checker=collision,
+        )
+
+        starts = [np.array([0.0, 0.0]), np.array([0.1, 0.1])]
+        goals = [np.array([np.pi / 2, 0.0]), np.array([np.pi / 2, np.pi / 4])]
+
+        path = planner.plan(start=starts, goal=goals, seed=42)
+        assert path is not None
+
+    def test_invalid_start_in_list_raises(self):
+        """Test that invalid start config in list raises clear error."""
+
+        class AlwaysInvalidChecker:
+            def is_valid(self, q):
+                return False
+
+            def is_valid_batch(self, qs):
+                return np.zeros(len(qs), dtype=bool)
+
+        robot = MockRobotModel()
+        ik = MockIKSolver(robot, MockCollisionChecker())
+        planner = CBiRRT(robot, ik, AlwaysInvalidChecker())
+
+        starts = [np.array([0.0, 0.0]), np.array([1.0, 1.0])]
+
+        T0_w = np.eye(4)
+        T0_w[0, 3] = 1.5
+        T0_w[1, 3] = 0.5
+        goal_tsr = TSR(
+            T0_w=T0_w,
+            Tw_e=np.eye(4),
+            Bw=np.array([
+                [-0.1, 0.1],
+                [-0.1, 0.1],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+            ]),
+        )
+
+        with pytest.raises(ValueError, match="Start\\[0\\].*collision"):
+            planner.plan(start=starts, goal_tsrs=[goal_tsr])
+
+    def test_backward_compatibility(self):
+        """Test that old API still works."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+
+        planner = CBiRRT(
+            robot=robot,
+            ik_solver=ik,
+            collision_checker=collision,
+        )
+
+        start_config = np.array([0.0, 0.0])
+
+        T0_w = np.eye(4)
+        T0_w[0, 3] = 1.5
+        T0_w[1, 3] = 0.5
+        goal_tsr = TSR(
+            T0_w=T0_w,
+            Tw_e=np.eye(4),
+            Bw=np.array([
+                [-0.1, 0.1],
+                [-0.1, 0.1],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+            ]),
+        )
+
+        # Old style - positional arg, only goal_tsrs
+        path = planner.plan(start_config, goal_tsrs=[goal_tsr], seed=42)
+        assert path is not None
+
+    def test_single_goal_config(self):
+        """Test planning with single goal configuration (new API)."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+
+        planner = CBiRRT(
+            robot=robot,
+            ik_solver=ik,
+            collision_checker=collision,
+        )
+
+        start = np.array([0.0, 0.0])
+        goal = np.array([np.pi / 2, 0.0])
+
+        path = planner.plan(start=start, goal=goal, seed=42)
+
+        assert path is not None
+        assert np.allclose(path[0], start)
+        assert np.allclose(path[-1], goal, atol=0.05)
