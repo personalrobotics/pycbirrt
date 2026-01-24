@@ -158,7 +158,7 @@ class CBiRRT:
 
             # Sample configuration (with bias toward opposite tree's TSR)
             q_sample = None
-            if tree_a is tree_start and self._rng.random() < self.config.goal_bias:
+            if tree_a is tree_start and self._goal_tsrs is not None and self._rng.random() < self.config.goal_bias:
                 q_sample = self._sample_from_tsrs(self._goal_tsrs, must_satisfy_constraints=True)
             elif tree_a is tree_goal and self._start_tsrs is not None and self._rng.random() < self.config.start_bias:
                 q_sample = self._sample_from_tsrs(self._start_tsrs, must_satisfy_constraints=True)
