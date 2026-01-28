@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 import time
 
 import numpy as np
@@ -8,6 +9,14 @@ from tsr.sampling import sample_from_tsrs
 from pycbirrt.config import CBiRRTConfig
 from pycbirrt.tree import RRTree
 from pycbirrt.interfaces import RobotModel, IKSolver, CollisionChecker
+from pycbirrt.exceptions import (
+    AllStartConfigurationsInCollision,
+    AllGoalConfigurationsInCollision,
+    AllStartConfigurationsInvalid,
+    AllGoalConfigurationsInvalid,
+)
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -245,24 +254,24 @@ class CBiRRT:
                 return False
         return True
 
-    def _validate_config(self, q: np.ndarray, context: str) -> None:
-        """Validate a single configuration.
+    def _check_config(self, q: np.ndarray) -> tuple[bool, str | None]:
+        """Check if a configuration is valid.
 
         Args:
-            q: Configuration to validate
-            context: Description for error messages (e.g., "Start[0]")
+            q: Configuration to check
 
-        Raises:
-            ValueError: If config is invalid
+        Returns:
+            Tuple of (is_valid, reason) where reason is None if valid,
+            or a string describing why it's invalid.
         """
         if not self.collision.is_valid(q):
-            raise ValueError(f"{context} configuration is in collision")
+            return False, "in collision"
 
         if self._constraint_tsrs is not None:
             if not self._satisfies_constraints(q):
-                raise ValueError(
-                    f"{context} configuration does not satisfy path constraints"
-                )
+                return False, "violates path constraints"
+
+        return True, None
 
     def _initialize_tree_configs(
         self,
@@ -271,6 +280,11 @@ class CBiRRT:
         config_type: str,  # "Start" or "Goal"
     ) -> list[np.ndarray]:
         """Initialize tree with fixed configs and TSR samples.
+
+        Validates all fixed configurations before proceeding. If some configs
+        are invalid but others are valid, logs a warning and continues with
+        the valid ones. If ALL configs are invalid, raises an appropriate
+        exception with details.
 
         Args:
             fixed_configs: List of fixed configurations (or None)
@@ -281,30 +295,65 @@ class CBiRRT:
             List of valid root configurations
 
         Raises:
-            ValueError: If no configs available or any fixed config is invalid
+            AllStartConfigurationsInCollision: If all start configs are in collision
+            AllGoalConfigurationsInCollision: If all goal configs are in collision
+            AllStartConfigurationsInvalid: If all start configs are invalid (mixed reasons)
+            AllGoalConfigurationsInvalid: If all goal configs are invalid (mixed reasons)
+            ValueError: If no configs available at all
         """
-        configs = []
+        valid_configs = []
+        invalid_details = []
+        all_in_collision = True
 
-        # Add and validate fixed configs
+        # Check all fixed configs first
         if fixed_configs is not None:
             for i, q in enumerate(fixed_configs):
-                self._validate_config(q, f"{config_type}[{i}]")
-                configs.append(q)
+                is_valid, reason = self._check_config(q)
+                if is_valid:
+                    valid_configs.append(q)
+                else:
+                    invalid_details.append(f"{config_type}[{i}]: {reason}")
+                    if reason != "in collision":
+                        all_in_collision = False
 
-        # Sample from TSRs
+        # If we have valid fixed configs, log warning about invalid ones and continue
+        if valid_configs and invalid_details:
+            logger.warning(
+                f"Filtered {len(invalid_details)} invalid {config_type.lower()} "
+                f"configuration(s): {'; '.join(invalid_details)}"
+            )
+
+        # Sample from TSRs (only if we need more configs or have none)
         if tsrs is not None:
             must_satisfy = self._constraint_tsrs is not None
             q_sampled = self._sample_from_tsrs(tsrs, must_satisfy)
             if q_sampled is not None:
-                configs.append(q_sampled)
+                valid_configs.append(q_sampled)
 
-        if not configs:
-            raise ValueError(
-                f"No valid {config_type.lower()} configurations available. "
-                f"Provide either {config_type.lower()} or {config_type.lower()}_tsrs."
-            )
+        # If we have valid configs, return them
+        if valid_configs:
+            return valid_configs
 
-        return configs
+        # No valid configs - raise appropriate exception
+        if fixed_configs is not None and len(fixed_configs) > 0:
+            # All fixed configs were invalid
+            n_configs = len(fixed_configs)
+            if config_type == "Start":
+                if all_in_collision:
+                    raise AllStartConfigurationsInCollision(n_configs, invalid_details)
+                else:
+                    raise AllStartConfigurationsInvalid(n_configs, invalid_details)
+            else:
+                if all_in_collision:
+                    raise AllGoalConfigurationsInCollision(n_configs, invalid_details)
+                else:
+                    raise AllGoalConfigurationsInvalid(n_configs, invalid_details)
+
+        # No configs provided at all
+        raise ValueError(
+            f"No valid {config_type.lower()} configurations available. "
+            f"Provide either {config_type.lower()} or {config_type.lower()}_tsrs."
+        )
 
     def _project_to_constraint(self, q: np.ndarray) -> np.ndarray | None:
         """Project configuration onto the constraint manifold.

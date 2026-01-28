@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from tsr import TSR
 
-from pycbirrt import CBiRRT, CBiRRTConfig
+from pycbirrt import CBiRRT, CBiRRTConfig, AllStartConfigurationsInCollision
 from pycbirrt.tree import RRTree
 
 
@@ -222,7 +222,7 @@ class TestCBiRRT:
             collision_checker=BlockingCollisionChecker(),
         )
 
-        with pytest.raises(ValueError, match="Start\\[0\\].*configuration is in collision"):
+        with pytest.raises(AllStartConfigurationsInCollision):
             planner.plan(np.array([0.0, 0.0]), goal_tsrs=[])
 
     @pytest.mark.parametrize(
@@ -481,7 +481,7 @@ class TestCBiRRT:
             ]),
         )
 
-        with pytest.raises(ValueError, match="Start\\[0\\].*collision"):
+        with pytest.raises(AllStartConfigurationsInCollision):
             planner.plan(start=starts, goal_tsrs=[goal_tsr])
 
     def test_backward_compatibility(self):
@@ -538,3 +538,123 @@ class TestCBiRRT:
         assert path is not None
         assert np.allclose(path[0], start)
         assert np.allclose(path[-1], goal, atol=0.05)
+
+
+class TestConfigValidation:
+    """Tests for start/goal configuration validation."""
+
+    def test_filters_invalid_starts_proceeds_with_valid(self, caplog):
+        """Test that invalid starts are filtered but planning proceeds with valid ones."""
+
+        class SelectiveCollisionChecker:
+            """Only the first config is in collision."""
+
+            def is_valid(self, q):
+                # Config [0, 0] is in collision, others are fine
+                return not (q[0] == 0.0 and q[1] == 0.0)
+
+            def is_valid_batch(self, qs):
+                return np.array([self.is_valid(q) for q in qs])
+
+        robot = MockRobotModel()
+        ik = MockIKSolver(robot, MockCollisionChecker())
+        planner = CBiRRT(robot, ik, SelectiveCollisionChecker())
+
+        # First start is in collision, second is valid
+        starts = [np.array([0.0, 0.0]), np.array([0.5, 0.5])]
+        goal = np.array([1.0, 0.0])
+
+        import logging
+
+        with caplog.at_level(logging.WARNING):
+            path = planner.plan(start=starts, goal=goal, seed=42)
+
+        # Should succeed with the valid start
+        assert path is not None
+        # Should have logged a warning about the filtered config
+        assert "Filtered 1 invalid start" in caplog.text
+        assert "Start[0]: in collision" in caplog.text
+
+    def test_all_goals_in_collision_raises(self):
+        """Test that all goals in collision raises AllGoalConfigurationsInCollision."""
+        from pycbirrt import AllGoalConfigurationsInCollision
+
+        class GoalBlockingChecker:
+            """Start is valid, goals are not."""
+
+            def __init__(self, goal_configs):
+                self.goal_configs = [tuple(g) for g in goal_configs]
+
+            def is_valid(self, q):
+                return tuple(q) not in self.goal_configs
+
+            def is_valid_batch(self, qs):
+                return np.array([self.is_valid(q) for q in qs])
+
+        robot = MockRobotModel()
+        start = np.array([0.0, 0.0])
+        goals = [np.array([1.0, 0.0]), np.array([1.0, 1.0])]
+
+        ik = MockIKSolver(robot, MockCollisionChecker())
+        planner = CBiRRT(robot, ik, GoalBlockingChecker(goals))
+
+        with pytest.raises(AllGoalConfigurationsInCollision) as exc_info:
+            planner.plan(start=start, goal=goals, seed=42)
+
+        assert exc_info.value.n_configs == 2
+        assert "Goal[0]: in collision" in str(exc_info.value)
+        assert "Goal[1]: in collision" in str(exc_info.value)
+
+    def test_exception_contains_details(self):
+        """Test that exception message contains details about which configs failed."""
+
+        class AlwaysInvalidChecker:
+            def is_valid(self, q):
+                return False
+
+            def is_valid_batch(self, qs):
+                return np.zeros(len(qs), dtype=bool)
+
+        robot = MockRobotModel()
+        ik = MockIKSolver(robot, MockCollisionChecker())
+        planner = CBiRRT(robot, ik, AlwaysInvalidChecker())
+
+        starts = [np.array([0.0, 0.0]), np.array([0.5, 0.5]), np.array([1.0, 1.0])]
+
+        with pytest.raises(AllStartConfigurationsInCollision) as exc_info:
+            planner.plan(start=starts, goal=np.array([2.0, 0.0]), seed=42)
+
+        exc = exc_info.value
+        assert exc.n_configs == 3
+        assert len(exc.details) == 3
+        assert "All 3 start configuration(s) in collision" in str(exc)
+
+    def test_filters_invalid_goals_proceeds_with_valid(self, caplog):
+        """Test that invalid goals are filtered but planning proceeds with valid ones."""
+
+        class SelectiveGoalChecker:
+            """Only goal [1.0, 1.0] is in collision."""
+
+            def is_valid(self, q):
+                return not (abs(q[0] - 1.0) < 0.01 and abs(q[1] - 1.0) < 0.01)
+
+            def is_valid_batch(self, qs):
+                return np.array([self.is_valid(q) for q in qs])
+
+        robot = MockRobotModel()
+        ik = MockIKSolver(robot, MockCollisionChecker())
+        planner = CBiRRT(robot, ik, SelectiveGoalChecker())
+
+        start = np.array([0.0, 0.0])
+        # First goal is in collision, second is valid
+        goals = [np.array([1.0, 1.0]), np.array([1.0, 0.0])]
+
+        import logging
+
+        with caplog.at_level(logging.WARNING):
+            path = planner.plan(start=start, goal=goals, seed=42)
+
+        # Should succeed with the valid goal
+        assert path is not None
+        # Should have logged a warning
+        assert "Filtered 1 invalid goal" in caplog.text
