@@ -10,7 +10,7 @@ authors = [
 ]
 dependencies = [
     "numpy>=1.24",
-    "tsr @ git+https://github.com/personalrobotics/tsr.git",
+    "tsr",
 ]
 
 [project.optional-dependencies]

@@ -18,6 +18,20 @@ A Python implementation of the Constrained Bi-directional Rapidly-exploring Rand
 
 ## Installation
 
+### Dependencies
+
+**Required**: `tsr` (Task Space Regions) - not on PyPI, install from GitHub:
+```bash
+uv pip install "tsr @ git+https://github.com/personalrobotics/tsr.git"
+```
+
+**Optional**: `eaik` (analytical IK for UR robots) - available on PyPI:
+```bash
+uv pip install eaik
+```
+
+### Install pycbirrt
+
 ```bash
 uv pip install -e ".[all]"
 ```
