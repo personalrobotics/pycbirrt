@@ -145,7 +145,10 @@ class EAIKSolver:
         return self.robot.fwdKin(q)
 
     def solve(
-        self, pose: np.ndarray, q_init: np.ndarray | None = None
+        self,
+        pose: np.ndarray,
+        q_init: np.ndarray | None = None,
+        include_least_squares: bool = False,
     ) -> list[np.ndarray]:
         """Solve IK for a single end-effector pose (raw, unvalidated).
 
@@ -156,9 +159,13 @@ class EAIKSolver:
         Args:
             pose: 4x4 homogeneous transform
             q_init: Ignored (for interface compatibility with iterative solvers)
+            include_least_squares: If True, include least-squares solutions.
+                By default, LS solutions are excluded because they indicate
+                the target pose is outside the reachable workspace and may
+                have large position error.
 
         Returns:
-            List of all kinematic solutions (may include invalid ones)
+            List of kinematic solutions (exact only by default)
         """
         # EAIK returns IKSolution object with Q matrix of shape (N, dof)
         ik_result = self.robot.IK(pose)
@@ -167,7 +174,15 @@ class EAIKSolver:
         if num_solutions == 0:
             return []
 
-        return [ik_result.Q[i] for i in range(num_solutions)]
+        # By default, filter out least-squares solutions
+        if include_least_squares:
+            return [ik_result.Q[i] for i in range(num_solutions)]
+
+        return [
+            ik_result.Q[i]
+            for i in range(num_solutions)
+            if not ik_result.is_LS[i]
+        ]
 
     def solve_valid(
         self, pose: np.ndarray, q_init: np.ndarray | None = None
