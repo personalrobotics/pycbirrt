@@ -440,15 +440,15 @@ def main():
         config = CBiRRTConfig(
             timeout=30.0,
             goal_bias=0.15,
-            ik_num_seeds=1,
         )
     else:
         print("Using MuJoCo differential IK solver")
         ik_solver = MuJoCoIKSolver(model, data, "attachment_site", joints, collision)
+        # Differential solver may need more pose samples
         config = CBiRRTConfig(
             timeout=30.0,
             goal_bias=0.15,
-            ik_num_seeds=10,
+            tsr_samples=100,
         )
 
     planner = CBiRRT(robot, ik_solver, collision, config)

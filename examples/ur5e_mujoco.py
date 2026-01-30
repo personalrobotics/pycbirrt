@@ -524,12 +524,10 @@ def main():
             collision_checker=collision_checker,
         )
         print(f"  Kinematic family: {ik_solver.get_kinematic_family()}")
-        # EAIK doesn't need multiple seeds - it finds all solutions analytically
         config = CBiRRTConfig(
             max_iterations=5000,
             step_size=0.2,
             goal_bias=0.1,
-            ik_num_seeds=1,  # EAIK finds all solutions, one seed is enough
         )
     else:
         print("Using MuJoCo (differential) IK solver")
@@ -540,11 +538,12 @@ def main():
             joint_names=ur5e_joints,
             collision_checker=collision_checker,
         )
+        # Differential solver may need more pose samples to find solutions
         config = CBiRRTConfig(
             max_iterations=5000,
             step_size=0.2,
             goal_bias=0.1,
-            ik_num_seeds=20,  # Try more IK seeds for differential solver
+            tsr_samples=100,  # More pose samples for differential solver
         )
 
     # Create planner

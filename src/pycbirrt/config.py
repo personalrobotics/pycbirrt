@@ -34,8 +34,10 @@ class CBiRRTConfig:
     # Constraint projection
     max_projection_iters: int = 50  # Max iterations for projecting onto constraint manifold
 
-    # IK solving
-    ik_num_seeds: int = 10  # Number of random initial configurations to try for IK
+    # TSR sampling
+    tsr_samples: int = 50  # Max pose samples to try from TSR
+    num_tree_roots: int = 5  # Target number of root configs to seed each tree with
+    max_ik_per_pose: int = 2  # Max IK solutions to take per pose sample (for diversity)
 
     # Smoothing
     smooth_path: bool = True

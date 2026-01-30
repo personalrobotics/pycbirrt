@@ -13,6 +13,9 @@ dependencies = [
     "tsr",
 ]
 
+[tool.uv.sources]
+tsr = { path = "../tsr", editable = true }
+
 [project.optional-dependencies]
 mujoco = ["mujoco>=3.0"]
 eaik = ["eaik"]

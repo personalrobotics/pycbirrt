@@ -200,11 +200,10 @@ class CBiRRT:
     def _sample_from_tsrs(
         self, tsrs: list[TSR], must_satisfy_constraints: bool = False
     ) -> np.ndarray | None:
-        """Sample a valid configuration from TSRs.
+        """Sample a single valid configuration from TSRs.
 
-        Samples from the union of TSRs with probability proportional to each
-        TSR's volume (sum of Bw bounds). This ensures TSRs with more freedom
-        are sampled more frequently.
+        Tries multiple pose samples until finding one with a valid IK solution.
+        Used for goal biasing during planning.
 
         Args:
             tsrs: List of TSRs to sample from (union)
@@ -213,27 +212,57 @@ class CBiRRT:
         Returns:
             Valid joint configuration or None
         """
-        # Sample pose from TSRs (volume-weighted selection)
-        pose = sample_from_tsrs(tsrs, self._rng)
+        for _ in range(self.config.tsr_samples):
+            pose = sample_from_tsrs(tsrs, self._rng)
+            solutions = self.ik.solve_valid(pose)
 
-        # Try IK from multiple initial configurations
-        # This helps differential IK solvers find solutions from distant targets
-        lower, upper = self.robot.joint_limits
-        q_inits = [
-            self._rng.uniform(lower, upper) for _ in range(self.config.ik_num_seeds)
-        ]
-
-        for q_init in q_inits:
-            # Solve IK - returns only valid (collision-free, within limits) solutions
-            solutions = self.ik.solve_valid(pose, q_init)
-
-            # Check path constraints if required
             for q in solutions:
                 if must_satisfy_constraints and not self._satisfies_constraints(q):
                     continue
                 return q
 
         return None
+
+    def _sample_configs_from_tsrs(
+        self, tsrs: list[TSR], target_count: int, must_satisfy_constraints: bool = False
+    ) -> list[np.ndarray]:
+        """Sample multiple valid configurations from TSRs for tree initialization.
+
+        Samples poses and collects IK solutions from each (up to max_ik_per_pose)
+        until we have enough configs or exhaust the sample budget. Capping solutions
+        per pose ensures diversity across different TSR samples.
+
+        Args:
+            tsrs: List of TSRs to sample from (union)
+            target_count: Target number of configs to collect
+            must_satisfy_constraints: If True, also check path constraint TSRs
+
+        Returns:
+            List of valid configurations (may be less than target_count)
+        """
+        configs = []
+        max_per_pose = self.config.max_ik_per_pose
+
+        for _ in range(self.config.tsr_samples):
+            if len(configs) >= target_count:
+                break
+
+            pose = sample_from_tsrs(tsrs, self._rng)
+            solutions = self.ik.solve_valid(pose)
+
+            # Cap solutions per pose for diversity
+            added_from_pose = 0
+            for q in solutions:
+                if added_from_pose >= max_per_pose:
+                    break
+                if must_satisfy_constraints and not self._satisfies_constraints(q):
+                    continue
+                configs.append(q)
+                added_from_pose += 1
+                if len(configs) >= target_count:
+                    break
+
+        return configs
 
     def _satisfies_constraints(self, q: np.ndarray) -> bool:
         """Check if configuration satisfies all path constraint TSRs.
@@ -323,12 +352,13 @@ class CBiRRT:
                 f"configuration(s): {'; '.join(invalid_details)}"
             )
 
-        # Sample from TSRs (only if we need more configs or have none)
+        # Sample from TSRs to fill up to num_tree_roots configs
         if tsrs is not None:
             must_satisfy = self._constraint_tsrs is not None
-            q_sampled = self._sample_from_tsrs(tsrs, must_satisfy)
-            if q_sampled is not None:
-                valid_configs.append(q_sampled)
+            needed = max(0, self.config.num_tree_roots - len(valid_configs))
+            if needed > 0:
+                sampled = self._sample_configs_from_tsrs(tsrs, needed, must_satisfy)
+                valid_configs.extend(sampled)
 
         # If we have valid configs, return them
         if valid_configs:
