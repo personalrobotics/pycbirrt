@@ -629,10 +629,12 @@ class CBiRRT:
             t = i / n_steps
             q = q_from + t * direction
 
-            if not self.collision.is_valid(q):
-                return current_idx, False
-            if not self._satisfies_constraints(q):
-                return current_idx, False
+            # Skip validation for endpoint - already checked in _grow
+            if i < n_steps:
+                if not self.collision.is_valid(q):
+                    return current_idx, False
+                if not self._satisfies_constraints(q):
+                    return current_idx, False
 
             # Add this valid intermediate node
             current_idx = tree.add_node(q, current_idx)
