@@ -163,7 +163,8 @@ config = CBiRRTConfig(
 
     # Smoothing
     smooth_path=True,
-    smoothing_iterations=100,
+    smoothing_iterations=50,   # Max attempts
+    smoothing_patience=15,     # Stop early if no improvement
 )
 ```
 

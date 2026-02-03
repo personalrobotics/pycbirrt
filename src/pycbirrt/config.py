@@ -41,7 +41,8 @@ class CBiRRTConfig:
 
     # Smoothing
     smooth_path: bool = True
-    smoothing_iterations: int = 100
+    smoothing_iterations: int = 50
+    smoothing_patience: int = 15  # Stop early if no improvement in this many attempts
 
     # Angular joints (for proper distance calculation with wraparound)
     # If None, all joints are treated as linear
