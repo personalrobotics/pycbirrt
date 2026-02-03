@@ -684,6 +684,8 @@ class CBiRRT:
         to the other. If successful, replaces the intermediate waypoints
         with the new shorter path segment.
 
+        Stops early if no improvement is made for `smoothing_patience` attempts.
+
         Args:
             path: Original path
 
@@ -694,10 +696,17 @@ class CBiRRT:
             return path
 
         smoothed = list(path)
+        attempts_without_improvement = 0
 
         for _ in range(self.config.smoothing_iterations):
             if len(smoothed) <= 2:
                 break
+
+            # Early termination if no progress
+            if attempts_without_improvement >= self.config.smoothing_patience:
+                break
+
+            prev_len = len(smoothed)
 
             # Pick two random points (need at least one point between them)
             i = self._rng.integers(0, len(smoothed) - 2)
@@ -708,6 +717,12 @@ class CBiRRT:
             if shortcut is not None:
                 # Replace path[i:j+1] with the shortcut
                 smoothed = smoothed[:i] + shortcut + smoothed[j + 1 :]
+
+            # Track improvement
+            if len(smoothed) < prev_len:
+                attempts_without_improvement = 0
+            else:
+                attempts_without_improvement += 1
 
         return smoothed
 
