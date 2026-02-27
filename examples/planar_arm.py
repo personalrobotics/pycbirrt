@@ -167,8 +167,6 @@ class CircleObstacleChecker:
         # Check if intersection is within segment
         return (0 <= t1 <= 1) or (0 <= t2 <= 1) or (t1 < 0 and t2 > 1)
 
-    def is_valid_batch(self, qs: np.ndarray) -> np.ndarray:
-        return np.array([self.is_valid(q) for q in qs])
 
 
 def visualize_result(

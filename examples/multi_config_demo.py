@@ -10,7 +10,8 @@ from tsr import TSR
 
 # Import from parent examples
 import sys
-sys.path.insert(0, '.')
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
 from planar_arm import PlanarArmRobot, PlanarArmIK, CircleObstacleChecker
 
 from pycbirrt import CBiRRT, CBiRRTConfig
@@ -85,7 +86,7 @@ def main():
     actual_goal = result.path[-1]
 
     start_idx = next(i for i, s in enumerate(start_configs) if np.allclose(s, actual_start, atol=0.01))
-    goal_idx = next(i for i, g in enumerate(goal_configs) if np.allclose(g, actual_goal, atol=0.1))
+    goal_idx = next(i for i, g in enumerate(goal_configs) if np.allclose(g, actual_goal, atol=0.01))
 
     print(f"\n  Connected: Start {start_idx+1} → Goal {goal_idx+1}")
 

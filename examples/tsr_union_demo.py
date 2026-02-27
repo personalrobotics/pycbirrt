@@ -440,6 +440,7 @@ def main():
         config = CBiRRTConfig(
             timeout=30.0,
             goal_bias=0.15,
+            angular_joints=(True, True, True, True, True, True),
         )
     else:
         print("Using MuJoCo differential IK solver")
@@ -449,6 +450,7 @@ def main():
             timeout=30.0,
             goal_bias=0.15,
             tsr_samples=100,
+            angular_joints=(True, True, True, True, True, True),
         )
 
     planner = CBiRRT(robot, ik_solver, collision, config)
@@ -484,18 +486,17 @@ def main():
         # Create grasp TSRs for this target position
         top_tsr, side_tsr = create_grasp_tsrs(target_pos)
 
-        # Plan to SIDE grasp only for splash video
+        # Plan to EITHER top-down or side grasp (TSR union)
         t0 = time.perf_counter()
-        path = planner.plan(start, [side_tsr], seed=seed)
+        path = planner.plan(start, goal_tsrs=[top_tsr, side_tsr], seed=seed)
         plan_time = time.perf_counter() - t0
 
         if path is None:
             print(f"  No path found! Skipping...")
             continue
 
-        # Identify which grasp was chosen (SIDE only for splash video)
         final_pose = robot.forward_kinematics(path[-1])
-        grasp_type = "SIDE"  # Force SIDE since we're only using SIDE TSR
+        grasp_type = identify_grasp_type(final_pose, top_tsr, side_tsr)
 
         print(f"  Found: {len(path)} waypoints in {plan_time:.2f}s")
         print(f"  Grasp: {grasp_type}")
