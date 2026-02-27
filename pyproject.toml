@@ -19,11 +19,15 @@ tsr = { path = "../tsr", editable = true }
 [project.optional-dependencies]
 mujoco = ["mujoco>=3.0"]
 eaik = ["eaik"]
+examples = [
+    "matplotlib",
+    "mediapy",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov",
 ]
-all = ["pycbirrt[mujoco,eaik,dev]"]
+all = ["pycbirrt[mujoco,eaik,examples,dev]"]
 
 [build-system]
 requires = ["setuptools>=61.0"]
