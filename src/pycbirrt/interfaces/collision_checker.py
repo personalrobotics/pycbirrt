@@ -16,13 +16,3 @@ class CollisionChecker(Protocol):
         """
         ...
 
-    def is_valid_batch(self, qs: np.ndarray) -> np.ndarray:
-        """Check multiple configurations for collisions.
-
-        Args:
-            qs: Array of shape (N, dof) of joint configurations
-
-        Returns:
-            Boolean array of shape (N,) indicating validity
-        """
-        ...

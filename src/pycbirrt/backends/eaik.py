@@ -1,20 +1,14 @@
 """EAIK backend for analytical inverse kinematics."""
 
-from typing import Protocol
-
 import numpy as np
+
+from pycbirrt.interfaces.collision_checker import CollisionChecker
 
 try:
     from eaik.IK_DH import DhRobot
     from eaik.IK_URDF import UrdfRobot
 except ImportError:
     raise ImportError("EAIK backend requires eaik. Install with: pip install eaik")
-
-
-class CollisionChecker(Protocol):
-    """Protocol for collision checking (matches pycbirrt.interfaces.CollisionChecker)."""
-
-    def is_valid(self, q: np.ndarray) -> bool: ...
 
 
 class EAIKSolver:

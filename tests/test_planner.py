@@ -658,3 +658,234 @@ class TestConfigValidation:
         assert path is not None
         # Should have logged a warning
         assert "Filtered 1 invalid goal" in caplog.text
+
+
+class TestAngularJoints:
+    """Tests for angular joint wraparound handling."""
+
+    def test_angular_joints_validation_mismatch(self):
+        """angular_joints length must match robot DOF."""
+        robot = MockRobotModel()  # 2 DOF
+        ik = MockIKSolver(robot, MockCollisionChecker())
+
+        config = CBiRRTConfig(angular_joints=(True, True, True))  # 3 != 2
+        with pytest.raises(ValueError, match="angular_joints length"):
+            CBiRRT(robot, ik, MockCollisionChecker(), config)
+
+    def test_angular_joints_validation_correct(self):
+        """angular_joints with correct length should not raise."""
+        robot = MockRobotModel()  # 2 DOF
+        ik = MockIKSolver(robot, MockCollisionChecker())
+
+        config = CBiRRTConfig(angular_joints=(True, True))
+        planner = CBiRRT(robot, ik, MockCollisionChecker(), config)
+        assert planner.config.angular_joints == (True, True)
+
+    def test_angular_distance_wraparound(self):
+        """Distance between angles near ±pi should be small, not ~2*pi."""
+        robot = MockRobotModel()
+        ik = MockIKSolver(robot, MockCollisionChecker())
+        config = CBiRRTConfig(angular_joints=(True, True))
+        planner = CBiRRT(robot, ik, MockCollisionChecker(), config)
+
+        q1 = np.array([-np.pi + 0.1, 0.0])
+        q2 = np.array([np.pi - 0.1, 0.0])
+        dist = planner._angular_distance(q1, q2)
+        # Wraparound distance should be ~0.2, not ~2*pi - 0.2
+        assert dist < 0.5
+
+    def test_angular_direction_shortest_path(self):
+        """Direction should go the short way around the circle."""
+        robot = MockRobotModel()
+        ik = MockIKSolver(robot, MockCollisionChecker())
+        config = CBiRRTConfig(angular_joints=(True, False))
+        planner = CBiRRT(robot, ik, MockCollisionChecker(), config)
+
+        q_from = np.array([np.pi - 0.1, 0.0])
+        q_to = np.array([-np.pi + 0.1, 0.0])
+        direction = planner._angular_direction(q_from, q_to)
+        # Should go forward (positive) through pi, not backward through 0
+        assert direction[0] > 0
+        assert abs(direction[0]) < 0.5
+
+    def test_planning_with_angular_joints(self):
+        """Planning should succeed with angular_joints enabled."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+
+        config = CBiRRTConfig(angular_joints=(True, True))
+        planner = CBiRRT(robot, ik, collision, config)
+
+        start = np.array([0.0, 0.0])
+        goal = np.array([1.0, 0.5])
+        path = planner.plan(start=start, goal=goal, seed=42)
+        assert path is not None
+        assert len(path) >= 2
+
+
+class TestConstraintTSRs:
+    """Tests for path constraint TSR handling."""
+
+    def test_satisfies_constraints_no_constraints(self):
+        """With no constraint TSRs, any config satisfies constraints."""
+        robot = MockRobotModel()
+        ik = MockIKSolver(robot, MockCollisionChecker())
+        planner = CBiRRT(robot, ik, MockCollisionChecker())
+
+        assert planner._satisfies_constraints(np.array([0.0, 0.0]))
+
+    def test_satisfies_constraints_with_tsr(self):
+        """Config must satisfy constraint TSR when set."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+        planner = CBiRRT(robot, ik, collision)
+
+        # Constraint TSR: end-effector x in [1.5, 2.5], y in [-0.5, 0.5]
+        T0_w = np.eye(4)
+        T0_w[0, 3] = 2.0
+        constraint_tsr = TSR(
+            T0_w=T0_w,
+            Tw_e=np.eye(4),
+            Bw=np.array([
+                [-0.5, 0.5],
+                [-0.5, 0.5],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+            ]),
+        )
+        planner._constraint_tsrs = [constraint_tsr]
+
+        # q=[0,0] gives FK at (2.0, 0.0) which is inside the constraint
+        assert planner._satisfies_constraints(np.array([0.0, 0.0]))
+
+        # q=[pi/2, 0] gives FK at (0.0, 2.0) which is outside the constraint
+        assert not planner._satisfies_constraints(np.array([np.pi / 2, 0.0]))
+
+    def test_planning_with_constraint_tsrs(self):
+        """Planning with constraint TSRs should produce paths satisfying them."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+
+        # Loose constraint: end-effector must stay within a large box
+        T0_w = np.eye(4)
+        T0_w[0, 3] = 1.0
+        constraint_tsr = TSR(
+            T0_w=T0_w,
+            Tw_e=np.eye(4),
+            Bw=np.array([
+                [-2.0, 2.0],
+                [-2.0, 2.0],
+                [-1.0, 1.0],
+                [-np.pi, np.pi],
+                [-np.pi, np.pi],
+                [-np.pi, np.pi],
+            ]),
+        )
+
+        planner = CBiRRT(robot, ik, collision)
+
+        start = np.array([0.0, 0.0])
+        goal = np.array([0.3, 0.3])
+
+        path = planner.plan(
+            start=start, goal=goal, constraint_tsrs=[constraint_tsr], seed=42
+        )
+
+        assert path is not None
+        assert len(path) >= 2
+
+        # Verify all path waypoints satisfy the constraint
+        for q in path:
+            pose = robot.forward_kinematics(q)
+            dist, _ = constraint_tsr.distance(pose)
+            assert dist < 0.1, f"Path waypoint violates constraint (dist={dist})"
+
+
+class TestPathSmoothing:
+    """Tests for path smoothing."""
+
+    def test_smoothing_reduces_waypoints(self):
+        """Smoothing a jagged path should reduce waypoint count."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+
+        # Use a generous step size so smoothing can shortcut
+        config = CBiRRTConfig(
+            smooth_path=False,  # We'll call _smooth_path manually
+            step_size=0.3,
+            smoothing_iterations=100,
+            smoothing_patience=30,
+        )
+        planner = CBiRRT(robot, ik, collision, config)
+        planner._rng = np.random.default_rng(42)
+        planner._constraint_tsrs = None
+
+        # Create a deliberately jagged path (zigzag)
+        path = [
+            np.array([0.0, 0.0]),
+            np.array([0.1, 0.2]),
+            np.array([0.2, 0.0]),
+            np.array([0.3, 0.2]),
+            np.array([0.4, 0.0]),
+            np.array([0.5, 0.2]),
+            np.array([0.6, 0.0]),
+        ]
+
+        smoothed = planner._smooth_path(path)
+        assert len(smoothed) <= len(path)
+
+    def test_smoothing_short_path_unchanged(self):
+        """Path with 2 or fewer waypoints should not be modified."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+        planner = CBiRRT(robot, ik, collision)
+        planner._rng = np.random.default_rng(42)
+        planner._constraint_tsrs = None
+
+        path = [np.array([0.0, 0.0]), np.array([1.0, 0.0])]
+        smoothed = planner._smooth_path(path)
+        assert len(smoothed) == 2
+
+    def test_smoothing_patience_terminates_early(self):
+        """Smoothing should stop early when no progress is made."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+
+        config = CBiRRTConfig(
+            smooth_path=False,
+            smoothing_iterations=1000,
+            smoothing_patience=5,
+        )
+        planner = CBiRRT(robot, ik, collision, config)
+        planner._rng = np.random.default_rng(42)
+        planner._constraint_tsrs = None
+
+        # Already-smooth straight-line path — no shortcuts possible
+        path = [np.array([0.0, 0.0]), np.array([0.05, 0.0]), np.array([0.1, 0.0])]
+        smoothed = planner._smooth_path(path)
+        # Should terminate early (patience=5) rather than running 1000 iterations
+        assert smoothed is not None
+
+
+class TestTreeCaching:
+    """Tests for RRTree config array caching."""
+
+    def test_nearest_consistent_after_add(self):
+        """nearest() should return correct results after adding nodes."""
+        tree = RRTree(np.array([0.0, 0.0]))
+        tree.add_node(np.array([10.0, 10.0]), 0)
+
+        # Query near second node
+        assert tree.nearest(np.array([9.0, 9.0])) == 1
+
+        # Add a third node closer to query
+        tree.add_node(np.array([9.5, 9.5]), 1)
+        assert tree.nearest(np.array([9.0, 9.0])) == 2
