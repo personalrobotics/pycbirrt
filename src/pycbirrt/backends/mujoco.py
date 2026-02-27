@@ -1,19 +1,13 @@
 """MuJoCo backend for robot model, collision checking, and IK."""
 
-from typing import Protocol
-
 import numpy as np
+
+from pycbirrt.interfaces.collision_checker import CollisionChecker
 
 try:
     import mujoco
 except ImportError:
     raise ImportError("MuJoCo backend requires mujoco. Install with: pip install mujoco")
-
-
-class CollisionChecker(Protocol):
-    """Protocol for collision checking."""
-
-    def is_valid(self, q: np.ndarray) -> bool: ...
 
 
 class MuJoCoRobotModel:

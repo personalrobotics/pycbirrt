@@ -59,6 +59,14 @@ class CBiRRT:
         self.collision = collision_checker
         self.config = config or CBiRRTConfig()
 
+        # Validate angular_joints length matches robot DOF
+        if self.config.angular_joints is not None:
+            if len(self.config.angular_joints) != robot.dof:
+                raise ValueError(
+                    f"angular_joints length ({len(self.config.angular_joints)}) "
+                    f"must match robot DOF ({robot.dof})"
+                )
+
         self._rng = np.random.default_rng()
         self._constraint_tsrs: list[TSR] | None = None
         self._start_tsrs: list[TSR] | None = None

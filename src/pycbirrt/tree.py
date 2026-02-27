@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import numpy as np
 
 
@@ -28,6 +28,7 @@ class RRTree:
 
         self.nodes: list[Node] = []
         self._configs: list[np.ndarray] = []
+        self._configs_array: np.ndarray | None = None  # Cached for nearest()
 
         # Add all configs as roots
         for config in configs:
@@ -47,6 +48,7 @@ class RRTree:
         node = Node(config=config.copy(), parent=parent_idx)
         self.nodes.append(node)
         self._configs.append(config.copy())
+        self._configs_array = None  # Invalidate cache
         return len(self.nodes) - 1
 
     def nearest(self, config: np.ndarray) -> int:
@@ -58,8 +60,9 @@ class RRTree:
         Returns:
             Index of nearest node
         """
-        configs = np.array(self._configs)
-        distances = np.linalg.norm(configs - config, axis=1)
+        if self._configs_array is None or len(self._configs_array) != len(self._configs):
+            self._configs_array = np.array(self._configs)
+        distances = np.linalg.norm(self._configs_array - config, axis=1)
         return int(np.argmin(distances))
 
     def get_path_to_root(self, node_idx: int) -> list[np.ndarray]:
