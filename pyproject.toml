@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-tsr = { path = "../tsr", editable = true }
+tsr = { workspace = true }
 
 [project.optional-dependencies]
 mujoco = ["mujoco>=3.0"]
