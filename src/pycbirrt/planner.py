@@ -4,6 +4,7 @@ import time
 
 import numpy as np
 from tsr import TSR
+from tsr import choose_tsr_index
 from tsr.sampling import sample_from_tsrs
 
 from pycbirrt.config import CBiRRTConfig
@@ -21,12 +22,26 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PlanResult:
-    """Result of a planning query."""
+    """Result of a planning query.
+
+    Attributes:
+        path: Joint configurations from start to goal, or None if failed.
+        start_index: Index into the start input (config list or TSR list)
+            that the path begins from. Always 0 for single start.
+        goal_index: Index into the goal input (config list or TSR list)
+            that the path ends at. Always 0 for single goal.
+        iterations: Number of RRT iterations used.
+        planning_time: Wall-clock time in seconds.
+        tree_sizes: Tuple of (start_tree_size, goal_tree_size).
+        success: Whether a path was found.
+    """
 
     path: list[np.ndarray] | None
-    tree_start: RRTree
-    tree_goal: RRTree
+    start_index: int
+    goal_index: int
     iterations: int
+    planning_time: float
+    tree_sizes: tuple[int, int]
     success: bool
 
 
@@ -143,28 +158,48 @@ class CBiRRT:
         # Initialize start configurations
         # Validation errors (invalid configs) should propagate up
         # Only sampling failures return None
-        start_roots = self._initialize_tree_configs(
+        start_roots, start_source_indices = self._initialize_tree_configs(
             start_configs, start_tsrs, "Start"
         )
 
         # Initialize goal configurations
-        goal_roots = self._initialize_tree_configs(
+        goal_roots, goal_source_indices = self._initialize_tree_configs(
             goal_configs, goal_tsrs, "Goal"
         )
 
-        # Initialize trees with multiple roots
-        tree_start = RRTree(start_roots if len(start_roots) > 1 else start_roots[0])
-        tree_goal = RRTree(goal_roots if len(goal_roots) > 1 else goal_roots[0])
+        # Initialize trees with multiple roots and source indices
+        tree_start = RRTree(
+            start_roots if len(start_roots) > 1 else start_roots[0],
+            source_indices=start_source_indices,
+        )
+        tree_goal = RRTree(
+            goal_roots if len(goal_roots) > 1 else goal_roots[0],
+            source_indices=goal_source_indices,
+        )
 
         # Track start time for timeout
         start_time = time.monotonic()
+
+        def _make_result(path, iteration, success):
+            elapsed = time.monotonic() - start_time
+            si = tree_start.get_root_source_index(0) if success else 0
+            gi = tree_goal.get_root_source_index(0) if success else 0
+            return PlanResult(
+                path=path,
+                start_index=si,
+                goal_index=gi,
+                iterations=iteration,
+                planning_time=elapsed,
+                tree_sizes=(len(tree_start), len(tree_goal)),
+                success=success,
+            )
 
         # Main planning loop
         for iteration in range(self.config.max_iterations):
             # Check timeout
             if time.monotonic() - start_time > self.config.timeout:
                 if return_details:
-                    return PlanResult(None, tree_start, tree_goal, iteration, False)
+                    return _make_result(None, iteration, False)
                 return None
 
             # Alternate which tree we extend
@@ -197,12 +232,29 @@ class CBiRRT:
                 if self.config.smooth_path:
                     path = self._smooth_path(path)
 
+                # Determine which start/goal roots were used
+                if tree_a is tree_start:
+                    si = tree_start.get_root_source_index(grow_idx)
+                    gi = tree_goal.get_root_source_index(connect_idx)
+                else:
+                    si = tree_start.get_root_source_index(connect_idx)
+                    gi = tree_goal.get_root_source_index(grow_idx)
+
+                elapsed = time.monotonic() - start_time
                 if return_details:
-                    return PlanResult(path, tree_start, tree_goal, iteration + 1, True)
+                    return PlanResult(
+                        path=path,
+                        start_index=si if si is not None else 0,
+                        goal_index=gi if gi is not None else 0,
+                        iterations=iteration + 1,
+                        planning_time=elapsed,
+                        tree_sizes=(len(tree_start), len(tree_goal)),
+                        success=True,
+                    )
                 return path
 
         if return_details:
-            return PlanResult(None, tree_start, tree_goal, self.config.max_iterations, False)
+            return _make_result(None, self.config.max_iterations, False)
         return None
 
     def _sample_from_tsrs(
@@ -233,7 +285,7 @@ class CBiRRT:
 
     def _sample_configs_from_tsrs(
         self, tsrs: list[TSR], target_count: int, must_satisfy_constraints: bool = False
-    ) -> list[np.ndarray]:
+    ) -> tuple[list[np.ndarray], list[int]]:
         """Sample multiple valid configurations from TSRs for tree initialization.
 
         Samples poses and collects IK solutions from each (up to max_ik_per_pose)
@@ -246,16 +298,19 @@ class CBiRRT:
             must_satisfy_constraints: If True, also check path constraint TSRs
 
         Returns:
-            List of valid configurations (may be less than target_count)
+            Tuple of (configs, tsr_indices) where tsr_indices[i] is the index
+            into tsrs that produced configs[i].
         """
         configs = []
+        tsr_indices = []
         max_per_pose = self.config.max_ik_per_pose
 
         for _ in range(self.config.tsr_samples):
             if len(configs) >= target_count:
                 break
 
-            pose = sample_from_tsrs(tsrs, self._rng)
+            tsr_idx = choose_tsr_index(tsrs, self._rng)
+            pose = tsrs[tsr_idx].sample()
             solutions = self.ik.solve_valid(pose)
 
             # Cap solutions per pose for diversity
@@ -266,11 +321,12 @@ class CBiRRT:
                 if must_satisfy_constraints and not self._satisfies_constraints(q):
                     continue
                 configs.append(q)
+                tsr_indices.append(tsr_idx)
                 added_from_pose += 1
                 if len(configs) >= target_count:
                     break
 
-        return configs
+        return configs, tsr_indices
 
     def _satisfies_constraints(self, q: np.ndarray) -> bool:
         """Check if configuration satisfies all path constraint TSRs.
@@ -315,7 +371,7 @@ class CBiRRT:
         fixed_configs: list[np.ndarray] | None,
         tsrs: list[TSR] | None,
         config_type: str,  # "Start" or "Goal"
-    ) -> list[np.ndarray]:
+    ) -> tuple[list[np.ndarray], list[int]]:
         """Initialize tree with fixed configs and TSR samples.
 
         Validates all fixed configurations before proceeding. If some configs
@@ -329,7 +385,11 @@ class CBiRRT:
             config_type: "Start" or "Goal" for error messages
 
         Returns:
-            List of valid root configurations
+            Tuple of (valid_configs, source_indices) where source_indices[i]
+            is the index into fixed_configs or tsrs that produced config i.
+            For fixed configs, the index is the position in the input list.
+            For TSR-sampled configs, the index is currently 0 (TSR index
+            tracking requires changes to sample_from_tsrs).
 
         Raises:
             AllStartConfigurationsInCollision: If all start configs are in collision
@@ -339,6 +399,7 @@ class CBiRRT:
             ValueError: If no configs available at all
         """
         valid_configs = []
+        source_indices = []
         invalid_details = []
         all_in_collision = True
 
@@ -348,6 +409,7 @@ class CBiRRT:
                 is_valid, reason = self._check_config(q)
                 if is_valid:
                     valid_configs.append(q)
+                    source_indices.append(i)
                 else:
                     invalid_details.append(f"{config_type}[{i}]: {reason}")
                     if reason != "in collision":
@@ -365,12 +427,14 @@ class CBiRRT:
             must_satisfy = self._constraint_tsrs is not None
             needed = max(0, self.config.num_tree_roots - len(valid_configs))
             if needed > 0:
-                sampled = self._sample_configs_from_tsrs(tsrs, needed, must_satisfy)
-                valid_configs.extend(sampled)
+                sampled, tsr_indices = self._sample_configs_from_tsrs(tsrs, needed, must_satisfy)
+                for q, tsr_idx in zip(sampled, tsr_indices):
+                    valid_configs.append(q)
+                    source_indices.append(tsr_idx)
 
         # If we have valid configs, return them
         if valid_configs:
-            return valid_configs
+            return valid_configs, source_indices
 
         # No valid configs - raise appropriate exception
         if fixed_configs is not None and len(fixed_configs) > 0:

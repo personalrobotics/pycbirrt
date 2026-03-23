@@ -889,3 +889,138 @@ class TestTreeCaching:
         # Add a third node closer to query
         tree.add_node(np.array([9.5, 9.5]), 1)
         assert tree.nearest(np.array([9.0, 9.0])) == 2
+
+
+class TestPlanResultIndices:
+    """Verify start_index and goal_index point to the correct TSR/config."""
+
+    @pytest.fixture
+    def planner(self):
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+        return CBiRRT(robot=robot, ik_solver=ik, collision_checker=collision), robot
+
+    def _make_point_tsr(self, x, y, tol=0.1):
+        """Create a small TSR at (x, y)."""
+        T0_w = np.eye(4)
+        T0_w[0, 3] = x
+        T0_w[1, 3] = y
+        Bw = np.array([
+            [-tol, tol], [-tol, tol], [0, 0],
+            [0, 0], [0, 0], [0, 0],
+        ])
+        return TSR(T0_w=T0_w, Tw_e=np.eye(4), Bw=Bw)
+
+    def test_goal_index_matches_reached_tsr(self, planner):
+        """goal_index should point to the TSR closest to path[-1]."""
+        cbrt, robot = planner
+
+        start = np.array([0.0, 0.5])
+
+        # Two well-separated goal TSRs
+        tsr_a = self._make_point_tsr(1.5, 0.5)  # index 0
+        tsr_b = self._make_point_tsr(-1.5, 0.5)  # index 1
+
+        result = cbrt.plan(
+            start=start,
+            goal_tsrs=[tsr_a, tsr_b],
+            return_details=True,
+        )
+        assert result.success
+
+        # Compute EE pose at path end
+        ee_pose = robot.forward_kinematics(result.path[-1])
+
+        # The reached TSR should have ~zero distance
+        dist_a, _ = tsr_a.distance(ee_pose)
+        dist_b, _ = tsr_b.distance(ee_pose)
+
+        if result.goal_index == 0:
+            assert dist_a < 0.15, f"goal_index=0 but dist to TSR[0]={dist_a:.3f}"
+            assert dist_b > dist_a, "goal_index=0 but TSR[1] is closer"
+        else:
+            assert dist_b < 0.15, f"goal_index=1 but dist to TSR[1]={dist_b:.3f}"
+            assert dist_a > dist_b, "goal_index=1 but TSR[0] is closer"
+
+    def test_start_index_matches_reached_tsr(self, planner):
+        """start_index should point to the TSR closest to path[0]."""
+        cbrt, robot = planner
+
+        goal = np.array([0.0, 0.5])
+
+        # Two well-separated start TSRs
+        tsr_a = self._make_point_tsr(1.5, 0.5)  # index 0
+        tsr_b = self._make_point_tsr(-1.5, 0.5)  # index 1
+
+        result = cbrt.plan(
+            start_tsrs=[tsr_a, tsr_b],
+            goal=goal,
+            return_details=True,
+        )
+        assert result.success
+
+        # Compute EE pose at path start
+        ee_pose = robot.forward_kinematics(result.path[0])
+
+        dist_a, _ = tsr_a.distance(ee_pose)
+        dist_b, _ = tsr_b.distance(ee_pose)
+
+        if result.start_index == 0:
+            assert dist_a < 0.15, f"start_index=0 but dist to TSR[0]={dist_a:.3f}"
+            assert dist_b > dist_a, "start_index=0 but TSR[1] is closer"
+        else:
+            assert dist_b < 0.15, f"start_index=1 but dist to TSR[1]={dist_b:.3f}"
+            assert dist_a > dist_b, "start_index=1 but TSR[0] is closer"
+
+    def test_goal_index_with_multiple_configs(self, planner):
+        """goal_index with config list should match path[-1]."""
+        cbrt, robot = planner
+
+        start = np.array([0.0, 0.5])
+        goal_a = np.array([1.0, 0.5])  # index 0
+        goal_b = np.array([-1.0, 0.5])  # index 1
+
+        result = cbrt.plan(
+            start=start,
+            goal=[goal_a, goal_b],
+            return_details=True,
+        )
+        assert result.success
+
+        end = result.path[-1]
+        dist_a = np.linalg.norm(end - goal_a)
+        dist_b = np.linalg.norm(end - goal_b)
+
+        if result.goal_index == 0:
+            assert dist_a < dist_b
+        else:
+            assert dist_b < dist_a
+
+    def test_single_start_goal_returns_zero(self, planner):
+        """Single start and goal should return index 0."""
+        cbrt, robot = planner
+
+        result = cbrt.plan(
+            start=np.array([0.0, 0.5]),
+            goal=np.array([0.5, 0.5]),
+            return_details=True,
+        )
+        assert result.success
+        assert result.start_index == 0
+        assert result.goal_index == 0
+
+    def test_planning_stats_populated(self, planner):
+        """Planning stats should be populated on success and failure."""
+        cbrt, robot = planner
+
+        result = cbrt.plan(
+            start=np.array([0.0, 0.5]),
+            goal=np.array([0.5, 0.5]),
+            return_details=True,
+        )
+        assert result.success
+        assert result.planning_time > 0
+        assert result.iterations > 0
+        assert result.tree_sizes[0] > 0
+        assert result.tree_sizes[1] > 0
