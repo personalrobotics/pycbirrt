@@ -8,17 +8,24 @@ class Node:
 
     config: np.ndarray
     parent: int | None = None  # Index of parent node, None for root
+    source_index: int | None = None  # Index into the input list that produced this root
 
 
 class RRTree:
     """Rapidly-exploring Random Tree data structure."""
 
-    def __init__(self, root_config: np.ndarray | list[np.ndarray]):
+    def __init__(
+        self,
+        root_config: np.ndarray | list[np.ndarray],
+        source_indices: list[int] | None = None,
+    ):
         """Initialize tree with one or more root nodes.
 
         Args:
             root_config: Single configuration or list of configurations.
                         All provided configs become roots (parent=None).
+            source_indices: Optional index per root, tracking which input
+                           (config or TSR) produced it. Same length as configs.
         """
         # Normalize to list
         if isinstance(root_config, np.ndarray):
@@ -31,8 +38,9 @@ class RRTree:
         self._configs_array: np.ndarray | None = None  # Cached for nearest()
 
         # Add all configs as roots
-        for config in configs:
-            self.nodes.append(Node(config=config.copy(), parent=None))
+        for i, config in enumerate(configs):
+            src_idx = source_indices[i] if source_indices is not None else i
+            self.nodes.append(Node(config=config.copy(), parent=None, source_index=src_idx))
             self._configs.append(config.copy())
 
     def add_node(self, config: np.ndarray, parent_idx: int) -> int:
@@ -83,6 +91,13 @@ class RRTree:
 
     def __len__(self) -> int:
         return len(self.nodes)
+
+    def get_root_source_index(self, node_idx: int) -> int | None:
+        """Trace a node back to its root and return the source_index."""
+        idx = node_idx
+        while self.nodes[idx].parent is not None:
+            idx = self.nodes[idx].parent
+        return self.nodes[idx].source_index
 
     @property
     def num_roots(self) -> int:
