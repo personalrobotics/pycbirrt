@@ -59,6 +59,28 @@ planner = CBiRRT(robot, ik_solver, collision_checker)
 path = planner.plan(start_config, goal_tsrs=[goal_tsr])
 ```
 
+## Plan Result
+
+Use `return_details=True` to get planning stats and which start/goal was selected:
+
+```python
+result = planner.plan(
+    start=start_config,
+    goal_tsrs=[tsr_can_0, tsr_can_1, tsr_can_2],
+    return_details=True,
+)
+
+if result.success:
+    result.path            # joint waypoints from start to goal
+    result.goal_index      # which TSR was reached (index into goal_tsrs)
+    result.start_index     # which start was used (0 for single start)
+    result.planning_time   # wall-clock seconds
+    result.iterations      # RRT iterations used
+    result.tree_sizes      # (start_tree_nodes, goal_tree_nodes)
+```
+
+Indices work for any input type — config lists, TSR lists, or single values (always 0).
+
 ## How It Works
 
 <p align="center">
