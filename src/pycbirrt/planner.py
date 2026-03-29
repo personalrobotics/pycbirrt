@@ -285,7 +285,7 @@ class CBiRRT:
 
     def _sample_configs_from_tsrs(
         self, tsrs: list[TSR], target_count: int, must_satisfy_constraints: bool = False
-    ) -> tuple[list[np.ndarray], list[int]]:
+    ) -> tuple[list[np.ndarray], list[int], dict[str, int]]:
         """Sample multiple valid configurations from TSRs for tree initialization.
 
         Samples poses and collects IK solutions from each (up to max_ik_per_pose)
@@ -298,11 +298,14 @@ class CBiRRT:
             must_satisfy_constraints: If True, also check path constraint TSRs
 
         Returns:
-            Tuple of (configs, tsr_indices) where tsr_indices[i] is the index
-            into tsrs that produced configs[i].
+            Tuple of (configs, tsr_indices, stats) where:
+            - configs: valid configurations
+            - tsr_indices[i]: index into tsrs that produced configs[i]
+            - stats: rejection counts {"ik_failed", "in_collision", "constraint_violated"}
         """
         configs = []
         tsr_indices = []
+        stats = {"ik_failed": 0, "in_collision": 0, "constraint_violated": 0}
         max_per_pose = self.config.max_ik_per_pose
 
         for _ in range(self.config.tsr_samples):
@@ -313,14 +316,20 @@ class CBiRRT:
             pose = tsrs[tsr_idx].sample()
             solutions = self.ik.solve_valid(pose)
 
+            if not solutions:
+                stats["ik_failed"] += 1
+                continue
+
             # Cap solutions per pose for diversity
             added_from_pose = 0
             for q in solutions:
                 if added_from_pose >= max_per_pose:
                     break
                 if not self.collision.is_valid(q):
+                    stats["in_collision"] += 1
                     continue
                 if must_satisfy_constraints and not self._satisfies_constraints(q):
+                    stats["constraint_violated"] += 1
                     continue
                 configs.append(q)
                 tsr_indices.append(tsr_idx)
@@ -328,7 +337,7 @@ class CBiRRT:
                 if len(configs) >= target_count:
                     break
 
-        return configs, tsr_indices
+        return configs, tsr_indices, stats
 
     def _satisfies_constraints(self, q: np.ndarray) -> bool:
         """Check if configuration satisfies all path constraint TSRs.
@@ -425,11 +434,14 @@ class CBiRRT:
             )
 
         # Sample from TSRs to fill up to num_tree_roots configs
+        tsr_stats = None
         if tsrs is not None:
             must_satisfy = self._constraint_tsrs is not None
             needed = max(0, self.config.num_tree_roots - len(valid_configs))
             if needed > 0:
-                sampled, tsr_indices = self._sample_configs_from_tsrs(tsrs, needed, must_satisfy)
+                sampled, tsr_indices, tsr_stats = self._sample_configs_from_tsrs(
+                    tsrs, needed, must_satisfy,
+                )
                 for q, tsr_idx in zip(sampled, tsr_indices):
                     valid_configs.append(q)
                     source_indices.append(tsr_idx)
@@ -452,6 +464,26 @@ class CBiRRT:
                     raise AllGoalConfigurationsInCollision(n_configs, invalid_details)
                 else:
                     raise AllGoalConfigurationsInvalid(n_configs, invalid_details)
+
+        # TSR sampling failed — report why
+        if tsr_stats is not None:
+            total_attempts = sum(tsr_stats.values())
+            if total_attempts > 0:
+                details = []
+                if tsr_stats["ik_failed"]:
+                    details.append(f"{tsr_stats['ik_failed']} IK unreachable")
+                if tsr_stats["in_collision"]:
+                    details.append(f"{tsr_stats['in_collision']} in collision")
+                if tsr_stats["constraint_violated"]:
+                    details.append(f"{tsr_stats['constraint_violated']} constraint violated")
+                summary = ", ".join(details)
+
+                if tsr_stats["in_collision"] and not tsr_stats["ik_failed"]:
+                    Ex = AllGoalConfigurationsInCollision if config_type == "Goal" else AllStartConfigurationsInCollision
+                    raise Ex(tsr_stats["in_collision"], [summary])
+                else:
+                    Ex = AllGoalConfigurationsInvalid if config_type == "Goal" else AllStartConfigurationsInvalid
+                    raise Ex(total_attempts, [summary])
 
         # No configs provided at all
         raise ValueError(
