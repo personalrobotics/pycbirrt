@@ -232,7 +232,7 @@ class CBiRRT:
                 if self.config.smooth_path:
                     path = self._smooth_path(path)
 
-                # Determine which start/goal roots were used
+                # Determine which start/goal was used by tracing to root
                 if tree_a is tree_start:
                     si = tree_start.get_root_source_index(grow_idx)
                     gi = tree_goal.get_root_source_index(connect_idx)
@@ -318,6 +318,8 @@ class CBiRRT:
             for q in solutions:
                 if added_from_pose >= max_per_pose:
                     break
+                if not self.collision.is_valid(q):
+                    continue
                 if must_satisfy_constraints and not self._satisfies_constraints(q):
                     continue
                 configs.append(q)
