@@ -34,6 +34,7 @@ class PlanResult:
         planning_time: Wall-clock time in seconds.
         tree_sizes: Tuple of (start_tree_size, goal_tree_size).
         success: Whether a path was found.
+        failure_reason: Human-readable reason for failure, or None if success.
     """
 
     path: list[np.ndarray] | None
@@ -43,6 +44,7 @@ class PlanResult:
     planning_time: float
     tree_sizes: tuple[int, int]
     success: bool
+    failure_reason: str | None = None
 
 
 class CBiRRT:
@@ -180,7 +182,7 @@ class CBiRRT:
         # Track start time for timeout
         start_time = time.monotonic()
 
-        def _make_result(path, iteration, success):
+        def _make_result(path, iteration, success, failure_reason=None):
             elapsed = time.monotonic() - start_time
             si = tree_start.get_root_source_index(0) if success else 0
             gi = tree_goal.get_root_source_index(0) if success else 0
@@ -192,14 +194,20 @@ class CBiRRT:
                 planning_time=elapsed,
                 tree_sizes=(len(tree_start), len(tree_goal)),
                 success=success,
+                failure_reason=failure_reason,
             )
 
         # Main planning loop
         for iteration in range(self.config.max_iterations):
             # Check timeout
             if time.monotonic() - start_time > self.config.timeout:
+                reason = (
+                    f"Timeout after {self.config.timeout:.1f}s, {iteration} iterations. "
+                    f"Trees: start={len(tree_start)} nodes, goal={len(tree_goal)} nodes. "
+                    f"Trees could not connect."
+                )
                 if return_details:
-                    return _make_result(None, iteration, False)
+                    return _make_result(None, iteration, False, failure_reason=reason)
                 return None
 
             # Alternate which tree we extend
@@ -253,8 +261,13 @@ class CBiRRT:
                     )
                 return path
 
+        reason = (
+            f"Max iterations ({self.config.max_iterations}) reached. "
+            f"Trees: start={len(tree_start)} nodes, goal={len(tree_goal)} nodes. "
+            f"Trees could not connect."
+        )
         if return_details:
-            return _make_result(None, self.config.max_iterations, False)
+            return _make_result(None, self.config.max_iterations, False, failure_reason=reason)
         return None
 
     def _sample_from_tsrs(
