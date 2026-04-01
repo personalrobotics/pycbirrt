@@ -199,6 +199,13 @@ class CBiRRT:
 
         # Main planning loop
         for iteration in range(self.config.max_iterations):
+            # Check abort
+            if self.config.abort_fn is not None and self.config.abort_fn():
+                reason = "Aborted by user"
+                if return_details:
+                    return _make_result(None, iteration, False, failure_reason=reason)
+                return None
+
             # Check timeout
             if time.monotonic() - start_time > self.config.timeout:
                 reason = (
