@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -48,3 +49,6 @@ class CBiRRTConfig:
     # If None, all joints are treated as linear
     # If provided, boolean array where True = angular joint (handles 2*pi wraparound)
     angular_joints: tuple[bool, ...] | None = None
+
+    # Abort callback — return True to stop planning early
+    abort_fn: Callable[[], bool] | None = field(default=None, repr=False)
