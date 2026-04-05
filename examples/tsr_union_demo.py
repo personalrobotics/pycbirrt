@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 """Demo: TSR Union planning with multiple grasp approaches.
 
 This example demonstrates planning to a union of goal TSRs - the planner
@@ -24,16 +27,16 @@ import argparse
 import os
 from pathlib import Path
 
-import numpy as np
 import mujoco
+import numpy as np
+from tsr import TSR
 
 from pycbirrt import CBiRRT, CBiRRTConfig
 from pycbirrt.backends.mujoco import (
-    MuJoCoRobotModel,
     MuJoCoCollisionChecker,
     MuJoCoIKSolver,
+    MuJoCoRobotModel,
 )
-from tsr import TSR
 
 # Optional EAIK for faster planning
 try:
@@ -48,9 +51,7 @@ def get_menagerie_path() -> Path:
     """Get path to MuJoCo Menagerie."""
     path = os.environ.get("MUJOCO_MENAGERIE_PATH")
     if path is None:
-        raise EnvironmentError(
-            "Set MUJOCO_MENAGERIE_PATH to your mujoco_menagerie clone"
-        )
+        raise EnvironmentError("Set MUJOCO_MENAGERIE_PATH to your mujoco_menagerie clone")
     return Path(path)
 
 
@@ -174,23 +175,21 @@ def create_grasp_tsrs(target_pos: np.ndarray) -> tuple[TSR, TSR]:
     T_top = np.eye(4)
     T_top[:3, 3] = target_pos + np.array([0, 0, standoff_top])
     # Rotation: gripper z points DOWN (180 deg rotation around x)
-    T_top[:3, :3] = np.array([
-        [1, 0, 0],
-        [0, -1, 0],
-        [0, 0, -1]
-    ])
+    T_top[:3, :3] = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
 
     top_tsr = TSR(
         T0_w=T_top,
         Tw_e=np.eye(4),
-        Bw=np.array([
-            [-0.03, 0.03],   # x tolerance
-            [-0.03, 0.03],   # y tolerance
-            [0, 0.08],       # z: can be higher (more room for IK)
-            [-0.02, 0.02],   # roll: small tolerance
-            [-0.02, 0.02],   # pitch: small tolerance
-            [-np.pi, np.pi]  # yaw: full rotation around vertical (approach from any direction)
-        ])
+        Bw=np.array(
+            [
+                [-0.03, 0.03],  # x tolerance
+                [-0.03, 0.03],  # y tolerance
+                [0, 0.08],  # z: can be higher (more room for IK)
+                [-0.02, 0.02],  # roll: small tolerance
+                [-0.02, 0.02],  # pitch: small tolerance
+                [-np.pi, np.pi],  # yaw: full rotation around vertical (approach from any direction)
+            ]
+        ),
     )
 
     # === SIDE GRASP ===
@@ -209,24 +208,28 @@ def create_grasp_tsrs(target_pos: np.ndarray) -> tuple[TSR, TSR]:
     #   gripper z-axis (approach) -> -X (toward cylinder)
     #   gripper y-axis (up) -> +Z (world up)
     #   gripper x-axis -> +Y (to the side)
-    Tw_e_side = np.array([
-        [0, 0, -1, standoff_side],  # world X = -gripper_z, translation +X
-        [1, 0, 0, 0],               # world Y = gripper_x
-        [0, 1, 0, 0],               # world Z = gripper_y
-        [0, 0, 0, 1],
-    ])
+    Tw_e_side = np.array(
+        [
+            [0, 0, -1, standoff_side],  # world X = -gripper_z, translation +X
+            [1, 0, 0, 0],  # world Y = gripper_x
+            [0, 1, 0, 0],  # world Z = gripper_y
+            [0, 0, 0, 1],
+        ]
+    )
 
     side_tsr = TSR(
         T0_w=T_side,
         Tw_e=Tw_e_side,
-        Bw=np.array([
-            [0, 0.06],       # x: can be further back
-            [-0.03, 0.03],   # y tolerance
-            [-0.03, 0.03],   # z tolerance
-            [-0.1, 0.1],     # roll: some tolerance
-            [-0.1, 0.1],     # pitch: some tolerance
-            [-np.pi, np.pi]  # yaw: full 360 deg freedom around cylinder
-        ])
+        Bw=np.array(
+            [
+                [0, 0.06],  # x: can be further back
+                [-0.03, 0.03],  # y tolerance
+                [-0.03, 0.03],  # z tolerance
+                [-0.1, 0.1],  # roll: some tolerance
+                [-0.1, 0.1],  # pitch: some tolerance
+                [-np.pi, np.pi],  # yaw: full 360 deg freedom around cylinder
+            ]
+        ),
     )
 
     return top_tsr, side_tsr
@@ -325,7 +328,7 @@ def render_multi_grasp_video(
     side_count = sum(1 for c in grasp_cycles if c["grasp_type"] == "SIDE")
 
     print(f"\nSaved video to {output_path}")
-    print(f"  {len(grasp_cycles)} grasp cycles, {len(frames)} frames, ~{len(frames)/fps:.1f}s")
+    print(f"  {len(grasp_cycles)} grasp cycles, {len(frames)} frames, ~{len(frames) / fps:.1f}s")
     print(f"  Grasps: {top_count} TOP-DOWN, {side_count} SIDE")
 
 
@@ -401,14 +404,10 @@ def generate_target_positions(num_positions: int, rng: np.random.Generator) -> l
 
 def main():
     parser = argparse.ArgumentParser(description="TSR Union demo: multiple grasp approaches")
-    parser.add_argument("--output", "-o", default="/tmp/tsr_union_demo.mp4",
-                        help="Output video path")
-    parser.add_argument("--grasps", type=int, default=6,
-                        help="Number of grasp cycles to show")
-    parser.add_argument("--seed", type=int, default=None,
-                        help="Random seed (None = random each run)")
-    parser.add_argument("--interactive", "-i", action="store_true",
-                        help="Use interactive viewer instead of video")
+    parser.add_argument("--output", "-o", default="/tmp/tsr_union_demo.mp4", help="Output video path")
+    parser.add_argument("--grasps", type=int, default=6, help="Number of grasp cycles to show")
+    parser.add_argument("--seed", type=int, default=None, help="Random seed (None = random each run)")
+    parser.add_argument("--interactive", "-i", action="store_true", help="Use interactive viewer instead of video")
     args = parser.parse_args()
 
     menagerie = get_menagerie_path()
@@ -456,15 +455,15 @@ def main():
     planner = CBiRRT(robot, ik_solver, collision, config)
 
     # Start configuration (home)
-    start = np.array([0, -np.pi/2, np.pi/2, -np.pi/2, -np.pi/2, 0])
+    start = np.array([0, -np.pi / 2, np.pi / 2, -np.pi / 2, -np.pi / 2, 0])
 
     print("\n" + "=" * 60)
     print("TSR UNION DEMO: Multiple Grasp Approaches")
     print("=" * 60)
-    print(f"Robot: UR5e + Robotiq 2F85 gripper")
-    print(f"Two grasp approaches:")
-    print(f"  1. TOP-DOWN: gripper pointing down from above")
-    print(f"  2. SIDE: gripper pointing horizontally from front")
+    print("Robot: UR5e + Robotiq 2F85 gripper")
+    print("Two grasp approaches:")
+    print("  1. TOP-DOWN: gripper pointing down from above")
+    print("  2. SIDE: gripper pointing horizontally from front")
     print(f"\nPlanning {args.grasps} grasps to moving targets...")
     print("=" * 60)
 
@@ -492,7 +491,7 @@ def main():
         plan_time = time.perf_counter() - t0
 
         if path is None:
-            print(f"  No path found! Skipping...")
+            print("  No path found! Skipping...")
             continue
 
         final_pose = robot.forward_kinematics(path[-1])
@@ -501,11 +500,13 @@ def main():
         print(f"  Found: {len(path)} waypoints in {plan_time:.2f}s")
         print(f"  Grasp: {grasp_type}")
 
-        grasp_cycles.append({
-            "path": path,
-            "target_pos": target_pos,
-            "grasp_type": grasp_type,
-        })
+        grasp_cycles.append(
+            {
+                "path": path,
+                "target_pos": target_pos,
+                "grasp_type": grasp_type,
+            }
+        )
 
     if not grasp_cycles:
         print("\nNo paths found!")
@@ -514,8 +515,8 @@ def main():
     # Summary
     top_count = sum(1 for c in grasp_cycles if c["grasp_type"] == "TOP-DOWN")
     side_count = sum(1 for c in grasp_cycles if c["grasp_type"] == "SIDE")
-    print(f"\n" + "=" * 60)
-    print(f"PLANNING COMPLETE")
+    print("\n" + "=" * 60)
+    print("PLANNING COMPLETE")
     print(f"  {len(grasp_cycles)} successful grasps")
     print(f"  {top_count} TOP-DOWN, {side_count} SIDE")
     print("=" * 60)
@@ -523,15 +524,11 @@ def main():
     # Visualize
     if args.interactive:
         # For interactive mode, just show the first grasp cycle looping
-        visualize_interactive(
-            model, data,
-            grasp_cycles[0]["path"],
-            joints,
-            grasp_cycles[0]["grasp_type"]
-        )
+        visualize_interactive(model, data, grasp_cycles[0]["path"], joints, grasp_cycles[0]["grasp_type"])
     else:
         render_multi_grasp_video(
-            model, data,
+            model,
+            data,
             grasp_cycles,
             joints,
             output_path=args.output,

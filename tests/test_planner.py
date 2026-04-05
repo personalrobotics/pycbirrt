@@ -1,10 +1,13 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 """Tests for CBiRRT planner."""
 
 import numpy as np
 import pytest
 from tsr import TSR
 
-from pycbirrt import CBiRRT, CBiRRTConfig, AllStartConfigurationsInCollision
+from pycbirrt import AllStartConfigurationsInCollision, CBiRRT, CBiRRTConfig
 from pycbirrt.tree import RRTree
 
 
@@ -55,9 +58,7 @@ class MockIKSolver:
         self.robot = robot or MockRobotModel()
         self.collision = collision_checker or MockCollisionChecker()
 
-    def solve(
-        self, pose: np.ndarray, q_init: np.ndarray | None = None
-    ) -> list[np.ndarray]:
+    def solve(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Return all kinematic IK solutions (unvalidated).
 
         Note: q_init is ignored (analytical solver finds all solutions).
@@ -76,16 +77,12 @@ class MockIKSolver:
         solutions = []
         for sign in [1, -1]:
             q2 = sign * np.arccos(cos_q2)
-            q1 = np.arctan2(y, x) - np.arctan2(
-                self.robot.l2 * np.sin(q2), self.robot.l1 + self.robot.l2 * np.cos(q2)
-            )
+            q1 = np.arctan2(y, x) - np.arctan2(self.robot.l2 * np.sin(q2), self.robot.l1 + self.robot.l2 * np.cos(q2))
             solutions.append(np.array([q1, q2]))
 
         return solutions
 
-    def solve_valid(
-        self, pose: np.ndarray, q_init: np.ndarray | None = None
-    ) -> list[np.ndarray]:
+    def solve_valid(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Return only valid IK solutions (within limits, collision-free).
 
         Note: q_init is ignored (analytical solver finds all solutions).
@@ -187,14 +184,16 @@ class TestCBiRRT:
         goal_tsr = TSR(
             T0_w=T0_w,
             Tw_e=np.eye(4),
-            Bw=np.array([
-                [-0.1, 0.1],
-                [-0.1, 0.1],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-            ]),
+            Bw=np.array(
+                [
+                    [-0.1, 0.1],
+                    [-0.1, 0.1],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                ]
+            ),
         )
 
         path = planner.plan(start, goal_tsrs=[goal_tsr], seed=42)
@@ -262,14 +261,16 @@ class TestCBiRRT:
         goal_tsr = TSR(
             T0_w=T0_w,
             Tw_e=np.eye(4),
-            Bw=np.array([
-                [-0.1, 0.1],
-                [-0.1, 0.1],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-            ]),
+            Bw=np.array(
+                [
+                    [-0.1, 0.1],
+                    [-0.1, 0.1],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                ]
+            ),
         )
 
         result = planner.plan(start, goal_tsrs=[goal_tsr], seed=42, return_details=True)
@@ -303,14 +304,16 @@ class TestCBiRRT:
         start_tsr = TSR(
             T0_w=T0_w_start,
             Tw_e=np.eye(4),
-            Bw=np.array([
-                [-0.1, 0.1],
-                [-0.1, 0.1],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-            ]),
+            Bw=np.array(
+                [
+                    [-0.1, 0.1],
+                    [-0.1, 0.1],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                ]
+            ),
         )
 
         # Goal TSR: positions near (1.5, 0.5)
@@ -321,14 +324,16 @@ class TestCBiRRT:
         goal_tsr = TSR(
             T0_w=T0_w_goal,
             Tw_e=np.eye(4),
-            Bw=np.array([
-                [-0.1, 0.1],
-                [-0.1, 0.1],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-            ]),
+            Bw=np.array(
+                [
+                    [-0.1, 0.1],
+                    [-0.1, 0.1],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                ]
+            ),
         )
 
         # Plan with start=None, using start_tsrs
@@ -391,19 +396,19 @@ class TestCBiRRT:
         goal_tsr = TSR(
             T0_w=T0_w,
             Tw_e=np.eye(4),
-            Bw=np.array([
-                [-0.1, 0.1],
-                [-0.1, 0.1],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-            ]),
+            Bw=np.array(
+                [
+                    [-0.1, 0.1],
+                    [-0.1, 0.1],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                ]
+            ),
         )
 
-        result = planner.plan(
-            start=starts, goal_tsrs=[goal_tsr], seed=42, return_details=True
-        )
+        result = planner.plan(start=starts, goal_tsrs=[goal_tsr], seed=42, return_details=True)
 
         assert result.success
         # Path starts from one of the provided starts
@@ -471,14 +476,16 @@ class TestCBiRRT:
         goal_tsr = TSR(
             T0_w=T0_w,
             Tw_e=np.eye(4),
-            Bw=np.array([
-                [-0.1, 0.1],
-                [-0.1, 0.1],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-            ]),
+            Bw=np.array(
+                [
+                    [-0.1, 0.1],
+                    [-0.1, 0.1],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                ]
+            ),
         )
 
         with pytest.raises(AllStartConfigurationsInCollision):
@@ -504,14 +511,16 @@ class TestCBiRRT:
         goal_tsr = TSR(
             T0_w=T0_w,
             Tw_e=np.eye(4),
-            Bw=np.array([
-                [-0.1, 0.1],
-                [-0.1, 0.1],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-            ]),
+            Bw=np.array(
+                [
+                    [-0.1, 0.1],
+                    [-0.1, 0.1],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                ]
+            ),
         )
 
         # Old style - positional arg, only goal_tsrs
@@ -748,14 +757,16 @@ class TestConstraintTSRs:
         constraint_tsr = TSR(
             T0_w=T0_w,
             Tw_e=np.eye(4),
-            Bw=np.array([
-                [-0.5, 0.5],
-                [-0.5, 0.5],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-                [0, 0],
-            ]),
+            Bw=np.array(
+                [
+                    [-0.5, 0.5],
+                    [-0.5, 0.5],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                ]
+            ),
         )
         planner._constraint_tsrs = [constraint_tsr]
 
@@ -777,14 +788,16 @@ class TestConstraintTSRs:
         constraint_tsr = TSR(
             T0_w=T0_w,
             Tw_e=np.eye(4),
-            Bw=np.array([
-                [-2.0, 2.0],
-                [-2.0, 2.0],
-                [-1.0, 1.0],
-                [-np.pi, np.pi],
-                [-np.pi, np.pi],
-                [-np.pi, np.pi],
-            ]),
+            Bw=np.array(
+                [
+                    [-2.0, 2.0],
+                    [-2.0, 2.0],
+                    [-1.0, 1.0],
+                    [-np.pi, np.pi],
+                    [-np.pi, np.pi],
+                    [-np.pi, np.pi],
+                ]
+            ),
         )
 
         planner = CBiRRT(robot, ik, collision)
@@ -792,9 +805,7 @@ class TestConstraintTSRs:
         start = np.array([0.0, 0.0])
         goal = np.array([0.3, 0.3])
 
-        path = planner.plan(
-            start=start, goal=goal, constraint_tsrs=[constraint_tsr], seed=42
-        )
+        path = planner.plan(start=start, goal=goal, constraint_tsrs=[constraint_tsr], seed=42)
 
         assert path is not None
         assert len(path) >= 2
@@ -906,10 +917,16 @@ class TestPlanResultIndices:
         T0_w = np.eye(4)
         T0_w[0, 3] = x
         T0_w[1, 3] = y
-        Bw = np.array([
-            [-tol, tol], [-tol, tol], [0, 0],
-            [0, 0], [0, 0], [0, 0],
-        ])
+        Bw = np.array(
+            [
+                [-tol, tol],
+                [-tol, tol],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+            ]
+        )
         return TSR(T0_w=T0_w, Tw_e=np.eye(4), Bw=Bw)
 
     def test_goal_index_matches_reached_tsr(self, planner):

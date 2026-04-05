@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 """Example: UR5e + Robotiq 2F85 planning with CBiRRT in MuJoCo.
 
 This example demonstrates motion planning for a UR5e arm with a Robotiq 2F85
@@ -28,21 +31,22 @@ import os
 import time
 from pathlib import Path
 
-import numpy as np
 import mujoco
 import mujoco.viewer
+import numpy as np
+from tsr import TSR
 
 from pycbirrt import CBiRRT, CBiRRTConfig
 from pycbirrt.backends.mujoco import (
-    MuJoCoRobotModel,
     MuJoCoCollisionChecker,
     MuJoCoIKSolver,
+    MuJoCoRobotModel,
 )
-from tsr import TSR
 
 # Optional EAIK import (analytical IK, faster than differential)
 try:
     from pycbirrt.backends.eaik import EAIKSolver
+
     EAIK_AVAILABLE = True
 except ImportError:
     EAIK_AVAILABLE = False
@@ -64,6 +68,7 @@ def get_menagerie_path() -> Path:
 # Grasp TSR
 # =============================================================================
 
+
 def create_grasp_tsr(target_pos: np.ndarray) -> TSR:
     """Create a TSR for top-down grasp of a cylinder.
 
@@ -78,29 +83,34 @@ def create_grasp_tsr(target_pos: np.ndarray) -> TSR:
     T0_w = np.eye(4)
     T0_w[:3, 3] = target_pos + np.array([0, 0, standoff])
     # Gripper z points DOWN (180 deg rotation around x)
-    T0_w[:3, :3] = np.array([
-        [1,  0,  0],
-        [0, -1,  0],
-        [0,  0, -1],
-    ])
+    T0_w[:3, :3] = np.array(
+        [
+            [1, 0, 0],
+            [0, -1, 0],
+            [0, 0, -1],
+        ]
+    )
 
     return TSR(
         T0_w=T0_w,
         Tw_e=np.eye(4),
-        Bw=np.array([
-            [-0.02, 0.02],      # x tolerance
-            [-0.02, 0.02],      # y tolerance
-            [0, 0.05],          # z: can be 0-5cm higher
-            [-0.01, 0.01],      # roll: small tolerance
-            [-0.01, 0.01],      # pitch: small tolerance
-            [-np.pi, np.pi],    # yaw: full rotation
-        ]),
+        Bw=np.array(
+            [
+                [-0.02, 0.02],  # x tolerance
+                [-0.02, 0.02],  # y tolerance
+                [0, 0.05],  # z: can be 0-5cm higher
+                [-0.01, 0.01],  # roll: small tolerance
+                [-0.01, 0.01],  # pitch: small tolerance
+                [-np.pi, np.pi],  # yaw: full rotation
+            ]
+        ),
     )
 
 
 # =============================================================================
 # Scene Creation
 # =============================================================================
+
 
 def create_scene(menagerie_path: Path) -> "mujoco.MjModel":
     """Create a MuJoCo model with UR5e, Robotiq gripper, table, and cylinder.
@@ -203,6 +213,7 @@ def create_scene(menagerie_path: Path) -> "mujoco.MjModel":
 # Visualization
 # =============================================================================
 
+
 def render_to_video(
     model: "mujoco.MjModel",
     data: "mujoco.MjData",
@@ -295,10 +306,9 @@ def visualize_interactive(
 # Main
 # =============================================================================
 
+
 def main():
-    parser = argparse.ArgumentParser(
-        description="UR5e + Robotiq 2F85 motion planning with TSR-based goals"
-    )
+    parser = argparse.ArgumentParser(description="UR5e + Robotiq 2F85 motion planning with TSR-based goals")
     parser.add_argument("--render", type=str, help="Render to video file (e.g., output.mp4)")
     parser.add_argument("--no-viz", action="store_true", help="Skip visualization")
     parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
