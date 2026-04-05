@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 """Example: Simple 2-DOF planar arm planning with CBiRRT.
 
 This example demonstrates three planning scenarios:
@@ -12,12 +15,13 @@ Run with:
 """
 
 import argparse
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.patches import Circle, Rectangle
 from tsr import TSR
 
-from pycbirrt import CBiRRT, CBiRRTConfig, PlanResult
+from pycbirrt import CBiRRT, CBiRRTConfig
 from pycbirrt.tree import RRTree
 
 
@@ -49,14 +53,18 @@ class PlanarArmRobot:
     def get_joint_positions(self, q: np.ndarray) -> list[np.ndarray]:
         """Get positions of base, elbow, and end-effector for visualization."""
         base = np.array([0.0, 0.0])
-        elbow = np.array([
-            self.l1 * np.cos(q[0]),
-            self.l1 * np.sin(q[0]),
-        ])
-        ee = np.array([
-            self.l1 * np.cos(q[0]) + self.l2 * np.cos(q[0] + q[1]),
-            self.l1 * np.sin(q[0]) + self.l2 * np.sin(q[0] + q[1]),
-        ])
+        elbow = np.array(
+            [
+                self.l1 * np.cos(q[0]),
+                self.l1 * np.sin(q[0]),
+            ]
+        )
+        ee = np.array(
+            [
+                self.l1 * np.cos(q[0]) + self.l2 * np.cos(q[0] + q[1]),
+                self.l1 * np.sin(q[0]) + self.l2 * np.sin(q[0] + q[1]),
+            ]
+        )
         return [base, elbow, ee]
 
 
@@ -90,9 +98,7 @@ class PlanarArmIK:
         solutions = []
         for sign in [1, -1]:  # Elbow up / elbow down
             q2 = sign * np.arccos(cos_q2)
-            q1 = np.arctan2(y, x) - np.arctan2(
-                self.robot.l2 * np.sin(q2), self.robot.l1 + self.robot.l2 * np.cos(q2)
-            )
+            q1 = np.arctan2(y, x) - np.arctan2(self.robot.l2 * np.sin(q2), self.robot.l1 + self.robot.l2 * np.cos(q2))
             solutions.append(np.array([q1, q2]))
 
         return solutions
@@ -144,9 +150,7 @@ class CircleObstacleChecker:
 
         return True
 
-    def _segment_circle_collision(
-        self, p1: np.ndarray, p2: np.ndarray, center: np.ndarray, radius: float
-    ) -> bool:
+    def _segment_circle_collision(self, p1: np.ndarray, p2: np.ndarray, center: np.ndarray, radius: float) -> bool:
         """Check if line segment intersects circle."""
         d = p2 - p1
         f = p1 - center
@@ -166,7 +170,6 @@ class CircleObstacleChecker:
 
         # Check if intersection is within segment
         return (0 <= t1 <= 1) or (0 <= t2 <= 1) or (t1 < 0 and t2 > 1)
-
 
 
 def visualize_result(
@@ -204,8 +207,7 @@ def visualize_result(
     if constraint_region is not None:
         x_min, x_max, y_min, y_max = constraint_region
         rect = Rectangle(
-            (x_min, y_min), x_max - x_min, y_max - y_min,
-            color="yellow", alpha=0.2, label="Constraint region"
+            (x_min, y_min), x_max - x_min, y_max - y_min, color="yellow", alpha=0.2, label="Constraint region"
         )
         ax_ws.add_patch(rect)
 
@@ -313,16 +315,35 @@ def visualize_result(
         ax_cs.plot(
             [path_arr[i, 0], path_arr[i + 1, 0]],
             [path_arr[i, 1], path_arr[i + 1, 1]],
-            "k-", linewidth=2,
+            "k-",
+            linewidth=2,
         )
     ax_cs.plot([], [], "k-", linewidth=2, label="Path")  # For legend
     ax_cs.scatter(path_arr[:, 0], path_arr[:, 1], c="black", s=30, zorder=5)
 
     # Mark start and goal
-    ax_cs.scatter([tree_start.nodes[0].config[0]], [tree_start.nodes[0].config[1]],
-               c="blue", s=200, marker="*", edgecolors="black", linewidths=2, zorder=10, label="Start")
-    ax_cs.scatter([tree_goal.nodes[0].config[0]], [tree_goal.nodes[0].config[1]],
-               c="green", s=200, marker="*", edgecolors="black", linewidths=2, zorder=10, label="Goal")
+    ax_cs.scatter(
+        [tree_start.nodes[0].config[0]],
+        [tree_start.nodes[0].config[1]],
+        c="blue",
+        s=200,
+        marker="*",
+        edgecolors="black",
+        linewidths=2,
+        zorder=10,
+        label="Start",
+    )
+    ax_cs.scatter(
+        [tree_goal.nodes[0].config[0]],
+        [tree_goal.nodes[0].config[1]],
+        c="green",
+        s=200,
+        marker="*",
+        edgecolors="black",
+        linewidths=2,
+        zorder=10,
+        label="Goal",
+    )
 
     ax_cs.set_xlim(-np.pi, np.pi)
     ax_cs.set_ylim(-np.pi, np.pi)
@@ -349,14 +370,16 @@ def make_position_tsr(x: float, y: float, tolerance: float = 0.1) -> TSR:
     return TSR(
         T0_w=T0_w,
         Tw_e=np.eye(4),
-        Bw=np.array([
-            [-tolerance, tolerance],  # x tolerance
-            [-tolerance, tolerance],  # y tolerance
-            [0, 0],                   # z (unused in 2D)
-            [0, 0],                   # roll
-            [0, 0],                   # pitch
-            [0, 0],                   # yaw
-        ]),
+        Bw=np.array(
+            [
+                [-tolerance, tolerance],  # x tolerance
+                [-tolerance, tolerance],  # y tolerance
+                [0, 0],  # z (unused in 2D)
+                [0, 0],  # roll
+                [0, 0],  # pitch
+                [0, 0],  # yaw
+            ]
+        ),
     )
 
 
@@ -375,14 +398,16 @@ def make_y_constraint_tsr(y_min: float, y_max: float) -> TSR:
     return TSR(
         T0_w=T0_w,
         Tw_e=np.eye(4),
-        Bw=np.array([
-            [-10, 10],              # x: effectively unconstrained
-            [-y_range, y_range],    # y: constrained to band
-            [0, 0],                 # z
-            [0, 0],                 # roll
-            [0, 0],                 # pitch
-            [0, 0],                 # yaw
-        ]),
+        Bw=np.array(
+            [
+                [-10, 10],  # x: effectively unconstrained
+                [-y_range, y_range],  # y: constrained to band
+                [0, 0],  # z
+                [0, 0],  # roll
+                [0, 0],  # pitch
+                [0, 0],  # yaw
+            ]
+        ),
     )
 
 
@@ -442,8 +467,12 @@ def example_basic():
     print(f"  Final position: ({final_pos[0]:.3f}, {final_pos[1]:.3f})")
 
     visualize_result(
-        robot, result.path, obstacles,
-        result.tree_start, result.tree_goal, collision_checker,
+        robot,
+        result.path,
+        obstacles,
+        result.tree_start,
+        result.tree_goal,
+        collision_checker,
         goal_region=(goal_pos, 0.1),
         title="Example 1: Basic Planning",
         filename="example1_result.png",
@@ -516,8 +545,12 @@ def example_start_goal_tsrs():
     print(f"  Final position: ({final_pose[0, 3]:.3f}, {final_pose[1, 3]:.3f})")
 
     visualize_result(
-        robot, result.path, obstacles,
-        result.tree_start, result.tree_goal, collision_checker,
+        robot,
+        result.path,
+        obstacles,
+        result.tree_start,
+        result.tree_goal,
+        collision_checker,
         start_region=(start_pos, 0.2),
         goal_region=(goal_pos, 0.2),
         title="Example 2: Start and Goal TSRs",
@@ -610,8 +643,12 @@ def example_constrained():
     print(f"  Final position: ({final_pose[0, 3]:.3f}, {final_pose[1, 3]:.3f})")
 
     visualize_result(
-        robot, result.path, obstacles,
-        result.tree_start, result.tree_goal, collision_checker,
+        robot,
+        result.path,
+        obstacles,
+        result.tree_start,
+        result.tree_goal,
+        collision_checker,
         start_region=(start_pos, 0.1),
         goal_region=(goal_pos, 0.1),
         constraint_region=(-2.5, 2.5, y_min, y_max),
@@ -623,7 +660,8 @@ def example_constrained():
 def main():
     parser = argparse.ArgumentParser(description="CBiRRT planar arm examples")
     parser.add_argument(
-        "--example", "-e",
+        "--example",
+        "-e",
         type=int,
         choices=[1, 2, 3],
         help="Run specific example (1=basic, 2=start/goal TSRs, 3=constrained)",

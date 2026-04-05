@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 """EAIK backend for analytical inverse kinematics."""
 
 import numpy as np
@@ -172,15 +175,9 @@ class EAIKSolver:
         if include_least_squares:
             return [ik_result.Q[i] for i in range(num_solutions)]
 
-        return [
-            ik_result.Q[i]
-            for i in range(num_solutions)
-            if not ik_result.is_LS[i]
-        ]
+        return [ik_result.Q[i] for i in range(num_solutions) if not ik_result.is_LS[i]]
 
-    def solve_valid(
-        self, pose: np.ndarray, q_init: np.ndarray | None = None
-    ) -> list[np.ndarray]:
+    def solve_valid(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Solve IK and return only valid solutions.
 
         Filters solutions to return only those that are:

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 """Demo of multiple start and goal configurations.
 
 This example demonstrates the new capability to provide multiple discrete
@@ -5,14 +8,14 @@ configurations as lists. The planner grows trees from all configurations
 simultaneously.
 """
 
-import numpy as np
-from tsr import TSR
-
 # Import from parent examples
 import sys
 from pathlib import Path
+
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).parent))
-from planar_arm import PlanarArmRobot, PlanarArmIK, CircleObstacleChecker
+from planar_arm import CircleObstacleChecker, PlanarArmIK, PlanarArmRobot
 
 from pycbirrt import CBiRRT, CBiRRTConfig
 
@@ -43,25 +46,25 @@ def main():
 
     # Define multiple start configurations (collision-free)
     start_configs = [
-        np.array([np.pi / 4, 0.0]),    # Start 1: 45 degrees up-right
-        np.array([np.pi / 4, 0.2]),    # Start 2: slightly different
+        np.array([np.pi / 4, 0.0]),  # Start 1: 45 degrees up-right
+        np.array([np.pi / 4, 0.2]),  # Start 2: slightly different
     ]
 
     # Define multiple goal configurations
     goal_configs = [
-        np.array([np.pi / 2, 0.0]),       # Goal 1: pointing up
-        np.array([np.pi / 2, np.pi / 4]), # Goal 2: pointing up-left
+        np.array([np.pi / 2, 0.0]),  # Goal 1: pointing up
+        np.array([np.pi / 2, np.pi / 4]),  # Goal 2: pointing up-left
     ]
 
     print(f"\nStart configs: {len(start_configs)}")
     for i, q in enumerate(start_configs):
         pose = robot.forward_kinematics(q)
-        print(f"  Start {i+1}: joints={q}, ee=({pose[0,3]:.3f}, {pose[1,3]:.3f})")
+        print(f"  Start {i + 1}: joints={q}, ee=({pose[0, 3]:.3f}, {pose[1, 3]:.3f})")
 
     print(f"\nGoal configs: {len(goal_configs)}")
     for i, q in enumerate(goal_configs):
         pose = robot.forward_kinematics(q)
-        print(f"  Goal {i+1}: joints={q}, ee=({pose[0,3]:.3f}, {pose[1,3]:.3f})")
+        print(f"  Goal {i + 1}: joints={q}, ee=({pose[0, 3]:.3f}, {pose[1, 3]:.3f})")
 
     # Plan with multiple starts and goals
     print("\nPlanning with multiple starts and goals...")
@@ -88,12 +91,12 @@ def main():
     start_idx = next(i for i, s in enumerate(start_configs) if np.allclose(s, actual_start, atol=0.01))
     goal_idx = next(i for i, g in enumerate(goal_configs) if np.allclose(g, actual_goal, atol=0.01))
 
-    print(f"\n  Connected: Start {start_idx+1} → Goal {goal_idx+1}")
+    print(f"\n  Connected: Start {start_idx + 1} → Goal {goal_idx + 1}")
 
     start_pose = robot.forward_kinematics(actual_start)
     goal_pose = robot.forward_kinematics(actual_goal)
-    print(f"  Start ee: ({start_pose[0,3]:.3f}, {start_pose[1,3]:.3f})")
-    print(f"  Goal ee: ({goal_pose[0,3]:.3f}, {goal_pose[1,3]:.3f})")
+    print(f"  Start ee: ({start_pose[0, 3]:.3f}, {start_pose[1, 3]:.3f})")
+    print(f"  Goal ee: ({goal_pose[0, 3]:.3f}, {goal_pose[1, 3]:.3f})")
 
 
 if __name__ == "__main__":

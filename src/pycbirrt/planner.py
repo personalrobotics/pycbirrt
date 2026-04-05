@@ -1,21 +1,23 @@
-from dataclasses import dataclass
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 import logging
 import time
+from dataclasses import dataclass
 
 import numpy as np
-from tsr import TSR
-from tsr import choose_tsr_index
+from tsr import TSR, choose_tsr_index
 from tsr.sampling import sample_from_tsrs
 
 from pycbirrt.config import CBiRRTConfig
-from pycbirrt.tree import RRTree
-from pycbirrt.interfaces import RobotModel, IKSolver, CollisionChecker
 from pycbirrt.exceptions import (
-    AllStartConfigurationsInCollision,
     AllGoalConfigurationsInCollision,
-    AllStartConfigurationsInvalid,
     AllGoalConfigurationsInvalid,
+    AllStartConfigurationsInCollision,
+    AllStartConfigurationsInvalid,
 )
+from pycbirrt.interfaces import CollisionChecker, IKSolver, RobotModel
+from pycbirrt.tree import RRTree
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +82,7 @@ class CBiRRT:
         if self.config.angular_joints is not None:
             if len(self.config.angular_joints) != robot.dof:
                 raise ValueError(
-                    f"angular_joints length ({len(self.config.angular_joints)}) "
-                    f"must match robot DOF ({robot.dof})"
+                    f"angular_joints length ({len(self.config.angular_joints)}) must match robot DOF ({robot.dof})"
                 )
 
         self._rng = np.random.default_rng()
@@ -160,14 +161,10 @@ class CBiRRT:
         # Initialize start configurations
         # Validation errors (invalid configs) should propagate up
         # Only sampling failures return None
-        start_roots, start_source_indices = self._initialize_tree_configs(
-            start_configs, start_tsrs, "Start"
-        )
+        start_roots, start_source_indices = self._initialize_tree_configs(start_configs, start_tsrs, "Start")
 
         # Initialize goal configurations
-        goal_roots, goal_source_indices = self._initialize_tree_configs(
-            goal_configs, goal_tsrs, "Goal"
-        )
+        goal_roots, goal_source_indices = self._initialize_tree_configs(goal_configs, goal_tsrs, "Goal")
 
         # Initialize trees with multiple roots and source indices
         tree_start = RRTree(
@@ -241,9 +238,7 @@ class CBiRRT:
 
             if connected:
                 # Found a path - extract and return it
-                path = self._extract_path(
-                    tree_start, tree_goal, tree_a, tree_b, grow_idx, connect_idx
-                )
+                path = self._extract_path(tree_start, tree_goal, tree_a, tree_b, grow_idx, connect_idx)
                 if self.config.smooth_path:
                     path = self._smooth_path(path)
 
@@ -277,9 +272,7 @@ class CBiRRT:
             return _make_result(None, self.config.max_iterations, False, failure_reason=reason)
         return None
 
-    def _sample_from_tsrs(
-        self, tsrs: list[TSR], must_satisfy_constraints: bool = False
-    ) -> np.ndarray | None:
+    def _sample_from_tsrs(self, tsrs: list[TSR], must_satisfy_constraints: bool = False) -> np.ndarray | None:
         """Sample a single valid configuration from TSRs.
 
         Tries multiple pose samples until finding one with a valid IK solution.
@@ -460,7 +453,9 @@ class CBiRRT:
             needed = max(0, self.config.num_tree_roots - len(valid_configs))
             if needed > 0:
                 sampled, tsr_indices, tsr_stats = self._sample_configs_from_tsrs(
-                    tsrs, needed, must_satisfy,
+                    tsrs,
+                    needed,
+                    must_satisfy,
                 )
                 for q, tsr_idx in zip(sampled, tsr_indices):
                     valid_configs.append(q)
@@ -499,7 +494,9 @@ class CBiRRT:
                 summary = ", ".join(details)
 
                 if tsr_stats["in_collision"] and not tsr_stats["ik_failed"]:
-                    Ex = AllGoalConfigurationsInCollision if config_type == "Goal" else AllStartConfigurationsInCollision
+                    Ex = (
+                        AllGoalConfigurationsInCollision if config_type == "Goal" else AllStartConfigurationsInCollision
+                    )
                     raise Ex(tsr_stats["in_collision"], [summary])
                 else:
                     Ex = AllGoalConfigurationsInvalid if config_type == "Goal" else AllStartConfigurationsInvalid
@@ -648,9 +645,7 @@ class CBiRRT:
 
         return diff
 
-    def _grow(
-        self, tree: RRTree, q_target: np.ndarray, max_steps: int | None = None
-    ) -> tuple[int, bool]:
+    def _grow(self, tree: RRTree, q_target: np.ndarray, max_steps: int | None = None) -> tuple[int, bool]:
         """Grow tree toward target using EXT or CON behavior.
 
         When path constraints are active, each new configuration is projected
@@ -720,9 +715,7 @@ class CBiRRT:
 
         return current_idx, False
 
-    def _extend_along_edge(
-        self, tree: RRTree, start_idx: int, q_target: np.ndarray
-    ) -> tuple[int, bool]:
+    def _extend_along_edge(self, tree: RRTree, start_idx: int, q_target: np.ndarray) -> tuple[int, bool]:
         """Extend tree along edge, adding intermediate nodes.
 
         Checks collision and constraint satisfaction at each step. Adds valid
@@ -793,14 +786,14 @@ class CBiRRT:
         if tree_a is tree_start:
             # tree_a=start was extended to idx_a, tree_b=goal connected at idx_b
             path_from_start = tree_start.get_path_to_root(idx_a)  # start -> idx_a
-            path_from_goal = tree_goal.get_path_to_root(idx_b)    # goal -> idx_b
+            path_from_goal = tree_goal.get_path_to_root(idx_b)  # goal -> idx_b
             # We want: start -> idx_a -> idx_b -> goal
             # path_from_goal reversed gives: idx_b -> goal
             return path_from_start + list(reversed(path_from_goal))
         else:
             # tree_a=goal was extended to idx_a, tree_b=start connected at idx_b
             path_from_start = tree_start.get_path_to_root(idx_b)  # start -> idx_b
-            path_from_goal = tree_goal.get_path_to_root(idx_a)    # goal -> idx_a
+            path_from_goal = tree_goal.get_path_to_root(idx_a)  # goal -> idx_a
             # We want: start -> idx_b -> idx_a -> goal
             # path_from_goal reversed gives: idx_a -> goal
             return path_from_start + list(reversed(path_from_goal))
@@ -854,9 +847,7 @@ class CBiRRT:
 
         return smoothed
 
-    def _try_shortcut(
-        self, q_from: np.ndarray, q_to: np.ndarray
-    ) -> list[np.ndarray] | None:
+    def _try_shortcut(self, q_from: np.ndarray, q_to: np.ndarray) -> list[np.ndarray] | None:
         """Try to find a shorter path between two configurations using grow.
 
         Args:

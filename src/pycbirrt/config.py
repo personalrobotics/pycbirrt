@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 from collections.abc import Callable
 from dataclasses import dataclass, field
 

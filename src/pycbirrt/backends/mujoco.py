@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 """MuJoCo backend for robot model, collision checking, and IK."""
 
 import numpy as np
@@ -254,9 +257,7 @@ class MuJoCoIKSolver:
 
     def _get_jacobian(self) -> np.ndarray:
         """Get 6xN Jacobian for the end-effector site."""
-        mujoco.mj_jacSite(
-            self.model, self.data, self._jacp, self._jacr, self.ee_site_id
-        )
+        mujoco.mj_jacSite(self.model, self.data, self._jacp, self._jacr, self.ee_site_id)
         # Extract columns for controlled joints only
         jacp = self._jacp[:, self.dof_adrs]
         jacr = self._jacr[:, self.dof_adrs]
@@ -301,9 +302,7 @@ class MuJoCoIKSolver:
             return np.clip(q, lower, upper)
         return q
 
-    def solve(
-        self, pose: np.ndarray, q_init: np.ndarray | None = None
-    ) -> list[np.ndarray]:
+    def solve(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Solve IK for a single end-effector pose using differential IK.
 
         Args:
@@ -346,9 +345,7 @@ class MuJoCoIKSolver:
         # Did not converge
         return []
 
-    def solve_valid(
-        self, pose: np.ndarray, q_init: np.ndarray | None = None
-    ) -> list[np.ndarray]:
+    def solve_valid(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Solve IK and return only valid solutions.
 
         Filters solutions to return only those that are:

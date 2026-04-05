@@ -1,12 +1,15 @@
-from pycbirrt.planner import CBiRRT, PlanResult
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 from pycbirrt.config import CBiRRTConfig
 from pycbirrt.exceptions import (
-    PlanningError,
-    AllStartConfigurationsInCollision,
     AllGoalConfigurationsInCollision,
-    AllStartConfigurationsInvalid,
     AllGoalConfigurationsInvalid,
+    AllStartConfigurationsInCollision,
+    AllStartConfigurationsInvalid,
+    PlanningError,
 )
+from pycbirrt.planner import CBiRRT, PlanResult
 
 __all__ = [
     "CBiRRT",

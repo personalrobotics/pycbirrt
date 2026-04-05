@@ -4,9 +4,12 @@ version = "1.0.0"
 description = "CBiRRT motion planner with TSR constraints"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
-    {name = "Siddhartha Srinivasa"},
+    {name = "Siddhartha Srinivasa", email = "siddhartha.srinivasa@gmail.com"},
+]
+maintainers = [
+    {name = "Siddhartha Srinivasa", email = "siddhartha.srinivasa@gmail.com"},
 ]
 dependencies = [
     "numpy>=1.24",
@@ -33,5 +36,20 @@ all = ["pycbirrt[mujoco,eaik,examples,dev]"]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[project.urls]
+Homepage = "https://github.com/personalrobotics/pycbirrt"
+Repository = "https://github.com/personalrobotics/pycbirrt"
+Issues = "https://github.com/personalrobotics/pycbirrt/issues"
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/pycbirrt/__init__.py" = ["F401"]
+"src/pycbirrt/**/__init__.py" = ["F401"]

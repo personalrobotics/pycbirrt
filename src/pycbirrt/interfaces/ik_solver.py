@@ -1,4 +1,8 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 from typing import Protocol
+
 import numpy as np
 
 
@@ -10,9 +14,7 @@ class IKSolver(Protocol):
     The `solve_valid()` filters for collision-free solutions within joint limits.
     """
 
-    def solve(
-        self, pose: np.ndarray, q_init: np.ndarray | None = None
-    ) -> list[np.ndarray]:
+    def solve(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Solve IK for a single end-effector pose (raw, unvalidated).
 
         Args:
@@ -25,9 +27,7 @@ class IKSolver(Protocol):
         """
         ...
 
-    def solve_valid(
-        self, pose: np.ndarray, q_init: np.ndarray | None = None
-    ) -> list[np.ndarray]:
+    def solve_valid(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Solve IK and return only valid solutions.
 
         Filters solutions to return only those that are:

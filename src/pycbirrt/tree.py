@@ -1,4 +1,8 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 from dataclasses import dataclass
+
 import numpy as np
 
 

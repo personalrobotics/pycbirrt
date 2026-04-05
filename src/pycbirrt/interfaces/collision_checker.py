@@ -1,4 +1,8 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
 from typing import Protocol
+
 import numpy as np
 
 
@@ -15,4 +19,3 @@ class CollisionChecker(Protocol):
             True if collision-free, False otherwise
         """
         ...
-
