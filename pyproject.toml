@@ -13,7 +13,7 @@ maintainers = [
 ]
 dependencies = [
     "numpy>=1.24",
-    "tsr",
+    "tsr @ git+https://github.com/personalrobotics/tsr.git",
 ]
 
 [tool.uv.sources]
