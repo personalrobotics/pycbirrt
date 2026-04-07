@@ -29,6 +29,7 @@ examples = [
 dev = [
     "pytest>=7.0",
     "pytest-cov",
+    "ruff",
 ]
 all = ["pycbirrt[mujoco,eaik,examples,dev]"]
 
