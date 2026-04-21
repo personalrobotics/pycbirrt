@@ -582,13 +582,30 @@ class CBiRRT:
         return None
 
     def _sample_random_config(self) -> np.ndarray:
-        """Sample a random configuration within joint limits."""
+        """Sample a random configuration within joint limits.
+
+        Uses robot.joint_limits for all joints. For angular joints,
+        the limits should cover the working range (e.g., ±2π). The
+        angular distance metric handles wrapping.
+        """
         lower, upper = self.robot.joint_limits
         return self._rng.uniform(lower, upper)
 
     def _is_within_limits(self, q: np.ndarray) -> bool:
-        """Check if configuration is within joint limits."""
+        """Check if configuration is within joint limits.
+
+        Angular (continuous) joints always pass — any angle is valid.
+        """
         lower, upper = self.robot.joint_limits
+
+        if self.config.angular_joints is not None:
+            for i in range(len(q)):
+                if self.config.angular_joints[i]:
+                    continue  # angular joint, any value is valid
+                if q[i] < lower[i] or q[i] > upper[i]:
+                    return False
+            return True
+
         return bool(np.all(q >= lower) and np.all(q <= upper))
 
     def _angular_distance(self, q1: np.ndarray, q2: np.ndarray) -> float:
