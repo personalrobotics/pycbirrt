@@ -48,6 +48,8 @@ where = ["src"]
 
 [tool.ruff]
 line-length = 120
+# Newer ruff formats code blocks in Markdown; keep prose examples as written.
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = ["F", "E", "W", "I"]
