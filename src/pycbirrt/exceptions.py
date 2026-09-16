@@ -56,3 +56,13 @@ class AllGoalConfigurationsInvalid(PlanningError):
         if details:
             msg += f": {'; '.join(details)}"
         super().__init__(msg)
+
+
+class UnsupportedCapability(TypeError):
+    """Raised when a state set is asked for a capability it does not provide.
+
+    For example: sampling a multi-child ``AnyOf`` without a mixture policy,
+    or projecting onto a multi-child ``AllOf`` without a projection strategy.
+    """
+
+    pass
