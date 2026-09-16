@@ -17,6 +17,7 @@ from pycbirrt.exceptions import (
     AllStartConfigurationsInvalid,
 )
 from pycbirrt.interfaces import CollisionChecker, IKSolver, RobotModel
+from pycbirrt.space import JointSpace
 from pycbirrt.tree import RRTree
 
 logger = logging.getLogger(__name__)
@@ -78,12 +79,10 @@ class CBiRRT:
         self.collision = collision_checker
         self.config = config or CBiRRTConfig()
 
-        # Validate angular_joints length matches robot DOF
-        if self.config.angular_joints is not None:
-            if len(self.config.angular_joints) != robot.dof:
-                raise ValueError(
-                    f"angular_joints length ({len(self.config.angular_joints)}) must match robot DOF ({robot.dof})"
-                )
+        # Joint-space geometry: limits, metric, interpolation, sampling.
+        # Raises ValueError if angular_joints length does not match robot DOF.
+        lower, upper = robot.joint_limits
+        self.space = JointSpace(lower, upper, angular_joints=self.config.angular_joints)
 
         self._rng = np.random.default_rng()
         self._constraint_tsrs: list[TSR] | None = None
@@ -227,7 +226,7 @@ class CBiRRT:
             elif tree_a is tree_goal and self._start_tsrs is not None and self._rng.random() < self.config.start_bias:
                 q_sample = self._sample_from_tsrs(self._start_tsrs, must_satisfy_constraints=True)
             if q_sample is None:
-                q_sample = self._sample_random_config()
+                q_sample = self.space.sample(self._rng)
 
             # Extend tree_a toward random sample (uses extend_steps)
             grow_idx, _ = self._grow(tree_a, q_sample, self.config.extend_steps)
@@ -566,9 +565,9 @@ class CBiRRT:
             best_q = None
             best_dist = float("inf")
             for sol in solutions:
-                if not self._is_within_limits(sol):
+                if not self.space.within_limits(sol):
                     continue
-                d = self._angular_distance(q_current, sol)
+                d = self.space.distance(q_current, sol)
                 if d < best_dist:
                     best_dist = d
                     best_q = sol
@@ -581,47 +580,13 @@ class CBiRRT:
         # Exceeded max iterations
         return None
 
-    def _sample_random_config(self) -> np.ndarray:
-        """Sample a random configuration within joint limits.
-
-        Uses robot.joint_limits for all joints. For angular joints,
-        the limits should cover the working range (e.g., ±2π). The
-        angular distance metric handles wrapping.
-        """
-        lower, upper = self.robot.joint_limits
-        return self._rng.uniform(lower, upper)
-
-    def _is_within_limits(self, q: np.ndarray) -> bool:
-        """Check if configuration is within joint limits.
-
-        Angular (continuous) joints always pass — any angle is valid.
-        """
-        lower, upper = self.robot.joint_limits
-
-        if self.config.angular_joints is not None:
-            for i in range(len(q)):
-                if self.config.angular_joints[i]:
-                    continue  # angular joint, any value is valid
-                if q[i] < lower[i] or q[i] > upper[i]:
-                    return False
-            return True
-
-        return bool(np.all(q >= lower) and np.all(q <= upper))
-
     def _angular_distance(self, q1: np.ndarray, q2: np.ndarray) -> float:
-        """Compute distance between configurations, handling angular wraparound.
+        """Distance under the joint-space metric. Thin wrapper over ``self.space``."""
+        return self.space.distance(q1, q2)
 
-        For angular joints, the distance accounts for the 2*pi wraparound.
-        """
-        diff = q2 - q1
-
-        if self.config.angular_joints is not None:
-            # Wrap angular differences to [-pi, pi]
-            for i, is_angular in enumerate(self.config.angular_joints):
-                if is_angular:
-                    diff[i] = np.arctan2(np.sin(diff[i]), np.cos(diff[i]))
-
-        return float(np.linalg.norm(diff))
+    def _angular_direction(self, q_from: np.ndarray, q_to: np.ndarray) -> np.ndarray:
+        """Direction under the joint-space metric. Thin wrapper over ``self.space``."""
+        return self.space.direction(q_from, q_to)
 
     def _nearest_node(self, tree: RRTree, q_target: np.ndarray) -> int:
         """Find nearest node in tree using angular-aware distance.
@@ -633,7 +598,7 @@ class CBiRRT:
         Returns:
             Index of nearest node
         """
-        if self.config.angular_joints is None:
+        if self.space.angular_joints is None:
             # Use tree's built-in nearest (faster)
             return tree.nearest(q_target)
 
@@ -641,26 +606,11 @@ class CBiRRT:
         best_idx = 0
         best_dist = float("inf")
         for i, node in enumerate(tree.nodes):
-            dist = self._angular_distance(node.config, q_target)
+            dist = self.space.distance(node.config, q_target)
             if dist < best_dist:
                 best_dist = dist
                 best_idx = i
         return best_idx
-
-    def _angular_direction(self, q_from: np.ndarray, q_to: np.ndarray) -> np.ndarray:
-        """Compute direction from q_from to q_to, handling angular wraparound.
-
-        Returns the shortest path direction for angular joints.
-        """
-        diff = q_to - q_from
-
-        if self.config.angular_joints is not None:
-            # Wrap angular differences to [-pi, pi]
-            for i, is_angular in enumerate(self.config.angular_joints):
-                if is_angular:
-                    diff[i] = np.arctan2(np.sin(diff[i]), np.cos(diff[i]))
-
-        return diff
 
     def _grow(self, tree: RRTree, q_target: np.ndarray, max_steps: int | None = None) -> tuple[int, bool]:
         """Grow tree toward target using EXT or CON behavior.
@@ -687,7 +637,7 @@ class CBiRRT:
             q_current = tree.nodes[current_idx].config
 
             # Compute direction and remaining distance (angular-aware)
-            direction = self._angular_direction(q_current, q_target)
+            direction = self.space.direction(q_current, q_target)
             distance = np.linalg.norm(direction)
 
             # Check if we've reached the target
@@ -708,7 +658,7 @@ class CBiRRT:
             q_new = q_current + step
 
             # Check joint limits
-            if not self._is_within_limits(q_new):
+            if not self.space.within_limits(q_new):
                 break
 
             # Project onto constraint manifold if constraints exist
@@ -754,11 +704,11 @@ class CBiRRT:
             - reached_target: True if we reached q_target
         """
         q_from = tree.nodes[start_idx].config
-        distance = self._angular_distance(q_from, q_target)
+        distance = self.space.distance(q_from, q_target)
         n_steps = max(1, int(np.ceil(distance / self.config.step_size)))
 
         # Use angular-aware direction for interpolation
-        direction = self._angular_direction(q_from, q_target)
+        direction = self.space.direction(q_from, q_target)
 
         current_idx = start_idx
         for i in range(1, n_steps + 1):
