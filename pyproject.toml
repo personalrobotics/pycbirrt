@@ -29,7 +29,7 @@ examples = [
 dev = [
     "pytest>=7.0",
     "pytest-cov",
-    "ruff",
+    "ruff>=0.15,<0.16",  # formatter style only changes in minor releases; bump deliberately
     "hypothesis>=6.100",
 ]
 all = ["pycbirrt[mujoco,eaik,examples,dev]"]
