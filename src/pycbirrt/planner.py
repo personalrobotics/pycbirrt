@@ -551,10 +551,10 @@ class CBiRRT:
                 return None  # Not converging
             prev_dist = max_dist
 
-            # Project pose onto the worst TSR using bwopt (handles both position and orientation)
-            # bwopt is the closest point in Bw space (xyzrpy) to the current pose
-            # xyzrpy_to_trans converts it back to a 4x4 transform in the TSR's frame
-            projected_pose = worst_tsr.xyzrpy_to_trans(worst_bwopt)
+            # Project pose onto the worst TSR using bwopt (handles both position and orientation).
+            # bwopt is the closest point in Bw space (xyzrpy) to the current pose, expressed in
+            # the TSR's frame; compose with T0_w and Tw_e to get the world pose for IK.
+            projected_pose = worst_tsr.T0_w @ TSR.xyzrpy_to_trans(worst_bwopt) @ worst_tsr.Tw_e
 
             # Solve IK for the projected pose (pass q_current as hint for iterative solvers)
             solutions = self.ik.solve(projected_pose, q_init=q_current)

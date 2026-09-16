@@ -776,6 +776,42 @@ class TestConstraintTSRs:
         # q=[pi/2, 0] gives FK at (0.0, 2.0) which is outside the constraint
         assert not planner._satisfies_constraints(np.array([np.pi / 2, 0.0]))
 
+    def test_projection_respects_tsr_frames(self):
+        """Projection must compose bwopt with T0_w and Tw_e (regression for #28)."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        ik = MockIKSolver(robot, collision)
+        planner = CBiRRT(robot, ik, collision)
+
+        # Same 10cm box around world (1.2, 0.8), expressed two ways
+        T0_w = np.eye(4)
+        T0_w[0, 3] = 1.2
+        T0_w[1, 3] = 0.8
+        box = np.array([[-0.05, 0.05], [-0.05, 0.05], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]])
+        framed = TSR(T0_w=T0_w, Tw_e=np.eye(4), Bw=box)
+        shifted = box.copy()
+        shifted[0] += 1.2
+        shifted[1] += 0.8
+        unframed = TSR(T0_w=np.eye(4), Tw_e=np.eye(4), Bw=shifted)
+
+        q = np.array([0.3, 0.9])  # violates both by ~0.38
+        for tsr in (framed, unframed):
+            planner._constraint_tsrs = [tsr]
+            q_proj = planner._project_to_constraint(q)
+            assert q_proj is not None
+            dist, _ = tsr.distance(robot.forward_kinematics(q_proj))
+            assert dist <= planner.config.tsr_tolerance
+
+        # Also with a non-identity Tw_e: end-effector offset of 0.1 along its x axis
+        Tw_e = np.eye(4)
+        Tw_e[0, 3] = 0.1
+        offset = TSR(T0_w=T0_w, Tw_e=Tw_e, Bw=box)
+        planner._constraint_tsrs = [offset]
+        q_proj = planner._project_to_constraint(q)
+        assert q_proj is not None
+        dist, _ = offset.distance(robot.forward_kinematics(q_proj))
+        assert dist <= planner.config.tsr_tolerance
+
     def test_planning_with_constraint_tsrs(self):
         """Planning with constraint TSRs should produce paths satisfying them."""
         robot = MockRobotModel()
