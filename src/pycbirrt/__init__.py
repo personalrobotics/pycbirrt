@@ -24,6 +24,8 @@ from pycbirrt.sets import (
     StateSet,
     supports,
 )
+from pycbirrt.space import JointSpace
+from pycbirrt.tsr_set import TSRConfigurationSet, tsr_weights
 
 __all__ = [
     "CBiRRT",
@@ -46,4 +48,7 @@ __all__ = [
     "AllOf",
     "MostViolatedProjection",
     "supports",
+    "JointSpace",
+    "TSRConfigurationSet",
+    "tsr_weights",
 ]
