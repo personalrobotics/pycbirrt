@@ -301,7 +301,16 @@ class CBiRRT:
     # ------------------------------------------------------------------
 
     def _admissible(self, problem: PlanningProblem, q: np.ndarray) -> tuple[bool, str | None]:
-        """Whether ``q`` may appear on a path: valid and inside the path constraint."""
+        """Whether ``q`` may appear on a path, and if not, why.
+
+        Checked in order: membership in the ambient joint space (shape,
+        finiteness, limits), then the validator, then the path constraint.
+        Every root, sample, projected extension, and edge sample goes through
+        this, so nothing outside ``problem.space`` is ever stored in a tree.
+        """
+        why = problem.space.why_invalid(q)
+        if why is not None:
+            return False, f"outside joint space ({why})"
         if not problem.validator.is_valid(q):
             return False, "in collision"
         if problem.path_constraint is not None and not problem.path_constraint.contains(q):
@@ -354,7 +363,7 @@ class CBiRRT:
 
         stats = None
         if not is_finite(s) and supports(s, SetSampler):
-            stats = {"sample_failed": 0, "in_collision": 0, "constraint_violated": 0}
+            stats = {"sample_failed": 0, "outside_space": 0, "in_collision": 0, "constraint_violated": 0}
             for _ in range(self.config.tsr_samples):
                 if len(roots) >= self.config.num_tree_roots:
                     break
@@ -372,6 +381,8 @@ class CBiRRT:
                         kept += 1
                     elif reason == "in collision":
                         stats["in_collision"] += 1
+                    elif reason.startswith("outside joint space"):
+                        stats["outside_space"] += 1
                     else:
                         stats["constraint_violated"] += 1
 
@@ -389,12 +400,15 @@ class CBiRRT:
             details = []
             if stats["sample_failed"]:
                 details.append(f"{stats['sample_failed']} IK unreachable")
+            if stats["outside_space"]:
+                details.append(f"{stats['outside_space']} outside joint space")
             if stats["in_collision"]:
                 details.append(f"{stats['in_collision']} in collision")
             if stats["constraint_violated"]:
                 details.append(f"{stats['constraint_violated']} constraint violated")
             summary = ", ".join(details)
-            if stats["in_collision"] and not stats["sample_failed"]:
+            only_collisions = stats["in_collision"] == sum(stats.values())
+            if only_collisions:
                 raise in_collision_ex(stats["in_collision"], [summary])
             raise invalid_ex(sum(stats.values()), [summary])
 
@@ -479,12 +493,11 @@ class CBiRRT:
                 q_projected = projector.project(q_current, q_new)
                 if q_projected is None:
                     break
-                q_new = q_projected
-            elif constraint is not None and not constraint.contains(q_new):
-                break
+                q_new = np.asarray(q_projected, dtype=float)
 
-            # Validate the endpoint before the (more expensive) edge check
-            if not problem.validator.is_valid(q_new):
+            # Full admissibility of the endpoint (space membership again, since a
+            # projector may have moved it anywhere) before the more expensive edge check
+            if not self._admissible(problem, q_new)[0]:
                 break
 
             current_idx, reached = self._extend_along_edge(problem, tree, current_idx, q_new)

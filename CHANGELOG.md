@@ -4,6 +4,19 @@ All notable changes to pycbirrt. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- Membership in the ambient `JointSpace` (shape, finiteness, joint limits)
+  is now the first admissibility check for every root, sample, projected
+  extension, and edge sample. Out-of-limit or malformed fixed starts and
+  goals are rejected before search with the `...Invalid` exceptions and a
+  reason that names the joint; samplers and projectors that return
+  out-of-space configurations can no longer get them into a tree (#43).
+- Root sampling raises the `...InCollision` exception only when every
+  rejected candidate was a collision; any other reason makes it `...Invalid`.
+
 ## [1.1.0] - 2026-09-16
 
 Additive and backward compatible. `plan(...)` keeps its signature and

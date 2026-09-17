@@ -52,12 +52,44 @@ class JointSpace:
         return self.lower, self.upper
 
     def within_limits(self, q: np.ndarray) -> bool:
-        """Whether ``q`` is inside the joint limits. Angular joints always pass."""
+        """Whether ``q`` is inside the joint limits. Angular joints always pass.
+
+        Assumes ``q`` is a well-formed configuration; see ``contains`` for
+        the full membership test.
+        """
         q = np.asarray(q)
         inside = (q >= self.lower) & (q <= self.upper)
         if self.angular_joints is not None:
             inside = inside | self.angular_joints
         return bool(np.all(inside))
+
+    def why_invalid(self, q) -> str | None:
+        """Why ``q`` is not a member of this space, or None if it is.
+
+        A member is a numeric array of shape ``(dof,)`` with finite entries,
+        every bounded joint within its limits. Angular joints accept any
+        finite value.
+        """
+        try:
+            arr = np.asarray(q, dtype=float)
+        except (TypeError, ValueError):
+            return f"not numeric: {q!r}"
+        if arr.shape != (self.dof,):
+            return f"shape {arr.shape} != ({self.dof},)"
+        if not np.all(np.isfinite(arr)):
+            return f"non-finite entries: {arr}"
+        if not self.within_limits(arr):
+            bad = [i for i in range(self.dof) if not (self.lower[i] <= arr[i] <= self.upper[i])]
+            if self.angular_joints is not None:
+                bad = [i for i in bad if not self.angular_joints[i]]
+            return "outside joint limits at " + ", ".join(
+                f"joint {i}: {arr[i]:.4g} not in [{self.lower[i]:.4g}, {self.upper[i]:.4g}]" for i in bad
+            )
+        return None
+
+    def contains(self, q) -> bool:
+        """Whether ``q`` is a member of this space (see ``why_invalid``)."""
+        return self.why_invalid(q) is None
 
     def direction(self, q_from: np.ndarray, q_to: np.ndarray) -> np.ndarray:
         """Vector from ``q_from`` to ``q_to``, taking the short way around angular joints."""
