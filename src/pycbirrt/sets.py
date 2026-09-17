@@ -95,6 +95,22 @@ class SetDistance(Protocol):
 
 
 @runtime_checkable
+class SetViolation(Protocol):
+    """Capability: how far outside the set a configuration is, on the set's own scale.
+
+    ``violation(q)`` is nonnegative, exactly zero when ``contains(q)`` holds,
+    and positive otherwise. Unlike ``distance`` it already accounts for the
+    set's membership tolerance, so ``violation(q) == 0`` and ``contains(q)``
+    always agree. Strategies that compare violations across children, such
+    as ``MostViolatedProjection``, require the children's violations to be
+    on a comparable scale (for example, all residual TSR distances in the
+    same units); the strategy cannot check that, so the caller must.
+    """
+
+    def violation(self, q: np.ndarray) -> float: ...
+
+
+@runtime_checkable
 class SetProjector(Protocol):
     """Capability: move a configuration onto the set.
 
@@ -131,7 +147,7 @@ class IntersectionSampling(Protocol):
 
 
 def supports(s: object, capability: type) -> bool:
-    """Whether ``s`` provides ``capability`` (``SetSampler``, ``SetDistance``, or ``SetProjector``).
+    """Whether ``s`` provides ``capability`` (``SetSampler``, ``SetDistance``, ``SetViolation``, ``SetProjector``).
 
     Composites declare their capabilities explicitly via a ``capabilities``
     attribute; leaves are checked structurally.
@@ -151,7 +167,8 @@ class FiniteSet:
     """A finite collection of configurations.
 
     Supports membership (within ``tolerance`` under ``metric``), distance to
-    the nearest member, and uniform sampling. Provides no projector.
+    the nearest member, violation (distance beyond the tolerance), and
+    uniform sampling. Provides no projector.
     """
 
     def __init__(
@@ -171,6 +188,9 @@ class FiniteSet:
 
     def distance(self, q: np.ndarray) -> float:
         return min(self.metric(q, c) for c in self.configs)
+
+    def violation(self, q: np.ndarray) -> float:
+        return max(0.0, self.distance(q) - self.tolerance)
 
     def contains(self, q: np.ndarray) -> bool:
         return self.distance(q) <= self.tolerance
@@ -243,6 +263,8 @@ class AnyOf(_Composite):
 
     Capabilities:
         distance: min over children, if every child supports distance.
+        violation: min over children, if every child supports violation
+            (zero iff some child contains the point).
         sample: single child delegates. Multiple children require ``weights``
             (the mixture policy); the chosen child's index is prepended to
             each candidate's ``source``.
@@ -273,6 +295,8 @@ class AnyOf(_Composite):
         caps = {StateSet}
         if _all_support(self.children, SetDistance):
             caps.add(SetDistance)
+        if _all_support(self.children, SetViolation):
+            caps.add(SetViolation)
         if len(self.children) == 1:
             if supports(self.children[0], SetSampler):
                 caps.add(SetSampler)
@@ -296,6 +320,10 @@ class AnyOf(_Composite):
     def distance(self, q: np.ndarray) -> float:
         self._require(SetDistance)
         return min(c.distance(q) for c in self.children)
+
+    def violation(self, q: np.ndarray) -> float:
+        self._require(SetViolation)
+        return min(c.violation(q) for c in self.children)
 
     def sample(self, rng: np.random.Generator) -> list[Sample]:
         self._require(SetSampler)
@@ -325,8 +353,10 @@ class AllOf(_Composite):
     """Intersection: ``q`` is a member iff it is a member of every child.
 
     Capabilities:
-        distance: max over children (the largest violation), if every child
-            supports distance.
+        distance: max over children, if every child supports distance. This
+            is a geometric summary, not a membership test.
+        violation: max over children, if every child supports violation
+            (zero iff every child contains the point).
         sample: single child delegates. Multiple children require an explicit
             ``sampling`` strategy (see ``RejectionSampling``). Candidates keep
             the sampled child's provenance; ``AllOf`` adds no index.
@@ -350,6 +380,8 @@ class AllOf(_Composite):
         caps = {StateSet}
         if _all_support(self.children, SetDistance):
             caps.add(SetDistance)
+        if _all_support(self.children, SetViolation):
+            caps.add(SetViolation)
         if len(self.children) == 1:
             if supports(self.children[0], SetSampler):
                 caps.add(SetSampler)
@@ -379,6 +411,10 @@ class AllOf(_Composite):
     def distance(self, q: np.ndarray) -> float:
         self._require(SetDistance)
         return max(c.distance(q) for c in self.children)
+
+    def violation(self, q: np.ndarray) -> float:
+        self._require(SetViolation)
+        return max(c.violation(q) for c in self.children)
 
     def sample(self, rng: np.random.Generator) -> list[Sample]:
         self._require(SetSampler)
@@ -491,15 +527,20 @@ class RejectionSampling:
 
 
 class MostViolatedProjection:
-    """Heuristic: repeatedly project onto the child with the largest violation.
+    """Heuristic: repeatedly project onto the unsatisfied child with the largest violation.
 
-    Each iteration evaluates every child's distance, stops if all children
-    contain the configuration, and otherwise projects onto the most violated
-    child. Gives up when the largest violation stops decreasing by at least
-    ``progress_tolerance`` or after ``max_iters`` iterations.
+    Each iteration evaluates every child's ``violation`` (zero for children
+    that already contain the point), stops if every child contains the
+    configuration, and otherwise projects onto the child with the largest
+    violation. A satisfied child is never selected. Gives up when the largest
+    violation stops decreasing by at least ``progress_tolerance`` or after
+    ``max_iters`` iterations.
 
     This is a heuristic for intersections, not a true projection. Every child
-    must support both distance and projection.
+    must support both violation and projection, and the children's violations
+    must be on a comparable scale (see ``SetViolation``); for an intersection
+    of TSR-induced sets in the same units this holds. For heterogeneous
+    children use a different strategy or normalize the violations yourself.
     """
 
     def __init__(self, max_iters: int = 50, progress_tolerance: float = 1e-6):
@@ -508,9 +549,9 @@ class MostViolatedProjection:
 
     def requires(self, children: Sequence[StateSet]) -> None:
         for i, c in enumerate(children):
-            if not (supports(c, SetDistance) and supports(c, SetProjector)):
+            if not (supports(c, SetViolation) and supports(c, SetProjector)):
                 raise UnsupportedCapability(
-                    f"MostViolatedProjection requires every child to support distance and projection; "
+                    f"MostViolatedProjection requires every child to support violation and projection; "
                     f"child {i} ({c!r}) does not"
                 )
 
@@ -521,16 +562,18 @@ class MostViolatedProjection:
         q_proposed: np.ndarray,
     ) -> np.ndarray | None:
         q = np.array(q_proposed, dtype=float)
-        prev_violation = float("inf")
+        prev_worst = float("inf")
         for _ in range(self.max_iters):
-            violations = [c.distance(q) for c in children]
-            if all(c.contains(q) for c in children):
+            # Zero for satisfied children by contract, so argmax never picks one unless all are zero
+            violations = [0.0 if c.contains(q) else c.violation(q) for c in children]
+            worst_idx = int(np.argmax(violations))
+            worst = violations[worst_idx]
+            if worst <= 0.0:
                 return q
-            worst = max(violations)
-            if prev_violation - worst < self.progress_tolerance:
+            if prev_worst - worst < self.progress_tolerance:
                 return None
-            prev_violation = worst
-            q_next = children[int(np.argmax(violations))].project(q_previous, q)
+            prev_worst = worst
+            q_next = children[worst_idx].project(q_previous, q)
             if q_next is None:
                 return None
             q = np.asarray(q_next, dtype=float)

@@ -22,6 +22,13 @@ follows [Semantic Versioning](https://semver.org/).
   was not finite. New `seeds(s)` enumerates the explicit configurations
   embedded in any set expression; mixture weights now govern sampling
   only (#42).
+- `MostViolatedProjection` ranked children by raw `distance`, so a satisfied
+  child with a large tolerance could outrank an unsatisfied one and the
+  projection stalled on a feasible intersection. New `SetViolation`
+  capability: `violation(q)` is zero exactly when the set contains `q`
+  (`max(0, distance - tolerance)` for TSR and finite sets; min over a
+  union, max over an intersection). The strategy now selects only among
+  unsatisfied children by violation, and requires it of every child (#44).
 - Nearest-neighbor selection uses the query's `PlanningProblem.space`, not
   the planner's construction-time space, so a direct `solve(problem)` with
   a different joint topology is internally consistent (#45).

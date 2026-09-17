@@ -29,6 +29,8 @@ class TSRConfigurationSet:
     Capabilities:
         contains: TSR distance of ``FK(q)`` is within ``tolerance``.
         distance: the TSR distance of ``FK(q)`` (Berenson et al. 2011, Sec. 4.2).
+        violation: ``max(0, distance - tolerance)``; comparable across TSR sets
+            that use the same units and rotation weighting.
         sample: draw a pose uniformly from the TSR bounds, solve IK, and
             return every solution within joint limits as candidates. The
             caller validates them; returning all branches matters because
@@ -69,6 +71,10 @@ class TSRConfigurationSet:
     def distance(self, q: np.ndarray) -> float:
         dist, _ = self.tsr.distance(self.robot.forward_kinematics(q))
         return float(dist)
+
+    def violation(self, q: np.ndarray) -> float:
+        """TSR distance beyond the membership tolerance; zero iff ``contains``."""
+        return max(0.0, self.distance(q) - self.tolerance)
 
     def contains(self, q: np.ndarray) -> bool:
         return self.distance(q) <= self.tolerance
