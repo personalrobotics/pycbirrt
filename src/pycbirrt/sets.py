@@ -421,22 +421,41 @@ def members(s: StateSet) -> list[Sample]:
 
     Returns an empty list for sets that are not finite. For an
     intersection, enumerates the first finite child and keeps the members
-    the other children contain.
+    the other children contain. See ``seeds`` for the explicit candidates
+    embedded in a set that is not finite.
+    """
+    if not is_finite(s):
+        return []
+    return seeds(s)
+
+
+def seeds(s: StateSet) -> list[Sample]:
+    """The explicit configurations embedded in a set expression, with provenance.
+
+    Unlike ``members``, this does not require the set to be finite. A union
+    of a finite set and a sampleable region still contains the finite set's
+    configurations, and they should seed a search regardless of mixture
+    weights, which govern random sampling only.
+
+    - ``FiniteSet``: every member.
+    - ``AnyOf``: the seeds of every child, with the child index prepended.
+    - ``AllOf``: the seeds of the first child that has any, kept only if
+      every other child contains them (``AllOf`` adds no provenance).
+    - Other leaves: none.
     """
     if isinstance(s, FiniteSet):
         return [Sample(c.copy(), (i,)) for i, c in enumerate(s.configs)]
     if isinstance(s, AnyOf):
-        if not is_finite(s):
-            return []
         out = []
         for i, c in enumerate(s.children):
-            out.extend(Sample(m.q, (i, *m.source)) for m in members(c))
+            out.extend(Sample(m.q, (i, *m.source)) for m in seeds(c))
         return out
     if isinstance(s, AllOf):
         for i, c in enumerate(s.children):
-            if is_finite(c):
+            found = seeds(c)
+            if found:
                 others = s.children[:i] + s.children[i + 1 :]
-                return [m for m in members(c) if all(o.contains(m.q) for o in others)]
+                return [m for m in found if all(o.contains(m.q) for o in others)]
         return []
     return []
 

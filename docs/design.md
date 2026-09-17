@@ -138,11 +138,15 @@ sampler or projector.
   Nothing outside `problem.space` is ever stored in a tree. Concrete sets
   may filter limits early as an optimization, but correctness does not
   depend on it.
-- **Start and goal** must be finite, sampleable, or both. Every member of a
-  finite set is a candidate root. If the set is not finite and can sample,
-  admissible candidates are added until `num_tree_roots` roots exist or the
-  draw budget (`tsr_samples`) is spent, keeping at most `max_ik_per_pose`
-  per draw for diversity. Bias sampling draws from any sampleable set.
+- **Start and goal** must be finite, sampleable, or both. Every explicit
+  configuration embedded in the set is a candidate root: `seeds(s)` walks
+  the expression and collects the members of finite sets, including those
+  inside a union with a sampleable region, so mixture weights never decide
+  whether a fixed configuration is a root. If the set is not finite and can
+  sample, admissible candidates are added until `num_tree_roots` roots
+  exist or the draw budget (`tsr_samples`) is spent, keeping at most
+  `max_ik_per_pose` per draw for diversity and skipping candidates that
+  repeat a seed. Bias sampling draws from any sampleable set.
 - **Roots are taken from $\mathcal{S} \cap \mathcal{C}$ (and $\mathcal{G} \cap \mathcal{C}$) by
   rejection**: a candidate outside the path constraint or rejected by the
   validator is not a root. If no root survives, the planner raises the

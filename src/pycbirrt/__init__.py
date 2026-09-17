@@ -25,6 +25,9 @@ from pycbirrt.sets import (
     SetProjector,
     SetSampler,
     StateSet,
+    is_finite,
+    members,
+    seeds,
     supports,
 )
 from pycbirrt.space import JointSpace
@@ -54,6 +57,9 @@ __all__ = [
     "MostViolatedProjection",
     "RejectionSampling",
     "supports",
+    "seeds",
+    "is_finite",
+    "members",
     "JointSpace",
     "TSRConfigurationSet",
     "tsr_weights",

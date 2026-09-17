@@ -18,7 +18,7 @@ from pycbirrt.exceptions import (
 from pycbirrt.interfaces import CollisionChecker, IKSolver, RobotModel
 from pycbirrt.legacy import legacy_index, legacy_problem
 from pycbirrt.problem import PlanningProblem
-from pycbirrt.sets import Sample, SetProjector, SetSampler, StateSet, is_finite, members, supports
+from pycbirrt.sets import Sample, SetProjector, SetSampler, StateSet, is_finite, seeds, supports
 from pycbirrt.space import JointSpace
 from pycbirrt.tree import RRTree
 
@@ -328,13 +328,17 @@ class CBiRRT:
     def _roots(self, problem: PlanningProblem, s: StateSet, role: str) -> list[Sample]:
         """Collect tree roots for a start or goal set.
 
-        Every member of a finite set is a candidate root, validated and
-        filtered with a warning; if all are invalid an exception is raised.
-        If the set is not finite and supports sampling, admissible samples
-        are added until ``num_tree_roots`` roots exist or the sample budget
-        (``tsr_samples`` draws) is spent. Each draw may yield several
-        candidates (for example the IK branches of one pose); at most
-        ``max_ik_per_pose`` admissible ones per draw are kept, for diversity.
+        Every explicit configuration embedded in the set (``seeds``: the
+        members of finite sets, also inside unions with sampleable regions)
+        is a candidate root, validated and filtered with a warning. If the
+        set is not finite and supports sampling, admissible samples are
+        added until ``num_tree_roots`` roots exist or the sample budget
+        (``tsr_samples`` draws) is spent; a sampled candidate that repeats
+        an explicit seed (same provenance) is skipped. Each draw may yield
+        several candidates (for example the IK branches of one pose); at
+        most ``max_ik_per_pose`` admissible ones per draw are kept, for
+        diversity. Mixture weights govern sampling only, never whether
+        explicit seeds are roots.
 
         Raises:
             AllStartConfigurationsInCollision / AllGoalConfigurationsInCollision:
@@ -346,7 +350,8 @@ class CBiRRT:
         invalid_details: list[str] = []
         all_in_collision = True
 
-        explicit = members(s)
+        explicit = seeds(s)
+        seed_sources = {m.source for m in explicit}
         for m in explicit:
             ok, reason = self._admissible(problem, m.q)
             if ok:
@@ -355,11 +360,6 @@ class CBiRRT:
                 invalid_details.append(f"{role}[{legacy_index(m.source)}]: {reason}")
                 if reason != "in collision":
                     all_in_collision = False
-
-        if roots and invalid_details:
-            logger.warning(
-                f"Filtered {len(invalid_details)} invalid {role.lower()} configuration(s): {'; '.join(invalid_details)}"
-            )
 
         stats = None
         if not is_finite(s) and supports(s, SetSampler):
@@ -375,6 +375,8 @@ class CBiRRT:
                 for smp in candidates:
                     if kept >= self.config.max_ik_per_pose or len(roots) >= self.config.num_tree_roots:
                         break
+                    if smp.source in seed_sources:
+                        continue  # an explicit seed drawn again; already a root or already rejected
                     ok, reason = self._admissible(problem, smp.q)
                     if ok:
                         roots.append(smp)
@@ -387,26 +389,25 @@ class CBiRRT:
                         stats["constraint_violated"] += 1
 
         if roots:
+            if invalid_details:
+                logger.warning(
+                    f"Filtered {len(invalid_details)} invalid {role.lower()} configuration(s): "
+                    f"{'; '.join(invalid_details)}"
+                )
             return roots
 
         in_collision_ex = AllStartConfigurationsInCollision if role == "Start" else AllGoalConfigurationsInCollision
         invalid_ex = AllStartConfigurationsInvalid if role == "Start" else AllGoalConfigurationsInvalid
 
         if explicit:
+            if stats is not None and sum(stats.values()) > 0:
+                invalid_details.append(f"sampling: {self._sampling_summary(stats)}")
+                all_in_collision = all_in_collision and stats["in_collision"] == sum(stats.values())
             ex = in_collision_ex if all_in_collision else invalid_ex
             raise ex(len(explicit), invalid_details)
 
         if stats is not None and sum(stats.values()) > 0:
-            details = []
-            if stats["sample_failed"]:
-                details.append(f"{stats['sample_failed']} IK unreachable")
-            if stats["outside_space"]:
-                details.append(f"{stats['outside_space']} outside joint space")
-            if stats["in_collision"]:
-                details.append(f"{stats['in_collision']} in collision")
-            if stats["constraint_violated"]:
-                details.append(f"{stats['constraint_violated']} constraint violated")
-            summary = ", ".join(details)
+            summary = self._sampling_summary(stats)
             only_collisions = stats["in_collision"] == sum(stats.values())
             if only_collisions:
                 raise in_collision_ex(stats["in_collision"], [summary])
@@ -415,6 +416,19 @@ class CBiRRT:
         raise ValueError(
             f"No valid {role.lower()} configurations available. Provide either {role.lower()} or {role.lower()}_tsrs."
         )
+
+    @staticmethod
+    def _sampling_summary(stats: dict[str, int]) -> str:
+        details = []
+        if stats["sample_failed"]:
+            details.append(f"{stats['sample_failed']} IK unreachable")
+        if stats["outside_space"]:
+            details.append(f"{stats['outside_space']} outside joint space")
+        if stats["in_collision"]:
+            details.append(f"{stats['in_collision']} in collision")
+        if stats["constraint_violated"]:
+            details.append(f"{stats['constraint_violated']} constraint violated")
+        return ", ".join(details)
 
     # ------------------------------------------------------------------
     # Tree growth
