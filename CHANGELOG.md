@@ -19,6 +19,12 @@ follows [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- `MostViolatedProjection` required the single largest violation to
+  decrease after every projection, so an intersection with tied
+  violations (two axes from a corner) was reported as stalled after the
+  first child was satisfied. Progress is now the lexicographic decrease
+  of the sorted violation profile; it stops after a full sweep without
+  progress, when a projector makes no change, or at `max_iters` (#57).
 - `members` of a finite intersection enumerates a child that is itself
   finite, not the first child that merely has explicit seeds, so an
   `AllOf` whose first seed-bearing child is a mixed union still

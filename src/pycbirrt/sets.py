@@ -552,9 +552,18 @@ class MostViolatedProjection:
     Each iteration evaluates every child's ``violation`` (zero for children
     that already contain the point), stops if every child contains the
     configuration, and otherwise projects onto the child with the largest
-    violation. A satisfied child is never selected. Gives up when the largest
-    violation stops decreasing by at least ``progress_tolerance`` or after
-    ``max_iters`` iterations.
+    violation. A satisfied child is never selected.
+
+    Termination: success when every child is satisfied; failure when the
+    selected projection returns None or leaves the configuration unchanged
+    while its child is still violated; failure after a full sweep
+    (``len(children)`` consecutive iterations) without progress, where
+    progress means the violation profile, the violations sorted in
+    descending order, decreased lexicographically by at least
+    ``progress_tolerance`` in some position. Satisfying one of several
+    equally violated children therefore counts as progress even though the
+    maximum is unchanged, so tied plateaus are traversed rather than
+    mistaken for stagnation. ``max_iters`` bounds everything.
 
     This is a heuristic for intersections, not a true projection. Every child
     must support both violation and projection, and the children's violations
@@ -582,19 +591,38 @@ class MostViolatedProjection:
         q_proposed: np.ndarray,
     ) -> np.ndarray | None:
         q = np.array(q_proposed, dtype=float)
-        prev_worst = float("inf")
+        best_profile: list[float] | None = None
+        stale = 0
         for _ in range(self.max_iters):
             # Zero for satisfied children by contract, so argmax never picks one unless all are zero
             violations = [0.0 if c.contains(q) else c.violation(q) for c in children]
             worst_idx = int(np.argmax(violations))
-            worst = violations[worst_idx]
-            if worst <= 0.0:
+            if violations[worst_idx] <= 0.0:
                 return q
-            if prev_worst - worst < self.progress_tolerance:
-                return None
-            prev_worst = worst
+
+            profile = sorted(violations, reverse=True)
+            if best_profile is None or self._improved(profile, best_profile):
+                best_profile = profile
+                stale = 0
+            else:
+                stale += 1
+                if stale >= len(children):
+                    return None  # a full sweep without progress: cycling or stuck
+
             q_next = children[worst_idx].project(q_previous, q)
             if q_next is None:
                 return None
-            q = np.asarray(q_next, dtype=float)
+            q_next = np.asarray(q_next, dtype=float)
+            if np.array_equal(q_next, q):
+                return None  # the projector cannot move this point while its child is violated
+            q = q_next
         return None
+
+    def _improved(self, profile: list[float], best: list[float]) -> bool:
+        """Lexicographic decrease of the descending violation profile, at ``progress_tolerance``."""
+        for cur, prev in zip(profile, best):
+            if prev - cur >= self.progress_tolerance:
+                return True
+            if cur - prev >= self.progress_tolerance:
+                return False
+        return False
