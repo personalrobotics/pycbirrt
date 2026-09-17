@@ -13,6 +13,7 @@ from pycbirrt.exceptions import (
     AllGoalConfigurationsInvalid,
     AllStartConfigurationsInCollision,
     AllStartConfigurationsInvalid,
+    MotionContractError,
     UnsupportedCapability,
 )
 from pycbirrt.interfaces import CollisionChecker, IKSolver, RobotModel
@@ -559,25 +560,59 @@ class CBiRRT:
         last raw step may differ by 2π from the target's representation; that
         is the same physical motion (#35).
 
+        The returned ``LocalMotion`` is checked before the tree is touched:
+
+        - A zero-length motion (source already the exact target) succeeds
+          without adding a node, whatever the validator returned.
+        - ``reached=True`` on a nonzero motion with no configurations, or
+          with a final configuration that is not the exact target, is a
+          validator bug and raises ``MotionContractError``.
+        - ``reached=True`` with any inadmissible configuration (custom
+          validators only; the default is built from admissibility) is
+          rejected whole: nothing is stored and the result is not reached.
+        - ``reached=False`` keeps its admissible prefix: configurations are
+          stored up to the first inadmissible one. This is deliberate so that
+          partial extensions retain their progress.
+
         Returns:
             Tuple of (final_idx, reached_target).
         """
-        if not problem.space.contains(q_target):
+        space = problem.space
+        if not space.contains(q_target):
             return start_idx, False
         q_from = tree.nodes[start_idx].config
+        q_target = np.asarray(q_target, dtype=float)
+        if space.distance(q_from, q_target) == 0.0:
+            return start_idx, True  # already there; never add a duplicate
+
         validator = self._motion_validator(problem)
         motion = validator.validate(q_from, q_target)
+        configs = [np.asarray(q, dtype=float) for q in motion.configs]
+
+        if motion.reached:
+            if not configs:
+                raise MotionContractError(
+                    f"{type(validator).__name__} reported reached=True with no configurations for a motion of length "
+                    f"{space.distance(q_from, q_target):.4g}"
+                )
+            if configs[-1].shape != q_target.shape or not np.array_equal(configs[-1], q_target):
+                raise MotionContractError(
+                    f"{type(validator).__name__} reported reached=True but ended at {configs[-1]} instead of the "
+                    f"exact target {q_target}"
+                )
 
         custom = problem.motion_validator is not None
+        if custom:
+            admissible = [self._admissible(problem, q)[0] for q in configs]
+            if motion.reached and not all(admissible):
+                return start_idx, False  # a claimed success with an inadmissible state: reject whole
+            if not motion.reached:
+                first_bad = next((i for i, ok in enumerate(admissible) if not ok), len(configs))
+                configs = configs[:first_bad]
+
         current_idx = start_idx
-        for i, q in enumerate(motion.configs):
-            q = np.asarray(q, dtype=float)
-            if custom and not self._admissible(problem, q)[0]:
-                return current_idx, False
+        for q in configs:
             current_idx = tree.add_node(q, current_idx)
-        if motion.reached and motion.configs and not np.array_equal(motion.configs[-1], np.asarray(q_target)):
-            # A validator that claims to reach must end exactly at the target
-            return current_idx, False
         return current_idx, bool(motion.reached)
 
     def _motion_validator(self, problem: PlanningProblem) -> MotionValidator:
