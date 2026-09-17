@@ -16,6 +16,9 @@ follows [Semantic Versioning](https://semver.org/).
   out-of-space configurations can no longer get them into a tree (#43).
 - Root sampling raises the `...InCollision` exception only when every
   rejected candidate was a collision; any other reason makes it `...Invalid`.
+- Nearest-neighbor selection uses the query's `PlanningProblem.space`, not
+  the planner's construction-time space, so a direct `solve(problem)` with
+  a different joint topology is internally consistent (#45).
 
 ## [1.1.0] - 2026-09-16
 
