@@ -14,8 +14,13 @@ follows [Semantic Versioning](https://semver.org/).
   whether the target was reached), and every tree edge, the final
   connection between trees, and every shortcut go through it. The default
   `DiscreteMotionValidator` reproduces the discretized behavior at
-  `edge_resolution`. A custom validator can only be stricter: the planner
-  re-checks everything it returns for admissibility (#46).
+  `edge_resolution`. A custom validator *replaces* the default and owns the
+  motion's interior; the planner independently checks every configuration
+  it returns before storing it. `RestrictedMotionValidator(base, accepts)`
+  composes an extra restriction with a base validator (typically
+  `planner.default_motion_validator(problem)`) to be stricter while keeping
+  the default checks. Goal-tree edges are validated in the reverse of
+  execution direction (#46, #56).
 
 ### Fixed
 

@@ -550,10 +550,11 @@ class CBiRRT:
         ordinary growth, the final connection between trees, and shortcut
         smoothing. The problem's ``motion_validator`` (or the default
         ``DiscreteMotionValidator``) returns the validated configurations to
-        store; they are added as consecutive nodes. A custom validator's
-        configurations are re-checked for admissibility before storing, so a
-        custom validator can only be stricter than the default, and the
-        invariant that every stored node is admissible does not depend on it.
+        store; they are added as consecutive nodes. A custom validator
+        replaces the default and owns the motion's interior; the planner only
+        guarantees that every stored configuration is admissible (it re-checks
+        a custom validator's configurations) and that the ``LocalMotion``
+        contract holds. See ``pycbirrt.motion`` for the full contract.
 
         ``reached_target`` is True only if the motion was valid all the way
         and the tree now contains the exact target. With angular joints the
@@ -619,6 +620,16 @@ class CBiRRT:
         """The problem's motion validator, or the default discretized one."""
         if problem.motion_validator is not None:
             return problem.motion_validator
+        return self.default_motion_validator(problem)
+
+    def default_motion_validator(self, problem: PlanningProblem) -> DiscreteMotionValidator:
+        """The validator used when ``problem.motion_validator`` is None.
+
+        Straight segments sampled every ``edge_resolution`` (or ``step_size``),
+        each sample checked for admissibility in ``problem``. Use it as the
+        base of a ``RestrictedMotionValidator`` to add a restriction while
+        keeping the default checks.
+        """
         resolution = self.config.edge_resolution or self.config.step_size
         return DiscreteMotionValidator(problem.space, lambda q: self._admissible(problem, q)[0], resolution)
 

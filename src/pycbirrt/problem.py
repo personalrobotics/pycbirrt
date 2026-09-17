@@ -36,9 +36,14 @@ class PlanningProblem:
             including the final connection between trees and shortcuts. None
             means the default: the straight segment sampled every
             ``edge_resolution`` and checked for admissibility (space, validator,
-            path constraint). A custom validator may only be stricter: the
-            planner still checks every configuration it returns for
-            admissibility before storing it.
+            path constraint). A custom validator *replaces* the default and
+            owns the motion's interior; the planner still checks every
+            configuration it returns before storing it, but that does not
+            prove validity between them. To add a restriction on top of the
+            default checks, wrap ``CBiRRT.default_motion_validator(problem)``
+            in a ``RestrictedMotionValidator``. Bidirectional search validates
+            goal-tree edges in the reverse of execution direction, so motion
+            validity should not depend on direction. See ``pycbirrt.motion``.
     """
 
     space: JointSpace
