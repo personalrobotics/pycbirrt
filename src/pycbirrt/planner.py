@@ -464,8 +464,12 @@ class CBiRRT:
         """Grow tree toward target using EXT or CON behavior.
 
         Each new configuration is projected onto the path constraint if it
-        supports projection, or rejected if it leaves the constraint
-        otherwise, then validated, then connected by a checked edge.
+        supports projection, then connected by a checked edge that validates
+        every sample including its endpoint (and rejects it if it leaves a
+        rejection-only constraint). Once the target is within
+        ``connection_tolerance``, the exact target is connected through the
+        same checked edge; ``reached`` is True only after that edge exists,
+        so every consecutive pair on any returned path has been validated.
 
         Args:
             problem: The planning problem
@@ -476,11 +480,15 @@ class CBiRRT:
         Returns:
             Tuple of (node_index, reached) where:
             - node_index: Index of the furthest node reached toward target
-            - reached: True if we reached the target within connection_tolerance
+            - reached: True if the tree now contains the exact target,
+              connected by a validated edge
         """
         space = problem.space
         constraint = problem.path_constraint
         projector = constraint if constraint is not None and supports(constraint, SetProjector) else None
+
+        if not space.contains(q_target):
+            return self._nearest_node(space, tree, q_target), False
 
         current_idx = self._nearest_node(space, tree, q_target)
         steps_taken = 0
@@ -490,10 +498,14 @@ class CBiRRT:
             q_current = tree.nodes[current_idx].config
 
             direction = space.direction(q_current, q_target)
-            distance = np.linalg.norm(direction)
+            distance = float(np.linalg.norm(direction))
+
+            if distance == 0.0:
+                return current_idx, True  # already there; no duplicate node
 
             if distance < self.config.connection_tolerance:
-                return current_idx, True
+                # Close enough to connect: validate the exact final segment and add the target
+                return self._extend_along_edge(problem, tree, current_idx, q_target)
 
             if prev_distance - distance < self.config.progress_tolerance:
                 break
@@ -505,7 +517,7 @@ class CBiRRT:
             step = direction / distance * min(distance, self.config.step_size)
             q_new = q_current + step
 
-            if not space.within_limits(q_new):
+            if not space.contains(q_new):
                 break
 
             if projector is not None:
@@ -513,11 +525,8 @@ class CBiRRT:
                 if q_projected is None:
                     break
                 q_new = np.asarray(q_projected, dtype=float)
-
-            # Full admissibility of the endpoint (space membership again, since a
-            # projector may have moved it anywhere) before the more expensive edge check
-            if not self._admissible(problem, q_new)[0]:
-                break
+                if not space.contains(q_new):
+                    break  # a projector may move the point anywhere
 
             current_idx, reached = self._extend_along_edge(problem, tree, current_idx, q_new)
             steps_taken += 1
@@ -533,35 +542,42 @@ class CBiRRT:
         start_idx: int,
         q_target: np.ndarray,
     ) -> tuple[int, bool]:
-        """Extend tree along an edge, adding intermediate nodes.
+        """Extend tree along a straight edge, adding a node every ``edge_resolution``.
 
-        Checks validity and path-constraint membership every ``edge_resolution``
-        (default ``step_size``) along the edge. Adds valid intermediate
-        configurations to the tree and stops at the first invalid one,
-        keeping all valid ones added so far.
+        This is the single local-motion validation boundary: every sample
+        along the edge, including the endpoint, must be admissible (in the
+        joint space, valid, and inside the path constraint). Nodes are added
+        as they are validated; on the first inadmissible sample the edge
+        stops there and the nodes added so far are kept.
 
-        Note: This uses linear interpolation which is correct for the small
-        step sizes used (already within step_size from _grow). Angular
-        wraparound is handled at the direction/distance level.
+        The endpoint node is the exact target as given, so ``reached_target``
+        means the tree contains the target and paths keep their endpoints
+        exactly. With angular joints the interior samples follow the wrapped
+        direction, so the last raw step may differ by 2π from the target's
+        representation; that is the same physical motion (#35).
+
+        Note: linear interpolation along the wrapped direction is correct for
+        the small step sizes used.
 
         Returns:
             Tuple of (final_idx, reached_target).
         """
         space = problem.space
+        if not space.contains(q_target):
+            return start_idx, False
         q_from = tree.nodes[start_idx].config
-        distance = space.distance(q_from, q_target)
+        direction = space.direction(q_from, q_target)
+        distance = float(np.linalg.norm(direction))
+        if distance == 0.0:
+            return start_idx, True  # nothing to add
         resolution = self.config.edge_resolution or self.config.step_size
         n_steps = max(1, int(np.ceil(distance / resolution)))
-        direction = space.direction(q_from, q_target)
 
         current_idx = start_idx
         for i in range(1, n_steps + 1):
-            q = q_from + (i / n_steps) * direction
-
-            # Skip validation for the endpoint - already checked in _grow
-            if i < n_steps and not self._admissible(problem, q)[0]:
+            q = np.array(q_target, dtype=float) if i == n_steps else q_from + (i / n_steps) * direction
+            if not self._admissible(problem, q)[0]:
                 return current_idx, False
-
             current_idx = tree.add_node(q, current_idx)
 
         return current_idx, True
@@ -579,7 +595,11 @@ class CBiRRT:
         idx_a: int,
         idx_b: int,
     ) -> list[np.ndarray]:
-        """Extract path from connected trees, start to goal."""
+        """Extract path from connected trees, start to goal.
+
+        The connecting tree holds the exact configuration the other tree
+        reached, so the join would repeat it; that duplicate is dropped.
+        """
         # get_path_to_root returns path from ROOT to the specified node
         if tree_a is tree_start:
             path_from_start = tree_start.get_path_to_root(idx_a)
@@ -587,18 +607,32 @@ class CBiRRT:
         else:
             path_from_start = tree_start.get_path_to_root(idx_b)
             path_from_goal = tree_goal.get_path_to_root(idx_a)
-        return path_from_start + list(reversed(path_from_goal))
+        path = path_from_start + list(reversed(path_from_goal))
+        deduped = [path[0]]
+        for q in path[1:]:
+            if not np.array_equal(q, deduped[-1]):
+                deduped.append(q)
+        return deduped
 
     def _smooth_path(self, problem: PlanningProblem, path: list[np.ndarray]) -> list[np.ndarray]:
         """Smooth path by shortcutting with the grow function.
 
-        Picks two random points on the path and attempts to grow from one
-        to the other. If successful, replaces the intermediate waypoints
-        with the new shorter path segment. Stops early if no improvement is
-        made for ``smoothing_patience`` attempts.
+        Picks two random points on the path and attempts to grow from one to
+        the other. A shortcut replaces the segment between them only if it
+        is shorter in joint-space path length (under ``problem.space``), as
+        in the original CBiRRT; a shortcut with fewer waypoints can still be
+        longer, for example after projection. Every shortcut is a validated
+        edge sequence ending exactly at its target, so the path's first and
+        last waypoints are preserved exactly. Stops early after
+        ``smoothing_patience`` attempts without improvement.
         """
         if len(path) <= 2:
             return path
+
+        space = problem.space
+
+        def length(segment: list[np.ndarray]) -> float:
+            return sum(space.distance(a, b) for a, b in zip(segment[:-1], segment[1:]))
 
         smoothed = list(path)
         attempts_without_improvement = 0
@@ -609,16 +643,16 @@ class CBiRRT:
             if attempts_without_improvement >= self.config.smoothing_patience:
                 break
 
-            prev_len = len(smoothed)
+            i = int(self._rng.integers(0, len(smoothed) - 2))
+            j = int(self._rng.integers(i + 2, len(smoothed)))
 
-            i = self._rng.integers(0, len(smoothed) - 2)
-            j = self._rng.integers(i + 2, len(smoothed))
-
+            improved = False
             shortcut = self._try_shortcut(problem, smoothed[i], smoothed[j])
-            if shortcut is not None:
+            if shortcut is not None and length(shortcut) < length(smoothed[i : j + 1]) - 1e-9:
                 smoothed = smoothed[:i] + shortcut + smoothed[j + 1 :]
+                improved = True
 
-            if len(smoothed) < prev_len:
+            if improved:
                 attempts_without_improvement = 0
             else:
                 attempts_without_improvement += 1
@@ -634,12 +668,12 @@ class CBiRRT:
         """Try to connect two configurations directly using grow.
 
         Returns:
-            Configurations from q_from to q_to (inclusive), or None if failed
+            Configurations from ``q_from`` to ``q_to`` inclusive, every
+            consecutive pair validated, or None if the connection failed.
+            ``q_from == q_to`` gives the single-element path ``[q_from]``.
         """
         temp_tree = RRTree(q_from)
         final_idx, reached = self._grow(problem, temp_tree, q_to, max_steps=None)
         if not reached:
             return None
-        shortcut = temp_tree.get_path_to_root(final_idx)
-        shortcut[-1] = q_to  # grow reaches within tolerance; snap to the exact target
-        return shortcut
+        return temp_tree.get_path_to_root(final_idx)

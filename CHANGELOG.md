@@ -22,6 +22,17 @@ follows [Semantic Versioning](https://semver.org/).
   was not finite. New `seeds(s)` enumerates the explicit configurations
   embedded in any set expression; mixture weights now govern sampling
   only (#42).
+- **Tree connection and shortcuts are validated to the exact target.**
+  Growth reported success when merely within `connection_tolerance` of its
+  target, leaving the final gap unchecked in the returned path, and shortcut
+  smoothing snapped its last waypoint to the target without validating the
+  segment (and could drop the shortcut's start when growth succeeded
+  immediately). Now `reached` means the tree contains the exact target
+  through a validated edge; the edge routine validates every sample
+  including the endpoint; the join between trees carries no duplicate; and
+  smoothing accepts a shortcut only when its joint-space length is shorter
+  than the segment it replaces. Paths keep their first and last waypoints
+  exactly (#47).
 - `MostViolatedProjection` ranked children by raw `distance`, so a satisfied
   child with a large tolerance could outrank an unsatisfied one and the
   projection stalled on a feasible intersection. New `SetViolation`

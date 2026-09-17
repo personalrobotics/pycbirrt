@@ -168,6 +168,22 @@ sampler or projector.
   checked for membership and validity.
 - **The validator** is applied to every root, every extension endpoint, and
   every intermediate configuration along every edge.
+- **Edges are the single local-motion boundary.** Every tree edge is a
+  straight segment in the space, sampled every `edge_resolution`, and every
+  sample including the endpoint must be admissible. Validity is therefore
+  discrete at `edge_resolution`, not continuous; choose it against the
+  thinnest obstacle you must not miss. Making this boundary replaceable
+  (continuous collision checking, swept volumes) is #46.
+- **Reached means connected.** Growth reports success only once the tree
+  contains the exact target, added through a validated edge. Coming within
+  `connection_tolerance` triggers that final exact edge; it never substitutes
+  for it. Where the two trees meet, the connecting tree holds the other
+  tree's configuration exactly and the join has no unchecked gap.
+- **Shortcuts are validated edges that end at their target.** Smoothing
+  accepts a shortcut only if its joint-space path length under the problem's
+  space is shorter than the segment it replaces, as in the original CBiRRT;
+  fewer waypoints is not the criterion. The first and last waypoints of a
+  path are preserved exactly.
 
 ## Tolerances
 
