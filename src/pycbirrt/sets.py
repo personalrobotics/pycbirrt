@@ -15,7 +15,8 @@ Capability rules for composites:
 - A multi-child ``AnyOf`` samples only with an explicit mixture policy (``weights``),
   and projects by taking the nearest successful child projection.
 - A multi-child ``AllOf`` projects only with an explicit named strategy such as
-  ``MostViolatedProjection``. It does not sample.
+  ``MostViolatedProjection``, and samples only with one such as
+  ``RejectionSampling``.
 
 Use ``supports(s, Capability)`` to query what a set can do. Calling an
 unsupported capability raises ``UnsupportedCapability``.
@@ -118,6 +119,15 @@ class IntersectionProjection(Protocol):
         q_previous: np.ndarray,
         q_proposed: np.ndarray,
     ) -> np.ndarray | None: ...
+
+
+class IntersectionSampling(Protocol):
+    """A named strategy for sampling an intersection of sets.
+
+    May define ``requires(children)`` like ``IntersectionProjection``.
+    """
+
+    def sample(self, children: Sequence[StateSet], rng: np.random.Generator) -> list[Sample]: ...
 
 
 def supports(s: object, capability: type) -> bool:
@@ -317,7 +327,9 @@ class AllOf(_Composite):
     Capabilities:
         distance: max over children (the largest violation), if every child
             supports distance.
-        sample: single child delegates. Multiple children: unsupported.
+        sample: single child delegates. Multiple children require an explicit
+            ``sampling`` strategy (see ``RejectionSampling``). Candidates keep
+            the sampled child's provenance; ``AllOf`` adds no index.
         project: single child delegates. Multiple children require an
             explicit ``projection`` strategy (see ``MostViolatedProjection``);
             no generic intersection projector is implied.
@@ -329,9 +341,11 @@ class AllOf(_Composite):
         self,
         children: Sequence[StateSet],
         projection: IntersectionProjection | None = None,
+        sampling: IntersectionSampling | None = None,
     ):
         super().__init__(children)
         self.projection = projection
+        self.sampling = sampling
 
         caps = {StateSet}
         if _all_support(self.children, SetDistance):
@@ -341,17 +355,22 @@ class AllOf(_Composite):
                 caps.add(SetSampler)
             if supports(self.children[0], SetProjector):
                 caps.add(SetProjector)
-        elif projection is not None:
-            if hasattr(projection, "requires"):
-                projection.requires(self.children)
-            caps.add(SetProjector)
+        else:
+            if projection is not None:
+                if hasattr(projection, "requires"):
+                    projection.requires(self.children)
+                caps.add(SetProjector)
+            if sampling is not None:
+                if hasattr(sampling, "requires"):
+                    sampling.requires(self.children)
+                caps.add(SetSampler)
         self.capabilities = frozenset(caps)
 
     def _why_unsupported(self, capability: type) -> str:
         if capability is SetProjector:
             return "a multi-child intersection needs an explicit projection strategy (pass projection=)"
         if capability is SetSampler:
-            return "a multi-child intersection has no generic sampler"
+            return "a multi-child intersection needs an explicit sampling strategy (pass sampling=)"
         return "every child must support it"
 
     def contains(self, q: np.ndarray) -> bool:
@@ -363,7 +382,10 @@ class AllOf(_Composite):
 
     def sample(self, rng: np.random.Generator) -> list[Sample]:
         self._require(SetSampler)
-        return self.children[0].sample(rng)
+        if len(self.children) == 1:
+            return self.children[0].sample(rng)
+        assert self.sampling is not None
+        return self.sampling.sample(self.children, rng)
 
     def project(self, q_previous: np.ndarray, q_proposed: np.ndarray) -> np.ndarray | None:
         self._require(SetProjector)
@@ -422,6 +444,31 @@ def members(s: StateSet) -> list[Sample]:
 # ---------------------------------------------------------------------------
 # Named intersection strategies
 # ---------------------------------------------------------------------------
+
+
+class RejectionSampling:
+    """Sample one child of an intersection and keep what the others contain.
+
+    ``source`` is the index of the child to draw from; it must support
+    sampling. Every candidate of a draw is tested against the remaining
+    children by membership. This is exact but wasteful when the
+    intersection is a small part of the source: expect many empty draws.
+    """
+
+    def __init__(self, source: int = 0):
+        self.source = source
+
+    def requires(self, children: Sequence[StateSet]) -> None:
+        if not 0 <= self.source < len(children):
+            raise ValueError(f"RejectionSampling source index {self.source} out of range for {len(children)} children")
+        if not supports(children[self.source], SetSampler):
+            raise UnsupportedCapability(
+                f"RejectionSampling requires child {self.source} ({children[self.source]!r}) to support sampling"
+            )
+
+    def sample(self, children: Sequence[StateSet], rng: np.random.Generator) -> list[Sample]:
+        others = [c for i, c in enumerate(children) if i != self.source]
+        return [s for s in children[self.source].sample(rng) if all(o.contains(s.q) for o in others)]
 
 
 class MostViolatedProjection:

@@ -199,6 +199,37 @@ config = CBiRRTConfig(
 | 5 | None | **EXT-CON**: Extend limited, connect unlimited |
 | None | 5 | **CON-EXT**: Extend unlimited, connect limited |
 
+## Planning between sets
+
+`plan(...)` is one instantiation of a more general interface. The planner
+solves a `PlanningProblem` made of a joint space, a start set, a goal set, a
+validator, and an optional path-admissible set. Sets need only membership;
+sampling, distance, and projection are optional capabilities. `AnyOf` and
+`AllOf` compose sets with explicit semantics, and `TSRConfigurationSet` is the
+set a TSR induces through forward kinematics.
+
+```python
+from pycbirrt import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PlanningProblem, TSRConfigurationSet
+
+grasp_a = TSRConfigurationSet(tsr_a, robot, ik, planner.space)
+grasp_b = TSRConfigurationSet(tsr_b, robot, ik, planner.space)
+upright = TSRConfigurationSet(upright_tsr, robot, ik, planner.space)
+
+problem = PlanningProblem(
+    space=planner.space,
+    start=FiniteSet([q_start]),
+    goal=AnyOf([grasp_a, grasp_b], weights=[1, 1]),   # either grasp
+    validator=collision_checker,
+    path_constraint=upright,                          # one set: no strategy needed
+)
+result = planner.solve(problem, seed=0)
+result.goal_source   # which alternative the path reached
+```
+
+See [docs/design.md](docs/design.md) for the definitions, the composition
+rules, what the planner requires of each role, and how `plan(...)` lowers
+into this representation.
+
 ## Interfaces
 
 Implement these protocols for your robot:
