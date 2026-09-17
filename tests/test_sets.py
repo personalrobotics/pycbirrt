@@ -37,7 +37,7 @@ class Halfspace:
         return self.distance(q) <= self.tolerance
 
     def sample(self, rng):
-        return Sample(np.array([rng.uniform(self.lo, self.hi)]))
+        return [Sample(np.array([rng.uniform(self.lo, self.hi)]))]
 
     def project(self, q_previous, q_proposed):
         return np.array([max(self.lo, float(q_proposed[0]))])
@@ -92,8 +92,7 @@ class TestFiniteSet:
         rng = np.random.default_rng(0)
         seen = set()
         for _ in range(50):
-            smp = s.sample(rng)
-            assert smp is not None
+            (smp,) = s.sample(rng)
             (i,) = smp.source
             assert np.array_equal(smp.q, configs[i])
             seen.add(i)
@@ -160,8 +159,8 @@ class TestAnyOf:
         assert supports(s, SetProjector)
         assert supports(s, SetDistance)
         rng = np.random.default_rng(0)
-        smp = s.sample(rng)
-        assert smp is not None and child.contains(smp.q)
+        (smp,) = s.sample(rng)
+        assert child.contains(smp.q)
         assert smp.source == (0,)
         assert s.project(np.array([0.0]), np.array([-1.0]))[0] == pytest.approx(1.0)
 
@@ -177,8 +176,7 @@ class TestAnyOf:
         rng = np.random.default_rng(0)
         counts = [0, 0]
         for _ in range(400):
-            smp = s.sample(rng)
-            assert smp is not None
+            (smp,) = s.sample(rng)
             i = smp.source[0]
             assert [a, b][i].contains(smp.q)
             counts[i] += 1
@@ -189,7 +187,7 @@ class TestAnyOf:
         s = AnyOf([Halfspace(0.0, 1.0), Halfspace(5.0, 6.0)], weights=[1.0, 0.0])
         rng = np.random.default_rng(0)
         for _ in range(50):
-            assert s.sample(rng).source[0] == 0
+            assert s.sample(rng)[0].source[0] == 0
 
     def test_bad_weights_raise(self):
         with pytest.raises(ValueError):
@@ -205,10 +203,10 @@ class TestAnyOf:
                 return False
 
             def sample(self, rng):
-                return None
+                return []
 
         s = AnyOf([Fails()])
-        assert s.sample(np.random.default_rng(0)) is None
+        assert s.sample(np.random.default_rng(0)) == []
 
     def test_projection_picks_nearest_child_result(self):
         s = AnyOf([Interval(0, 1), Interval(4, 5)])
@@ -249,8 +247,8 @@ class TestAllOf:
         s = AllOf([child])
         assert supports(s, SetSampler)
         assert supports(s, SetProjector)
-        smp = s.sample(np.random.default_rng(0))
-        assert smp is not None and child.contains(smp.q)
+        (smp,) = s.sample(np.random.default_rng(0))
+        assert child.contains(smp.q)
         assert smp.source == ()
         assert s.project(np.array([0.0]), np.array([-1.0]))[0] == pytest.approx(1.0)
 
@@ -314,7 +312,7 @@ class TestNesting:
         outer = AnyOf([FiniteSet([np.array([9.0])]), inner], weights=[1, 1])
         rng = np.random.default_rng(1)
         for _ in range(30):
-            smp = outer.sample(rng)
+            (smp,) = outer.sample(rng)
             if smp.source[0] == 0:
                 assert smp.source == (0, 0)
                 assert smp.q[0] == 9.0

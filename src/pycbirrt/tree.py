@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Siddhartha Srinivasa
 
+from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -12,7 +14,7 @@ class Node:
 
     config: np.ndarray
     parent: int | None = None  # Index of parent node, None for root
-    source_index: int | None = None  # Index into the input list that produced this root
+    source_index: Any = None  # Provenance of this root (input index or Sample.source path)
 
 
 class RRTree:
@@ -21,7 +23,7 @@ class RRTree:
     def __init__(
         self,
         root_config: np.ndarray | list[np.ndarray],
-        source_indices: list[int] | None = None,
+        source_indices: Sequence[Any] | None = None,
     ):
         """Initialize tree with one or more root nodes.
 
@@ -96,7 +98,7 @@ class RRTree:
     def __len__(self) -> int:
         return len(self.nodes)
 
-    def get_root_source_index(self, node_idx: int) -> int | None:
+    def get_root_source_index(self, node_idx: int) -> Any:
         """Trace a node back to its root and return the source_index."""
         idx = node_idx
         while self.nodes[idx].parent is not None:

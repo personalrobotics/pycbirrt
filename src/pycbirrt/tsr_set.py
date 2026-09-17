@@ -30,10 +30,9 @@ class TSRConfigurationSet:
         contains: TSR distance of ``FK(q)`` is within ``tolerance``.
         distance: the TSR distance of ``FK(q)`` (Berenson et al. 2011, Sec. 4.2).
         sample: draw a pose uniformly from the TSR bounds, solve IK, and
-            return one solution within joint limits. With
-            ``max_solutions_per_pose > 1``, subsequent calls hand out the
-            remaining IK solutions of the same pose before drawing a new one,
-            which trades pose diversity for fewer IK calls.
+            return every solution within joint limits as candidates. The
+            caller validates them; returning all branches matters because
+            which branch is collision-free is not knowable here.
         project: iteratively move the pose to the closest point of the TSR
             and solve IK, choosing the solution nearest the current
             configuration under the joint-space metric. Gives up when the
@@ -53,10 +52,7 @@ class TSRConfigurationSet:
         tolerance: float = 1e-3,
         max_projection_iters: int = 50,
         progress_tolerance: float = 1e-6,
-        max_solutions_per_pose: int = 1,
     ):
-        if max_solutions_per_pose < 1:
-            raise ValueError("max_solutions_per_pose must be at least 1")
         self.tsr = tsr
         self.robot = robot
         self.ik = ik
@@ -64,8 +60,6 @@ class TSRConfigurationSet:
         self.tolerance = tolerance
         self.max_projection_iters = max_projection_iters
         self.progress_tolerance = progress_tolerance
-        self.max_solutions_per_pose = max_solutions_per_pose
-        self._pending: list[np.ndarray] = []
 
     def __repr__(self) -> str:
         return f"TSRConfigurationSet({self.tsr!r}, tolerance={self.tolerance})"
@@ -92,16 +86,9 @@ class TSRConfigurationSet:
         xyzrpy[3:6] = wrap_to_interval(xyzrpy[3:6])
         return self.tsr.T0_w @ TSR.xyzrpy_to_trans(xyzrpy) @ self.tsr.Tw_e
 
-    def sample(self, rng: np.random.Generator) -> Sample | None:
-        if self._pending:
-            return Sample(self._pending.pop(0))
+    def sample(self, rng: np.random.Generator) -> list[Sample]:
         pose = self.sample_pose(rng)
-        solutions = [q for q in self.ik.solve(pose) if self.space.within_limits(q)]
-        if not solutions:
-            return None
-        first, rest = solutions[0], solutions[1 : self.max_solutions_per_pose]
-        self._pending = [np.array(q, dtype=float) for q in rest]
-        return Sample(np.array(first, dtype=float))
+        return [Sample(np.array(q, dtype=float)) for q in self.ik.solve(pose) if self.space.within_limits(q)]
 
     # -- projection ----------------------------------------------------------
 

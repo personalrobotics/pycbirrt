@@ -11,9 +11,11 @@ from pycbirrt.exceptions import (
     UnsupportedCapability,
 )
 from pycbirrt.planner import CBiRRT, PlanResult
+from pycbirrt.problem import PlanningProblem
 from pycbirrt.sets import (
     AllOf,
     AnyOf,
+    EmptySet,
     FiniteSet,
     MostViolatedProjection,
     PredicateSet,
@@ -31,6 +33,7 @@ __all__ = [
     "CBiRRT",
     "CBiRRTConfig",
     "PlanResult",
+    "PlanningProblem",
     "PlanningError",
     "AllStartConfigurationsInCollision",
     "AllGoalConfigurationsInCollision",
@@ -42,6 +45,7 @@ __all__ = [
     "SetDistance",
     "SetProjector",
     "Sample",
+    "EmptySet",
     "FiniteSet",
     "PredicateSet",
     "AnyOf",

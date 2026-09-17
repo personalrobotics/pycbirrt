@@ -7,7 +7,9 @@ import numpy as np
 import pytest
 from tsr import TSR
 
-from pycbirrt import AllStartConfigurationsInCollision, CBiRRT, CBiRRTConfig
+from pycbirrt import AllStartConfigurationsInCollision, CBiRRT, CBiRRTConfig, PlanningProblem
+from pycbirrt.legacy import legacy_problem
+from pycbirrt.sets import AllOf, FiniteSet, MostViolatedProjection
 from pycbirrt.tree import RRTree
 
 
@@ -699,7 +701,7 @@ class TestAngularJoints:
 
         q1 = np.array([-np.pi + 0.1, 0.0])
         q2 = np.array([np.pi - 0.1, 0.0])
-        dist = planner._angular_distance(q1, q2)
+        dist = planner.space.distance(q1, q2)
         # Wraparound distance should be ~0.2, not ~2*pi - 0.2
         assert dist < 0.5
 
@@ -712,7 +714,7 @@ class TestAngularJoints:
 
         q_from = np.array([np.pi - 0.1, 0.0])
         q_to = np.array([-np.pi + 0.1, 0.0])
-        direction = planner._angular_direction(q_from, q_to)
+        direction = planner.space.direction(q_from, q_to)
         # Should go forward (positive) through pi, not backward through 0
         assert direction[0] > 0
         assert abs(direction[0]) < 0.5
@@ -733,19 +735,47 @@ class TestAngularJoints:
         assert len(path) >= 2
 
 
+def _legacy(planner, **kw):
+    """Lower legacy plan() arguments into a PlanningProblem for direct inspection."""
+    return legacy_problem(
+        planner.robot,
+        planner.ik,
+        planner.collision,
+        planner.space,
+        planner.config,
+        kw.get("start"),
+        kw.get("goal"),
+        kw.get("start_tsrs"),
+        kw.get("goal_tsrs"),
+        kw.get("constraint_tsrs"),
+    )
+
+
+def _unconstrained(planner, path):
+    """A problem whose only content is the path's endpoints; used to drive smoothing."""
+    return PlanningProblem(
+        space=planner.space,
+        start=FiniteSet([path[0]]),
+        goal=FiniteSet([path[-1]]),
+        validator=planner.collision,
+    )
+
+
 class TestConstraintTSRs:
     """Tests for path constraint TSR handling."""
 
-    def test_satisfies_constraints_no_constraints(self):
-        """With no constraint TSRs, any config satisfies constraints."""
+    def test_no_constraints_lowers_to_none(self):
+        """With no constraint TSRs, the problem has no path constraint and any config is admissible."""
         robot = MockRobotModel()
         ik = MockIKSolver(robot, MockCollisionChecker())
         planner = CBiRRT(robot, ik, MockCollisionChecker())
 
-        assert planner._satisfies_constraints(np.array([0.0, 0.0]))
+        problem = _legacy(planner, start=[np.array([0.0, 0.0])], goal=[np.array([0.5, 0.5])])
+        assert problem.path_constraint is None
+        assert planner._admissible(problem, np.array([0.0, 0.0]))[0]
 
-    def test_satisfies_constraints_with_tsr(self):
-        """Config must satisfy constraint TSR when set."""
+    def test_constraint_membership(self):
+        """A config is admissible iff its end-effector pose lies in the constraint TSR."""
         robot = MockRobotModel()
         collision = MockCollisionChecker()
         ik = MockIKSolver(robot, collision)
@@ -768,13 +798,17 @@ class TestConstraintTSRs:
                 ]
             ),
         )
-        planner._constraint_tsrs = [constraint_tsr]
+        q = np.array([0.0, 0.0])
+        problem = _legacy(planner, start=[q], goal=[q], constraint_tsrs=[constraint_tsr])
 
         # q=[0,0] gives FK at (2.0, 0.0) which is inside the constraint
-        assert planner._satisfies_constraints(np.array([0.0, 0.0]))
+        assert problem.path_constraint.contains(np.array([0.0, 0.0]))
+        assert planner._admissible(problem, np.array([0.0, 0.0]))[0]
 
         # q=[pi/2, 0] gives FK at (0.0, 2.0) which is outside the constraint
-        assert not planner._satisfies_constraints(np.array([np.pi / 2, 0.0]))
+        assert not problem.path_constraint.contains(np.array([np.pi / 2, 0.0]))
+        ok, reason = planner._admissible(problem, np.array([np.pi / 2, 0.0]))
+        assert not ok and reason == "violates path constraints"
 
     def test_projection_respects_tsr_frames(self):
         """Projection must compose bwopt with T0_w and Tw_e (regression for #28)."""
@@ -793,24 +827,29 @@ class TestConstraintTSRs:
         shifted[0] += 1.2
         shifted[1] += 0.8
         unframed = TSR(T0_w=np.eye(4), Tw_e=np.eye(4), Bw=shifted)
+        Tw_e = np.eye(4)
+        Tw_e[0, 3] = 0.1
+        offset = TSR(T0_w=T0_w, Tw_e=Tw_e, Bw=box)
 
-        q = np.array([0.3, 0.9])  # violates both by ~0.38
-        for tsr in (framed, unframed):
-            planner._constraint_tsrs = [tsr]
-            q_proj = planner._project_to_constraint(q)
+        q = np.array([0.3, 0.9])  # violates all three by ~0.38
+        for tsr in (framed, unframed, offset):
+            problem = _legacy(planner, start=[q], goal=[q], constraint_tsrs=[tsr])
+            q_proj = problem.path_constraint.project(q, q)
             assert q_proj is not None
             dist, _ = tsr.distance(robot.forward_kinematics(q_proj))
             assert dist <= planner.config.tsr_tolerance
 
-        # Also with a non-identity Tw_e: end-effector offset of 0.1 along its x axis
-        Tw_e = np.eye(4)
-        Tw_e[0, 3] = 0.1
-        offset = TSR(T0_w=T0_w, Tw_e=Tw_e, Bw=box)
-        planner._constraint_tsrs = [offset]
-        q_proj = planner._project_to_constraint(q)
-        assert q_proj is not None
-        dist, _ = offset.distance(robot.forward_kinematics(q_proj))
-        assert dist <= planner.config.tsr_tolerance
+    def test_multiple_constraints_lower_to_allof_with_named_strategy(self):
+        """Two constraint TSRs become an AllOf with an explicit projection strategy."""
+        robot = MockRobotModel()
+        collision = MockCollisionChecker()
+        planner = CBiRRT(robot, MockIKSolver(robot, collision), collision)
+        loose = np.array([[-2, 2], [-2, 2], [-1, 1], [-np.pi, np.pi], [-np.pi, np.pi], [-np.pi, np.pi]])
+        q = np.array([0.0, 0.0])
+        problem = _legacy(planner, start=[q], goal=[q], constraint_tsrs=[TSR(Bw=loose), TSR(Bw=loose)])
+        assert isinstance(problem.path_constraint, AllOf)
+        assert isinstance(problem.path_constraint.projection, MostViolatedProjection)
+        assert problem.path_constraint.contains(q)
 
     def test_planning_with_constraint_tsrs(self):
         """Planning with constraint TSRs should produce paths satisfying them."""
@@ -871,7 +910,6 @@ class TestPathSmoothing:
         )
         planner = CBiRRT(robot, ik, collision, config)
         planner._rng = np.random.default_rng(42)
-        planner._constraint_tsrs = None
 
         # Create a deliberately jagged path (zigzag)
         path = [
@@ -884,7 +922,7 @@ class TestPathSmoothing:
             np.array([0.6, 0.0]),
         ]
 
-        smoothed = planner._smooth_path(path)
+        smoothed = planner._smooth_path(_unconstrained(planner, path), path)
         assert len(smoothed) <= len(path)
 
     def test_smoothing_short_path_unchanged(self):
@@ -894,10 +932,9 @@ class TestPathSmoothing:
         ik = MockIKSolver(robot, collision)
         planner = CBiRRT(robot, ik, collision)
         planner._rng = np.random.default_rng(42)
-        planner._constraint_tsrs = None
 
         path = [np.array([0.0, 0.0]), np.array([1.0, 0.0])]
-        smoothed = planner._smooth_path(path)
+        smoothed = planner._smooth_path(_unconstrained(planner, path), path)
         assert len(smoothed) == 2
 
     def test_smoothing_patience_terminates_early(self):
@@ -913,11 +950,10 @@ class TestPathSmoothing:
         )
         planner = CBiRRT(robot, ik, collision, config)
         planner._rng = np.random.default_rng(42)
-        planner._constraint_tsrs = None
 
         # Already-smooth straight-line path — no shortcuts possible
         path = [np.array([0.0, 0.0]), np.array([0.05, 0.0]), np.array([0.1, 0.0])]
-        smoothed = planner._smooth_path(path)
+        smoothed = planner._smooth_path(_unconstrained(planner, path), path)
         # Should terminate early (patience=5) rather than running 1000 iterations
         assert smoothed is not None
 
