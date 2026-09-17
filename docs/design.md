@@ -129,6 +129,15 @@ sampler or projector.
 
 ## What the planner requires of each role
 
+- **Every accepted configuration is a member of the joint space.** The
+  first admissibility check for every root, sample, projected extension,
+  and edge sample is `space.contains(q)`: a finite numeric array of shape
+  `(dof,)` with every bounded joint inside its limits. A set, sampler, or
+  projector that returns anything else is rejected with the reason
+  "outside joint space", classified as invalid rather than as a collision.
+  Nothing outside `problem.space` is ever stored in a tree. Concrete sets
+  may filter limits early as an optimization, but correctness does not
+  depend on it.
 - **Start and goal** must be finite, sampleable, or both. Every member of a
   finite set is a candidate root. If the set is not finite and can sample,
   admissible candidates are added until `num_tree_roots` roots exist or the
