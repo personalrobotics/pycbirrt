@@ -228,3 +228,113 @@ class TestSeedValidation:
         role = Spy([np.zeros(2), np.array([0.1, 0.1])])
         roots = planner._roots(problem(planner, role, role), role, "Start")
         assert len(roots) == 2 and Spy.draws == 0
+
+
+# ---------------------------------------------------------------------------
+# Finite intersections and multi-child seeds (#55)
+# ---------------------------------------------------------------------------
+
+
+class Region:
+    """A sampleable, non-finite half-plane q[0] >= lo, with exact membership (unlike Deterministic)."""
+
+    def __init__(self, lo):
+        self.lo = lo
+
+    def contains(self, q):
+        return float(q[0]) >= self.lo
+
+    def sample(self, rng):
+        return [Sample(np.array([self.lo + 0.5, 0.0]))]
+
+
+class TestFiniteIntersections:
+    def test_issue_repro_enumerates_the_finite_child(self, planner):
+        mixed = AnyOf([FiniteSet([np.array([0.0, 0.0])]), PredicateSet(lambda q: q[0] == 1.0)])
+        inter = AllOf([mixed, FiniteSet([np.array([1.0, 0.0])])])
+        assert is_finite(inter) and inter.contains(np.array([1.0, 0.0]))
+        assert [m.q.tolist() for m in members(inter)] == [[1.0, 0.0]]
+        assert [m.q.tolist() for m in seeds(inter)] == [[1.0, 0.0]]
+        roots = planner._roots(problem(planner, inter, inter), inter, "Start")
+        assert has_root(roots, [1.0, 0.0])
+
+    def test_members_configurations_independent_of_child_order(self):
+        a = FiniteSet([np.array([0.0, 0.0]), np.array([1.0, 0.0]), np.array([2.0, 0.0])])
+        b = FiniteSet([np.array([1.0, 0.0]), np.array([2.0, 0.0]), np.array([3.0, 0.0])])
+        p = PredicateSet(lambda q: q[0] < 2.5)
+        for order in ([a, b, p], [p, b, a], [b, p, a]):
+            got = sorted(m.q.tolist() for m in members(AllOf(order)))
+            assert got == [[1.0, 0.0], [2.0, 0.0]]
+
+    def test_non_finite_intersection_collects_seeds_from_every_child(self):
+        keep = PredicateSet(lambda q: q[0] >= 0)
+        left = AnyOf([FiniteSet([np.array([-1.0, 0.0]), np.array([1.0, 0.0])]), Region(4.0)], weights=[1, 1])
+        right = AnyOf([FiniteSet([np.array([2.0, 0.0])]), Region(4.0)], weights=[1, 1])
+        inter = AllOf([keep, left, right, PredicateSet(lambda q: True)])
+        assert not is_finite(inter)
+        got = seeds(inter)
+        # [-1,0] fails `keep`; [1,0] from `left` is not in `right`... only configs the whole intersection contains
+        assert all(inter.contains(m.q) for m in got)
+        # Both [1,0] and [2,0] are seeds of some child, but neither is in every other child: intersection of
+        # two different finite parts is empty here, so nothing is a member
+        assert got == []
+
+    def test_non_finite_intersection_keeps_seeds_the_intersection_contains(self):
+        shared = np.array([1.0, 0.0])
+        left = AnyOf([FiniteSet([shared, np.array([-1.0, 0.0])]), Region(4.0)], weights=[1, 1])
+        right = AnyOf([FiniteSet([shared]), Region(4.0)], weights=[1, 1])
+        inter = AllOf([PredicateSet(lambda q: True), left, right])  # first child bears no seeds
+        assert not is_finite(inter)
+        got = seeds(inter)
+        assert [m.q.tolist() for m in got] == [[1.0, 0.0]]
+        assert got[0].source == (0, 0)  # first occurrence wins: from `left`, its finite child, member 0
+
+    def test_duplicate_seed_policy_is_first_occurrence(self):
+        q = np.array([0.5, 0.5])
+        a = AnyOf([FiniteSet([q]), Region(4.0)], weights=[1, 1])
+        b = AnyOf([Region(4.0), FiniteSet([q])], weights=[1, 1])
+        got = seeds(AllOf([b, a]))
+        assert len(got) == 1 and got[0].source == (1, 0)  # from b: child 1, member 0
+
+    @settings(max_examples=200, deadline=None)
+    @given(st.data())
+    def test_members_equal_membership_filter_of_all_leaf_configs(self, data):
+        """When finite, members(s) is exactly the set of leaf configurations that s contains."""
+        pool = [np.array([float(i), 0.0]) for i in range(4)]
+
+        def finite():
+            idx = data.draw(st.lists(st.integers(0, 3), min_size=1, max_size=3, unique=True))
+            return FiniteSet([pool[i] for i in idx])
+
+        def leaf():
+            kind = data.draw(st.sampled_from(["finite", "pred", "sampler"]))
+            if kind == "finite":
+                return finite()
+            if kind == "pred":
+                c = data.draw(st.floats(-0.5, 3.5))
+                return PredicateSet(lambda q, c=c: q[0] > c)
+            return Deterministic([9.0, 9.0])
+
+        def tree(depth):
+            if depth == 0 or data.draw(st.booleans()):
+                return leaf()
+            kids = [tree(depth - 1) for _ in range(data.draw(st.integers(1, 3)))]
+            if data.draw(st.booleans()):
+                return AnyOf(
+                    kids, weights=[1] * len(kids) if len(kids) > 1 and all(hasattr(k, "sample") for k in kids) else None
+                )
+            return AllOf(kids)
+
+        s = tree(2)
+        # Compare as sets of configurations: a union of two finite sets may list a shared
+        # member once per child, with distinct provenance
+        expected = sorted({tuple(q.tolist()) for q in pool if s.contains(q)})
+        got = sorted({tuple(m.q.tolist()) for m in members(s)})
+        if is_finite(s):
+            assert got == expected
+            assert sorted({tuple(m.q.tolist()) for m in seeds(s)}) == expected
+        else:
+            assert got == []
+            # seeds are members, and every pool config that s contains and that some finite leaf lists
+            # is found when it is embedded in a seed-bearing path
+            assert all(s.contains(m.q) for m in seeds(s))
