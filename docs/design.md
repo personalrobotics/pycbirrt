@@ -124,8 +124,12 @@ Named strategies so far:
 
 - `MostViolatedProjection(max_iters, progress_tolerance)`: repeatedly project
   onto the unsatisfied child with the largest `violation` until every child
-  contains the point, or progress stalls. A satisfied child is never
-  selected. Children must support violation and projection, and their
+  contains the point. A satisfied child is never selected. Progress is the
+  lexicographic decrease of the descending-sorted violation profile, so
+  clearing one of several equally violated children counts even though the
+  maximum is unchanged; it gives up after a full sweep without progress,
+  when a projector returns None or leaves the point unchanged, or at
+  `max_iters`. Children must support violation and projection, and their
   violations must be comparable (homogeneous TSR sets are).
 - `RejectionSampling(source)`: draw from one child and keep the candidates the
   others contain. Exact, but wasteful when the intersection is small.

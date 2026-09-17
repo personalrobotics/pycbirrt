@@ -174,3 +174,103 @@ class TestLegacyHomogeneousIntersection:
         assert not prob.path_constraint.contains(q_out)
         result = prob.path_constraint.project(q_out, q_out)
         assert result is not None and prob.path_constraint.contains(result)
+
+
+# ---------------------------------------------------------------------------
+# Tied violation plateaus (#57)
+# ---------------------------------------------------------------------------
+
+
+class Axis:
+    """{q : q[i] == 0}. Violation |q[i]|; projection zeroes that coordinate."""
+
+    def __init__(self, i):
+        self.i = i
+        self.projections = 0
+
+    def violation(self, q):
+        return abs(float(q[self.i]))
+
+    def contains(self, q):
+        return float(q[self.i]) == 0.0
+
+    def project(self, q_prev, q):
+        self.projections += 1
+        out = np.array(q, dtype=float)
+        out[self.i] = 0.0
+        return out
+
+
+class TestTiedPlateaus:
+    def test_two_axes_from_corner(self):
+        s = AllOf([Axis(0), Axis(1)], projection=MostViolatedProjection())
+        q = np.array([1.0, 1.0])
+        result = s.project(q, q)
+        assert result is not None and np.array_equal(result, [0.0, 0.0])
+
+    def test_three_axes_all_tied(self):
+        axes = [Axis(0), Axis(1), Axis(2)]
+        s = AllOf(axes, projection=MostViolatedProjection())
+        q = np.array([2.0, 2.0, 2.0])
+        result = s.project(q, q)
+        assert result is not None and np.array_equal(result, [0.0, 0.0, 0.0])
+        assert sum(a.projections for a in axes) == 3  # one projection per axis, no wasted steps
+
+    def test_ties_below_the_maximum(self):
+        """The maximum drops, then two equal residuals remain; both must be cleared."""
+        s = AllOf([Axis(0), Axis(1), Axis(2)], projection=MostViolatedProjection())
+        q = np.array([3.0, 1.0, 1.0])
+        result = s.project(q, q)
+        assert result is not None and np.array_equal(result, [0.0, 0.0, 0.0])
+
+    def test_immovable_projector_terminates(self):
+        class Stuck:
+            calls = 0
+
+            def violation(self, q):
+                return 1.0
+
+            def contains(self, q):
+                return False
+
+            def project(self, q_prev, q):
+                Stuck.calls += 1
+                return np.array(q)  # no change
+
+        s = AllOf([Stuck(), Axis(1)], projection=MostViolatedProjection(max_iters=1000))
+        assert s.project(np.array([1.0, 1.0]), np.array([1.0, 1.0])) is None
+        assert Stuck.calls == 1
+
+    def test_cycling_infeasible_intersection_terminates_within_a_sweep(self):
+        """Two disjoint intervals: alternating projection ping-pongs; stop after one full sweep without progress."""
+        a, b = Band(0.0, 0.5), Band(2.0, 0.5)  # [-0.5, 0.5] and [1.5, 2.5]
+        s = AllOf([a, b], projection=MostViolatedProjection(max_iters=1000))
+        assert s.project(np.array([1.0, 0.0]), np.array([1.0, 0.0])) is None
+        assert a.projections + b.projections <= 4
+
+    def test_max_iters_still_bounds(self):
+        class Creeping:
+            """Always violated; each projection halves the violation, so the profile always improves."""
+
+            def __init__(self):
+                self.v = 1.0
+
+            def violation(self, q):
+                return self.v
+
+            def contains(self, q):
+                return False
+
+            def project(self, q_prev, q):
+                self.v *= 0.5
+                return np.array(q) + 1e-3
+
+        s = AllOf([Creeping(), Axis(1)], projection=MostViolatedProjection(max_iters=7))
+        assert s.project(np.zeros(2), np.zeros(2)) is None
+
+    def test_different_tolerance_regression_still_passes(self):
+        a, b = Band(0.0, 1.0), Band(1.0, 0.1)
+        s = AllOf([a, b], projection=MostViolatedProjection())
+        q = np.array([0.89, 0.0])
+        result = s.project(q, q)
+        assert result is not None and s.contains(result) and a.projections == 0
