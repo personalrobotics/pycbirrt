@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Siddhartha Srinivasa
 
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from gafro import Motor
 
 
 class IKSolver(Protocol):
@@ -14,11 +17,12 @@ class IKSolver(Protocol):
     The `solve_valid()` filters for collision-free solutions within joint limits.
     """
 
-    def solve(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
+    def solve(self, pose: "Motor | np.ndarray", q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Solve IK for a single end-effector pose (raw, unvalidated).
 
         Args:
-            pose: 4x4 homogeneous transform of desired end-effector pose
+            pose: Desired end-effector pose as a ``gafro.Motor``
+                (a 4x4 homogeneous transform is also accepted).
             q_init: Optional initial configuration hint for iterative solvers.
                 Analytical solvers may ignore this parameter.
 
@@ -27,7 +31,7 @@ class IKSolver(Protocol):
         """
         ...
 
-    def solve_valid(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
+    def solve_valid(self, pose: "Motor | np.ndarray", q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Solve IK and return only valid solutions.
 
         Filters solutions to return only those that are:
@@ -35,7 +39,8 @@ class IKSolver(Protocol):
         - Collision-free
 
         Args:
-            pose: 4x4 homogeneous transform of desired end-effector pose
+            pose: Desired end-effector pose as a ``gafro.Motor``
+                (a 4x4 homogeneous transform is also accepted).
             q_init: Optional initial configuration for iterative solvers
 
         Returns:

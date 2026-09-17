@@ -3,9 +3,16 @@
 
 """EAIK backend for analytical inverse kinematics."""
 
-import numpy as np
+from typing import TYPE_CHECKING
 
+import numpy as np
+from gafro import Motor
+
+from pycbirrt.backends.gafro import as_motor
 from pycbirrt.interfaces.collision_checker import CollisionChecker
+
+if TYPE_CHECKING:
+    from gafro import Motor
 
 try:
     from eaik.IK_DH import DhRobot
@@ -130,20 +137,21 @@ class EAIKSolver:
         """Get the kinematic family of this robot."""
         return self.robot.getKinematicFamily()
 
-    def forward_kinematics(self, q: np.ndarray) -> np.ndarray:
+    def forward_kinematics(self, q: np.ndarray) -> "Motor":
         """Compute forward kinematics.
 
         Args:
             q: Joint configuration
 
         Returns:
-            4x4 homogeneous transform of end-effector
+            End-effector pose as a ``gafro.Motor``.
         """
-        return self.robot.fwdKin(q)
+        # EAIK's fwdKin returns a 4x4 matrix; convert at this boundary.
+        return as_motor(self.robot.fwdKin(q))
 
     def solve(
         self,
-        pose: np.ndarray,
+        pose: "Motor | np.ndarray",
         q_init: np.ndarray | None = None,
         include_least_squares: bool = False,
     ) -> list[np.ndarray]:
@@ -154,7 +162,8 @@ class EAIKSolver:
         of initial configuration.
 
         Args:
-            pose: 4x4 homogeneous transform
+            pose: Desired end-effector pose as a ``gafro.Motor`` (a 4x4
+                homogeneous transform is also accepted)
             q_init: Ignored (for interface compatibility with iterative solvers)
             include_least_squares: If True, include least-squares solutions.
                 By default, LS solutions are excluded because they indicate
@@ -164,8 +173,9 @@ class EAIKSolver:
         Returns:
             List of kinematic solutions (exact only by default)
         """
-        # EAIK returns IKSolution object with Q matrix of shape (N, dof)
-        ik_result = self.robot.IK(pose)
+        # EAIK returns IKSolution object with Q matrix of shape (N, dof).
+        # EAIK's C++ wrapper requires a 4x4 matrix; convert at this boundary.
+        ik_result = self.robot.IK(as_motor(pose).to_transformation_matrix())
         num_solutions = ik_result.num_solutions()
 
         if num_solutions == 0:
@@ -177,7 +187,7 @@ class EAIKSolver:
 
         return [ik_result.Q[i] for i in range(num_solutions) if not ik_result.is_LS[i]]
 
-    def solve_valid(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
+    def solve_valid(self, pose: "Motor | np.ndarray", q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Solve IK and return only valid solutions.
 
         Filters solutions to return only those that are:
@@ -189,7 +199,8 @@ class EAIKSolver:
         of initial configuration.
 
         Args:
-            pose: 4x4 homogeneous transform
+            pose: Desired end-effector pose as a ``gafro.Motor`` (a 4x4
+                homogeneous transform is also accepted)
             q_init: Ignored (for interface compatibility with iterative solvers)
 
         Returns:
@@ -214,17 +225,18 @@ class EAIKSolver:
 
         return valid
 
-    def solve_batch(self, poses: np.ndarray) -> list[list[np.ndarray]]:
+    def solve_batch(self, poses) -> list[list[np.ndarray]]:
         """Solve IK for multiple poses using batched computation.
 
         Args:
-            poses: Array of shape (N, 4, 4)
+            poses: Iterable of poses, each a ``gafro.Motor`` or 4x4 matrix
+                (e.g. an array of shape (N, 4, 4)).
 
         Returns:
             List of N lists of solutions
         """
-        # Convert to list of 4x4 matrices for EAIK
-        pose_list = [poses[i] for i in range(poses.shape[0])]
+        # Convert each pose to a 4x4 matrix for EAIK's C++ wrapper.
+        pose_list = [as_motor(pose).to_transformation_matrix() for pose in poses]
         results = self.robot.IK_batched(pose_list)
 
         all_solutions = []

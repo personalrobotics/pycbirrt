@@ -1,11 +1,26 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Siddhartha Srinivasa
 
-"""MuJoCo backend for robot model, collision checking, and IK."""
+"""MuJoCo backend for robot model, collision checking, and IK.
+
+``MuJoCoCollisionChecker`` is the load-bearing class here: gafro has no
+collision engine, so MuJoCo remains the collision source. ``MuJoCoRobotModel``
+and ``MuJoCoIKSolver`` are retained for standalone MuJoCo use, but the preferred
+path is the CGA-native :mod:`pycbirrt.backends.gafro` backend (Motor FK +
+geometric-Jacobian IK) paired with ``MuJoCoCollisionChecker`` for collisions —
+that combination keeps all geometry matrix-free.
+"""
+
+from typing import TYPE_CHECKING
 
 import numpy as np
+from gafro import Motor
 
+from pycbirrt.backends.gafro import as_motor
 from pycbirrt.interfaces.collision_checker import CollisionChecker
+
+if TYPE_CHECKING:
+    from gafro import Motor
 
 try:
     import mujoco
@@ -67,14 +82,21 @@ class MuJoCoRobotModel:
     def joint_limits(self) -> tuple[np.ndarray, np.ndarray]:
         return self._lower, self._upper
 
-    def forward_kinematics(self, q: np.ndarray) -> np.ndarray:
+    def normalize_pose(self, x) -> "Motor":
+        """Coerce a forward-kinematics / TSR pose to a ``Motor``.
+
+        Single-arm pose token, matching ``GafroRobotModel.normalize_pose``.
+        """
+        return as_motor(x)
+
+    def forward_kinematics(self, q: np.ndarray) -> "Motor":
         """Compute end-effector pose from joint configuration.
 
         Args:
             q: Joint configuration
 
         Returns:
-            4x4 homogeneous transform
+            End-effector pose as a ``gafro.Motor``.
         """
         # Set joint positions
         for i, jnt_id in enumerate(self.joint_ids):
@@ -88,12 +110,12 @@ class MuJoCoRobotModel:
         pos = self.data.site_xpos[self.ee_site_id].copy()
         rot_mat = self.data.site_xmat[self.ee_site_id].reshape(3, 3).copy()
 
-        # Build 4x4 transform
+        # Build 4x4 transform and convert to a Motor
         transform = np.eye(4)
         transform[:3, :3] = rot_mat
         transform[:3, 3] = pos
 
-        return transform
+        return as_motor(transform)
 
 
 class MuJoCoCollisionChecker:
@@ -263,8 +285,15 @@ class MuJoCoIKSolver:
         jacr = self._jacr[:, self.dof_adrs]
         return np.vstack([jacp, jacr])
 
-    def _pose_error(self, target_pose: np.ndarray) -> np.ndarray:
-        """Compute 6D pose error (position + orientation)."""
+    def _pose_error(self, target_pose) -> np.ndarray:
+        """Compute 6D pose error (position + orientation).
+
+        Args:
+            target_pose: Target pose as a ``gafro.Motor`` or 4x4 matrix.
+        """
+        # Normalize to a 4x4 matrix so the slicing below works for either input.
+        target_pose = as_motor(target_pose).to_transformation_matrix()
+
         # Current pose
         current_pos = self.data.site_xpos[self.ee_site_id]
         current_rot = self.data.site_xmat[self.ee_site_id].reshape(3, 3)
@@ -302,11 +331,12 @@ class MuJoCoIKSolver:
             return np.clip(q, lower, upper)
         return q
 
-    def solve(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
+    def solve(self, pose: "Motor | np.ndarray", q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Solve IK for a single end-effector pose using differential IK.
 
         Args:
-            pose: 4x4 homogeneous transform of desired end-effector pose
+            pose: Desired end-effector pose as a ``gafro.Motor`` (a 4x4
+                homogeneous transform is also accepted)
             q_init: Initial configuration (if None, uses current model state)
 
         Returns:
@@ -345,7 +375,7 @@ class MuJoCoIKSolver:
         # Did not converge
         return []
 
-    def solve_valid(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
+    def solve_valid(self, pose: "Motor | np.ndarray", q_init: np.ndarray | None = None) -> list[np.ndarray]:
         """Solve IK and return only valid solutions.
 
         Filters solutions to return only those that are:
@@ -353,7 +383,8 @@ class MuJoCoIKSolver:
         - Collision-free (if collision_checker provided)
 
         Args:
-            pose: 4x4 homogeneous transform
+            pose: Desired end-effector pose as a ``gafro.Motor`` (a 4x4
+                homogeneous transform is also accepted)
             q_init: Initial configuration (if None, uses current model state)
 
         Returns:
@@ -380,7 +411,7 @@ class MuJoCoIKSolver:
 
     def solve_from_multiple_inits(
         self,
-        pose: np.ndarray,
+        pose: "Motor | np.ndarray",
         q_inits: list[np.ndarray],
         return_all: bool = False,
     ) -> list[np.ndarray]:
@@ -389,7 +420,8 @@ class MuJoCoIKSolver:
         Useful for finding multiple solutions with a differential IK solver.
 
         Args:
-            pose: 4x4 homogeneous transform
+            pose: Desired end-effector pose as a ``gafro.Motor`` (a 4x4
+                homogeneous transform is also accepted)
             q_inits: List of initial configurations to try
             return_all: If True, return all solutions; if False, return first valid
 

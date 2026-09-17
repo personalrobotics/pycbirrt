@@ -37,6 +37,7 @@ import numpy as np
 from tsr import TSR
 
 from pycbirrt import CBiRRT, CBiRRTConfig
+from pycbirrt.backends.gafro import as_motor
 from pycbirrt.backends.mujoco import (
     MuJoCoCollisionChecker,
     MuJoCoIKSolver,
@@ -91,17 +92,21 @@ def create_grasp_tsr(target_pos: np.ndarray) -> TSR:
         ]
     )
 
+    # Bw is in the TSR split parametrization [tx,ty,tz, b12,b13,b23]: a
+    # translation box plus a rotor-bivector box (axis*angle). b23 spans
+    # [-pi, pi] = a full turn about the (downward) approach axis; b12/b13 give
+    # small tilt tolerance about the in-plane axes.
     return TSR(
         T0_w=T0_w,
         Tw_e=np.eye(4),
         Bw=np.array(
             [
-                [-0.02, 0.02],  # x tolerance
-                [-0.02, 0.02],  # y tolerance
-                [0, 0.05],  # z: can be 0-5cm higher
-                [-0.01, 0.01],  # roll: small tolerance
-                [-0.01, 0.01],  # pitch: small tolerance
-                [-np.pi, np.pi],  # yaw: full rotation
+                [-0.02, 0.02],  # tx tolerance
+                [-0.02, 0.02],  # ty tolerance
+                [0, 0.05],  # tz: can be 0-5cm higher
+                [-0.01, 0.01],  # b12: small tilt tolerance
+                [-0.01, 0.01],  # b13: small tilt tolerance
+                [-np.pi, np.pi],  # b23: full rotation about approach axis
             ]
         ),
     )
@@ -358,7 +363,7 @@ def main():
     grasp_tsr = create_grasp_tsr(target_pos)
 
     print(f"\nCylinder at: {target_pos}")
-    print(f"Grasp TSR frame at: {grasp_tsr.T0_w[:3, 3]}")
+    # print(f"Grasp TSR frame at: {grasp_tsr.T0_w[:3, 3]}")
 
     # Start configuration (home position)
     start = np.array([0, -np.pi / 2, np.pi / 2, -np.pi / 2, -np.pi / 2, 0])
@@ -378,7 +383,7 @@ def main():
     # Verify goal reached
     final_pose = robot.forward_kinematics(path[-1])
     dist, _ = grasp_tsr.distance(final_pose)
-    print(f"Final EE position: {final_pose[:3, 3]}")
+    print(f"Final EE position: {as_motor(final_pose).to_transformation_matrix()[:3, 3]}")
     print(f"Distance to TSR: {dist:.4f}")
 
     # Visualization

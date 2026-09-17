@@ -6,7 +6,8 @@ import time
 from dataclasses import dataclass
 
 import numpy as np
-from tsr import TSR, choose_tsr_index
+from tsr import TSR, Constraint, choose_tsr_index
+from tsr.bimanual import BimanualPose
 from tsr.sampling import sample_from_tsrs
 
 from pycbirrt.config import CBiRRTConfig
@@ -21,6 +22,25 @@ from pycbirrt.space import JointSpace
 from pycbirrt.tree import RRTree
 
 logger = logging.getLogger(__name__)
+
+
+def _merge_bimanual_poses(primary, secondary):
+    """Fold ``secondary``'s set component into ``primary`` wherever ``primary``
+    leaves it unset (``None``).
+
+    A goal-region TSR and a path-constraint TSR are typically defined over
+    disjoint components (e.g. absolute vs. relative for a bimanual pose), so
+    their samples can be solved as a single combined IK target instead of
+    solving the goal alone and rejecting it after the fact if the constraint
+    happens not to hold. A no-op for pose types (e.g. a plain single-arm
+    Motor) that don't decompose this way.
+    """
+    if not isinstance(primary, BimanualPose) or not isinstance(secondary, BimanualPose):
+        return primary
+    return BimanualPose(
+        absolute=primary.absolute if primary.absolute is not None else secondary.absolute,
+        relative=primary.relative if primary.relative is not None else secondary.relative,
+    )
 
 
 @dataclass
@@ -85,7 +105,14 @@ class CBiRRT:
         self.space = JointSpace(lower, upper, angular_joints=self.config.angular_joints)
 
         self._rng = np.random.default_rng()
-        self._constraint_tsrs: list[TSR] | None = None
+        # Running upper bound on the metric volume element, for rejection
+        # sampling; it only ever grows, so it self-corrects from below.
+        self._sample_density_bound = 0.0
+        # Path constraints are queried only through the Constraint seam
+        # (distance / to_transform), so any Constraint works — TSR or a geometric
+        # primitive such as PlaneConstraint. Start/goal regions additionally need
+        # volume-weighted sampling (.sample + .Bw), which today only TSR provides.
+        self._constraint_tsrs: list[Constraint] | None = None
         self._start_tsrs: list[TSR] | None = None
         self._goal_tsrs: list[TSR] | None = None
 
@@ -95,7 +122,7 @@ class CBiRRT:
         goal: np.ndarray | list[np.ndarray] | None = None,
         goal_tsrs: list[TSR] | None = None,
         start_tsrs: list[TSR] | None = None,
-        constraint_tsrs: list[TSR] | None = None,
+        constraint_tsrs: list[Constraint] | None = None,
         seed: int | None = None,
         return_details: bool = False,
     ) -> list[np.ndarray] | None | PlanResult:
@@ -226,7 +253,7 @@ class CBiRRT:
             elif tree_a is tree_goal and self._start_tsrs is not None and self._rng.random() < self.config.start_bias:
                 q_sample = self._sample_from_tsrs(self._start_tsrs, must_satisfy_constraints=True)
             if q_sample is None:
-                q_sample = self.space.sample(self._rng)
+                q_sample = self._sample_random_config()
 
             # Extend tree_a toward random sample (uses extend_steps)
             grow_idx, _ = self._grow(tree_a, q_sample, self.config.extend_steps)
@@ -286,6 +313,9 @@ class CBiRRT:
         """
         for _ in range(self.config.tsr_samples):
             pose = sample_from_tsrs(tsrs, self._rng)
+            if must_satisfy_constraints and self._constraint_tsrs:
+                for constraint_tsr in self._constraint_tsrs:
+                    pose = _merge_bimanual_poses(pose, constraint_tsr.sample())
             solutions = self.ik.solve_valid(pose)
 
             for q in solutions:
@@ -326,6 +356,9 @@ class CBiRRT:
 
             tsr_idx = choose_tsr_index(tsrs, self._rng)
             pose = tsrs[tsr_idx].sample()
+            if must_satisfy_constraints and self._constraint_tsrs:
+                for constraint_tsr in self._constraint_tsrs:
+                    pose = _merge_bimanual_poses(pose, constraint_tsr.sample())
             solutions = self.ik.solve_valid(pose)
 
             if not solutions:
@@ -363,7 +396,9 @@ class CBiRRT:
         if self._constraint_tsrs is None:
             return True
 
-        pose = self.robot.forward_kinematics(q)
+        # Normalize FK output through the model's pose token (Motor for
+        # single-arm, BimanualPose for bimanual); tsr.distance accepts either.
+        pose = self.robot.normalize_pose(self.robot.forward_kinematics(q))
         for tsr in self._constraint_tsrs:
             dist, _ = tsr.distance(pose)
             if dist > self.config.tsr_tolerance:
@@ -528,8 +563,8 @@ class CBiRRT:
         prev_dist = float("inf")
 
         for _ in range(self.config.max_projection_iters):
-            # Get current end-effector pose
-            pose = self.robot.forward_kinematics(q_current)
+            # Get current end-effector pose (normalized via the model's pose token)
+            pose = self.robot.normalize_pose(self.robot.forward_kinematics(q_current))
 
             # Find the TSR with the largest violation
             max_dist = 0.0
@@ -552,9 +587,10 @@ class CBiRRT:
             prev_dist = max_dist
 
             # Project pose onto the worst TSR using bwopt (handles both position and orientation).
-            # bwopt is the closest point in Bw space (xyzrpy) to the current pose, expressed in
-            # the TSR's frame; compose with T0_w and Tw_e to get the world pose for IK.
-            projected_pose = worst_tsr.T0_w @ TSR.xyzrpy_to_trans(worst_bwopt) @ worst_tsr.Tw_e
+            # bwopt is the closest point in the TSR's split Bw coords to the current pose;
+            # to_transform maps it to the full world-frame end-effector Motor (T0_w * Tw * Tw_e),
+            # the same pose space as forward_kinematics, so it flows straight to the IK solver.
+            projected_pose = worst_tsr.to_transform(worst_bwopt)
 
             # Solve IK for the projected pose (pass q_current as hint for iterative solvers)
             solutions = self.ik.solve(projected_pose, q_init=q_current)
@@ -567,7 +603,7 @@ class CBiRRT:
             for sol in solutions:
                 if not self.space.within_limits(sol):
                     continue
-                d = self.space.distance(q_current, sol)
+                d = self._angular_distance(q_current, sol)
                 if d < best_dist:
                     best_dist = d
                     best_q = sol
@@ -580,13 +616,97 @@ class CBiRRT:
         # Exceeded max iterations
         return None
 
+    def _sample_random_config(self) -> np.ndarray:
+        """Sample a random configuration within joint limits.
+
+        Draws from the joint-space box (``self.space``). For angular joints the
+        limits should cover the working range (e.g. ±2π); the angular distance
+        metric handles wrapping.
+
+        With ``metric_sampling`` enabled and a metric that exposes a volume
+        element, samples are drawn proportional to ``sqrt(det M(q))`` by
+        rejection rather than uniformly in joint coordinates. A uniform sample
+        spreads an RRT's Voronoi bias by *Euclidean* volume, which pulls tree
+        growth back toward the coordinate geometry however the nearest-neighbour
+        metric is defined; weighting by the volume element makes the bias follow
+        the metric instead.
+        """
+        volume_element = getattr(self.config.metric, "volume_element", None)
+        if not self.config.metric_sampling or volume_element is None:
+            return self.space.sample(self._rng)
+
+        # Rejection sampling against a running estimate of the peak density.
+        # The bound self-corrects upward whenever a larger value appears, so a
+        # loose initial estimate costs a few extra draws, not correctness.
+        best = self._sample_density_bound
+        candidate = None
+        for _ in range(self.config.metric_sampling_tries):
+            candidate = self.space.sample(self._rng)
+            density = volume_element(candidate)
+            if density > best:
+                best = density
+                self._sample_density_bound = best
+            if best <= 0.0 or self._rng.random() < density / best:
+                return candidate
+        # Budget exhausted: fall back to the last uniform draw, which keeps the
+        # sampler total rather than looping forever in a flat region.
+        return candidate
+
     def _angular_distance(self, q1: np.ndarray, q2: np.ndarray) -> float:
-        """Distance under the joint-space metric. Thin wrapper over ``self.space``."""
-        return self.space.distance(q1, q2)
+        """Distance between configurations, handling angular wraparound.
+
+        Wraparound is resolved by ``self.space`` so the metric only ever sees a
+        genuine displacement; the metric then decides how to measure it
+        (Euclidean by default, or by kinetic energy when one is configured).
+        """
+        diff = self._angular_direction(q1, q2)
+        return self._metric_norm(q1, diff)
 
     def _angular_direction(self, q_from: np.ndarray, q_to: np.ndarray) -> np.ndarray:
-        """Direction under the joint-space metric. Thin wrapper over ``self.space``."""
+        """Direction from ``q_from`` to ``q_to``. Thin wrapper over ``self.space``."""
         return self.space.direction(q_from, q_to)
+
+    def _metric_norm(self, q: np.ndarray, dq: np.ndarray) -> float:
+        """Length of displacement ``dq`` at ``q`` under the configured metric."""
+        if self.config.metric is None:
+            return float(np.linalg.norm(dq))
+        return float(self.config.metric.norm(q, dq))
+
+    def _metric_scale(self, q: np.ndarray, dq: np.ndarray, target: float,
+                      length: float) -> np.ndarray:
+        """Shorten ``dq`` to metric length ``target`` (``length`` is its current one)."""
+        scale_to_length = getattr(self.config.metric, "scale_to_length", None)
+        if scale_to_length is None:
+            return dq / length * target
+        return np.asarray(scale_to_length(q, dq, target), dtype=float)
+
+    def _extension_step(self, q_current: np.ndarray, q_target: np.ndarray,
+                        direction: np.ndarray, distance: float) -> np.ndarray | None:
+        """One extension step from ``q_current`` toward ``q_target``.
+
+        Straight-line by default. With ``geodesic_extension`` the direction is
+        the metric's Riemannian natural gradient of the squared-distance
+        potential -- a discrete geodesic step in the sense of Kyaw & Kelly,
+        "Geometry-Aware Sampling-Based Motion Planning on Riemannian Manifolds"
+        (Algorithm 1). Under an anisotropic metric that direction is *not* the
+        straight line: steepest descent turns away from the heavy directions.
+
+        Returns None when no usable step exists (a degenerate gradient).
+        """
+        target_length = min(distance, self.config.step_size)
+        if self.config.geodesic_extension and self.config.metric is not None:
+            natural_gradient = getattr(self.config.metric, "natural_gradient", None)
+            if natural_gradient is not None:
+                descent = np.asarray(natural_gradient(q_current, q_target), dtype=float)
+                # Keep the angular convention of the straight-line direction:
+                # wraparound was already resolved there.
+                if self.space.angular_joints is not None:
+                    descent = self._angular_direction(q_current, q_current + descent)
+                length = self._metric_norm(q_current, descent)
+                if length <= 1e-12:
+                    return None
+                return self._metric_scale(q_current, descent, target_length, length)
+        return self._metric_scale(q_current, direction, target_length, distance)
 
     def _nearest_node(self, tree: RRTree, q_target: np.ndarray) -> int:
         """Find nearest node in tree using angular-aware distance.
@@ -598,15 +718,16 @@ class CBiRRT:
         Returns:
             Index of nearest node
         """
-        if self.space.angular_joints is None:
-            # Use tree's built-in nearest (faster)
+        if self.space.angular_joints is None and self.config.metric is None:
+            # Use tree's built-in nearest (faster); it hardcodes the Euclidean
+            # norm, so it is only valid when no metric is configured.
             return tree.nearest(q_target)
 
         # Compute angular-aware distances
         best_idx = 0
         best_dist = float("inf")
         for i, node in enumerate(tree.nodes):
-            dist = self.space.distance(node.config, q_target)
+            dist = self._angular_distance(node.config, q_target)
             if dist < best_dist:
                 best_dist = dist
                 best_idx = i
@@ -636,9 +757,11 @@ class CBiRRT:
         while True:
             q_current = tree.nodes[current_idx].config
 
-            # Compute direction and remaining distance (angular-aware)
-            direction = self.space.direction(q_current, q_target)
-            distance = np.linalg.norm(direction)
+            # Compute direction and remaining distance (angular-aware, and in
+            # the configured metric so step_size means the same thing here as
+            # it does to the nearest-neighbour query).
+            direction = self._angular_direction(q_current, q_target)
+            distance = self._metric_norm(q_current, direction)
 
             # Check if we've reached the target
             if distance < self.config.tsr_tolerance:
@@ -653,8 +776,16 @@ class CBiRRT:
             if max_steps is not None and steps_taken >= max_steps:
                 break
 
-            # Normalize and limit step size
-            step = direction / distance * min(distance, self.config.step_size)
+            # Choose the step. With geodesic_extension the direction comes from
+            # the metric's natural gradient (a discrete geodesic step) rather
+            # than the straight line; otherwise it is the straight line toward
+            # the target. Either way it is then scaled to metric length
+            # step_size -- the midpoint rule is not absolutely homogeneous
+            # (scaling dq moves the point where M is sampled), so a plain
+            # division can miss the requested length badly.
+            step = self._extension_step(q_current, q_target, direction, distance)
+            if step is None:
+                break
             q_new = q_current + step
 
             # Check joint limits
@@ -704,11 +835,11 @@ class CBiRRT:
             - reached_target: True if we reached q_target
         """
         q_from = tree.nodes[start_idx].config
-        distance = self.space.distance(q_from, q_target)
+        distance = self._angular_distance(q_from, q_target)
         n_steps = max(1, int(np.ceil(distance / self.config.step_size)))
 
         # Use angular-aware direction for interpolation
-        direction = self.space.direction(q_from, q_target)
+        direction = self._angular_direction(q_from, q_target)
 
         current_idx = start_idx
         for i in range(1, n_steps + 1):
@@ -794,25 +925,31 @@ class CBiRRT:
             if attempts_without_improvement >= self.config.smoothing_patience:
                 break
 
-            prev_len = len(smoothed)
-
             # Pick two random points (need at least one point between them)
             i = self._rng.integers(0, len(smoothed) - 2)
             j = self._rng.integers(i + 2, len(smoothed))
 
             # Try to grow from i to j
             shortcut = self._try_shortcut(smoothed[i], smoothed[j])
+            improved = False
             if shortcut is not None:
-                # Replace path[i:j+1] with the shortcut
-                smoothed = smoothed[:i] + shortcut + smoothed[j + 1 :]
+                candidate = smoothed[:i] + shortcut + smoothed[j + 1 :]
+                # Accept on *path cost* in the configured metric, not on
+                # waypoint count: under a kinetic-energy metric a shortcut with
+                # fewer waypoints can still cost more work, and keeping it would
+                # undo exactly what the metric was chosen to optimise.
+                if self._path_cost(candidate) < self._path_cost(smoothed):
+                    smoothed = candidate
+                    improved = True
 
-            # Track improvement
-            if len(smoothed) < prev_len:
-                attempts_without_improvement = 0
-            else:
-                attempts_without_improvement += 1
+            attempts_without_improvement = 0 if improved else attempts_without_improvement + 1
 
         return smoothed
+
+    def _path_cost(self, path) -> float:
+        """Total length of a path under the configured metric."""
+        return float(sum(self._angular_distance(path[k], path[k + 1])
+                         for k in range(len(path) - 1)))
 
     def _try_shortcut(self, q_from: np.ndarray, q_to: np.ndarray) -> list[np.ndarray] | None:
         """Try to find a shorter path between two configurations using grow.

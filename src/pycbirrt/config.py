@@ -3,6 +3,10 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pycbirrt.metrics import Metric
 
 
 @dataclass
@@ -52,6 +56,30 @@ class CBiRRTConfig:
     # If None, all joints are treated as linear
     # If provided, boolean array where True = angular joint (handles 2*pi wraparound)
     angular_joints: tuple[bool, ...] | None = None
+
+    # Configuration-space metric for nearest-neighbour queries and step sizes.
+    # None means the Euclidean norm on joint values (the historical behaviour).
+    # Pass a pycbirrt.metrics.KineticEnergyMetric to measure displacements by
+    # the work they take (dq^T M(q) dq) instead, so a step that swings the
+    # whole arm counts for more than one that flicks the wrist. Note step_size
+    # and tsr_tolerance are then in the metric's units, not radians.
+    metric: "Metric | None" = None
+
+    # Draw random samples proportional to the metric's volume element
+    # sqrt(det M(q)) instead of uniformly in joint coordinates, so the RRT's
+    # Voronoi bias follows the metric rather than the coordinates. Ignored when
+    # no metric is set, or when the metric exposes no volume element.
+    metric_sampling: bool = False
+    metric_sampling_tries: int = 16  # rejection draws before falling back
+
+    # Extend along the metric's natural gradient (a discrete geodesic step)
+    # instead of the straight line toward the target -- Algorithm 1 of Kyaw &
+    # Kelly, "Geometry-Aware Sampling-Based Motion Planning on Riemannian
+    # Manifolds". Under an anisotropic metric the two differ: on a UR5e the
+    # natural gradient points ~0.91 cosine toward the target where the straight
+    # line is 1.0 by construction but is not the cheapest way there. Needs a
+    # metric exposing natural_gradient(); ignored otherwise.
+    geodesic_extension: bool = False
 
     # Abort callback — return True to stop planning early
     abort_fn: Callable[[], bool] | None = field(default=None, repr=False)

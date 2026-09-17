@@ -81,8 +81,8 @@ def main():
 
     print(f"\n✓ Success! Found path in {result.iterations} iterations")
     print(f"  Path length: {len(result.path)} waypoints")
-    print(f"  Start tree: {len(result.tree_start)} nodes ({result.tree_start.num_roots} roots)")
-    print(f"  Goal tree: {len(result.tree_goal)} nodes ({result.tree_goal.num_roots} roots)")
+    print(f"  Start tree: {result.tree_sizes[0]} nodes ({len(start_configs)} roots)")
+    print(f"  Goal tree: {result.tree_sizes[1]} nodes ({len(goal_configs)} roots)")
 
     # Check which start/goal were connected
     actual_start = result.path[0]

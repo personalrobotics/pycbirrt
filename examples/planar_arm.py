@@ -18,11 +18,12 @@ import argparse
 
 import matplotlib.pyplot as plt
 import numpy as np
+from gafro import Motor
 from matplotlib.patches import Circle, Rectangle
 from tsr import TSR
 
 from pycbirrt import CBiRRT, CBiRRTConfig
-from pycbirrt.tree import RRTree
+from pycbirrt.backends.gafro import as_motor
 
 
 class PlanarArmRobot:
@@ -49,6 +50,9 @@ class PlanarArmRobot:
         T[0, 3] = x
         T[1, 3] = y
         return T
+
+    def normalize_pose(self, x) -> Motor:
+        return as_motor(x)
 
     def get_joint_positions(self, q: np.ndarray) -> list[np.ndarray]:
         """Get positions of base, elbow, and end-effector for visualization."""
@@ -84,6 +88,7 @@ class PlanarArmIK:
 
         Note: q_init is ignored for analytical solver.
         """
+        pose = as_motor(pose).to_transformation_matrix()  # accept a gafro.Motor or a 4x4 matrix
         x, y = pose[0, 3], pose[1, 3]
         d = np.sqrt(x**2 + y**2)
 
@@ -176,8 +181,6 @@ def visualize_result(
     robot: PlanarArmRobot,
     path: list[np.ndarray],
     obstacles: list[tuple[np.ndarray, float]],
-    tree_start: RRTree,
-    tree_goal: RRTree,
     collision_checker: CircleObstacleChecker,
     start_region: tuple[np.ndarray, float] | None = None,
     goal_region: tuple[np.ndarray, float] | None = None,
@@ -185,14 +188,16 @@ def visualize_result(
     title: str = "CBiRRT Planning Result",
     filename: str = "planar_arm_result.png",
 ):
-    """Visualize planning result with workspace path and C-space trees side by side.
+    """Visualize planning result with workspace path and C-space path side by side.
+
+    Note: PlanResult exposes only tree_sizes (counts), not the RRTree objects,
+    so the C-space panel shows the collision map and final path but not the
+    explored trees.
 
     Args:
         robot: The planar arm robot
         path: List of joint configurations
         obstacles: List of (center, radius) obstacle tuples
-        tree_start: RRT tree rooted at start
-        tree_goal: RRT tree rooted at goal
         collision_checker: Collision checker for C-space visualization
         start_region: Optional (center, radius) for start TSR visualization
         goal_region: Optional (center, radius) for goal TSR visualization
@@ -283,29 +288,6 @@ def visualize_result(
 
     ax_cs.contourf(Q1, Q2, collision_map, levels=[0.5, 1.5], colors=["red"], alpha=0.3)
 
-    # Draw tree edges (handling angular wraparound)
-    def draw_tree(tree: RRTree, color: str, label: str):
-        for node in tree.nodes:
-            if node.parent is not None:
-                parent = tree.nodes[node.parent]
-                # Skip edges that wrap around ±π (would draw long lines across plot)
-                diff = np.abs(node.config - parent.config)
-                if diff[0] > np.pi or diff[1] > np.pi:
-                    continue
-                ax_cs.plot(
-                    [parent.config[0], node.config[0]],
-                    [parent.config[1], node.config[1]],
-                    color=color,
-                    alpha=0.4,
-                    linewidth=0.5,
-                )
-        # Draw nodes
-        configs = np.array([n.config for n in tree.nodes])
-        ax_cs.scatter(configs[:, 0], configs[:, 1], c=color, s=5, alpha=0.6, label=label)
-
-    draw_tree(tree_start, "blue", f"Start tree ({len(tree_start)} nodes)")
-    draw_tree(tree_goal, "green", f"Goal tree ({len(tree_goal)} nodes)")
-
     # Draw path (handling angular wraparound)
     path_arr = np.array(path)
     for i in range(len(path_arr) - 1):
@@ -321,10 +303,10 @@ def visualize_result(
     ax_cs.plot([], [], "k-", linewidth=2, label="Path")  # For legend
     ax_cs.scatter(path_arr[:, 0], path_arr[:, 1], c="black", s=30, zorder=5)
 
-    # Mark start and goal
+    # Mark start and goal (taken from the path endpoints)
     ax_cs.scatter(
-        [tree_start.nodes[0].config[0]],
-        [tree_start.nodes[0].config[1]],
+        [path_arr[0, 0]],
+        [path_arr[0, 1]],
         c="blue",
         s=200,
         marker="*",
@@ -334,8 +316,8 @@ def visualize_result(
         label="Start",
     )
     ax_cs.scatter(
-        [tree_goal.nodes[0].config[0]],
-        [tree_goal.nodes[0].config[1]],
+        [path_arr[-1, 0]],
+        [path_arr[-1, 1]],
         c="green",
         s=200,
         marker="*",
@@ -453,8 +435,8 @@ def example_basic():
     result = planner.plan(start, goal_tsrs=[goal_tsr], seed=42, return_details=True)
 
     print(f"  Iterations: {result.iterations}")
-    print(f"  Start tree nodes: {len(result.tree_start)}")
-    print(f"  Goal tree nodes: {len(result.tree_goal)}")
+    print(f"  Start tree nodes: {result.tree_sizes[0]}")
+    print(f"  Goal tree nodes: {result.tree_sizes[1]}")
 
     if not result.success:
         print("No path found!")
@@ -470,8 +452,6 @@ def example_basic():
         robot,
         result.path,
         obstacles,
-        result.tree_start,
-        result.tree_goal,
         collision_checker,
         goal_region=(goal_pos, 0.1),
         title="Example 1: Basic Planning",
@@ -529,8 +509,8 @@ def example_start_goal_tsrs():
     )
 
     print(f"  Iterations: {result.iterations}")
-    print(f"  Start tree nodes: {len(result.tree_start)}")
-    print(f"  Goal tree nodes: {len(result.tree_goal)}")
+    print(f"  Start tree nodes: {result.tree_sizes[0]}")
+    print(f"  Goal tree nodes: {result.tree_sizes[1]}")
 
     if not result.success:
         print("No path found!")
@@ -548,8 +528,6 @@ def example_start_goal_tsrs():
         robot,
         result.path,
         obstacles,
-        result.tree_start,
-        result.tree_goal,
         collision_checker,
         start_region=(start_pos, 0.2),
         goal_region=(goal_pos, 0.2),
@@ -579,7 +557,10 @@ def example_constrained():
         goal_bias=0.1,
         smooth_path=True,
         smoothing_iterations=50,
-        tsr_tolerance=0.05,
+        # tsr_tolerance is the allowed distance from the constraint manifold; the
+        # end-effector may sit up to this far outside the y-band, so keep it tight
+        # for visibly in-band paths (the excursion scales linearly with it).
+        tsr_tolerance=0.01,
         angular_joints=(True, True),  # Both joints are rotational
     )
     planner = CBiRRT(
@@ -615,8 +596,8 @@ def example_constrained():
     )
 
     print(f"  Iterations: {result.iterations}")
-    print(f"  Start tree nodes: {len(result.tree_start)}")
-    print(f"  Goal tree nodes: {len(result.tree_goal)}")
+    print(f"  Start tree nodes: {result.tree_sizes[0]}")
+    print(f"  Goal tree nodes: {result.tree_sizes[1]}")
 
     if not result.success:
         print("No path found!")
@@ -646,8 +627,6 @@ def example_constrained():
         robot,
         result.path,
         obstacles,
-        result.tree_start,
-        result.tree_goal,
         collision_checker,
         start_region=(start_pos, 0.1),
         goal_region=(goal_pos, 0.1),

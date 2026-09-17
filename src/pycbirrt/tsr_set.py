@@ -15,7 +15,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import numpy as np
-from tsr import TSR, wrap_to_interval
+from tsr import wrap_to_interval
 from tsr.sampling import weights_from_tsrs
 
 from pycbirrt.interfaces import IKSolver, RobotModel
@@ -87,10 +87,11 @@ class TSRConfigurationSet:
         Uses the caller's generator rather than ``TSR.sample`` so results are
         reproducible under a seed (see personalrobotics/tsr#52).
         """
-        bw = self.tsr._Bw_cont  # continuous bounds: handles wrapped RPY intervals
-        xyzrpy = bw[:, 0] + (bw[:, 1] - bw[:, 0]) * rng.random(6)
-        xyzrpy[3:6] = wrap_to_interval(xyzrpy[3:6])
-        return self.tsr.T0_w @ TSR.xyzrpy_to_trans(xyzrpy) @ self.tsr.Tw_e
+        bounds = self.tsr._Bw_cont  # continuous bounds: handles wrapped angular intervals
+        bw = bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * rng.random(6)
+        # bw is Motor.log order: rotor bivector first, translation last.
+        bw[0:3] = wrap_to_interval(bw[0:3])
+        return self.tsr.to_transform(bw)
 
     def sample(self, rng: np.random.Generator) -> Sample | None:
         if self._pending:
@@ -116,7 +117,7 @@ class TSRConfigurationSet:
                 return None
             prev_dist = dist
 
-            target = self.tsr.T0_w @ TSR.xyzrpy_to_trans(bwopt) @ self.tsr.Tw_e
+            target = self.tsr.to_transform(bwopt)
             best, best_d = None, float("inf")
             for sol in self.ik.solve(target, q_init=q):
                 if not self.space.within_limits(sol):
