@@ -18,6 +18,7 @@ from pycbirrt.sets import (
     SetDistance,
     SetProjector,
     SetSampler,
+    SetViolation,
     StateSet,
     supports,
 )
@@ -33,6 +34,9 @@ class Halfspace:
 
     def distance(self, q):
         return max(0.0, self.lo - float(q[0]))
+
+    def violation(self, q):
+        return max(0.0, self.distance(q) - self.tolerance)
 
     def contains(self, q):
         return self.distance(q) <= self.tolerance
@@ -53,6 +57,9 @@ class Interval:
     def distance(self, q):
         x = float(q[0])
         return max(0.0, self.lo - x, x - self.hi)
+
+    def violation(self, q):
+        return max(0.0, self.distance(q) - self.tolerance)
 
     def contains(self, q):
         return self.distance(q) <= self.tolerance
@@ -302,8 +309,18 @@ class TestAllOf:
         assert s.project(np.array([0.0]), np.array([0.5])) is None
 
     def test_most_violated_requires_child_capabilities(self):
-        with pytest.raises(UnsupportedCapability, match="child 1"):
+        with pytest.raises(UnsupportedCapability, match="violation and projection.*child 1"):
             AllOf([Interval(0, 1), Membership(True)], projection=MostViolatedProjection())
+
+    def test_violation_composes(self):
+        s = AllOf([Interval(0, 2), Interval(1, 3)])
+        assert supports(s, SetViolation)
+        assert s.violation(np.array([0.0])) == pytest.approx(1.0)
+        assert s.violation(np.array([1.5])) == 0.0
+        u = AnyOf([Interval(0, 1), Interval(2, 3)])
+        assert u.violation(np.array([1.2])) == pytest.approx(0.2)
+        assert u.violation(np.array([0.5])) == 0.0
+        assert not supports(AllOf([Interval(0, 1), Membership(True)]), SetViolation)
 
     def test_empty_raises(self):
         with pytest.raises(ValueError):

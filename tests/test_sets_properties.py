@@ -23,6 +23,7 @@ from pycbirrt.sets import (
     SetDistance,
     SetProjector,
     SetSampler,
+    SetViolation,
     supports,
 )
 
@@ -43,6 +44,9 @@ class Interval:
     def distance(self, q):
         x = float(q[0])
         return max(0.0, self.lo - x, x - self.hi)
+
+    def violation(self, q):
+        return max(0.0, self.distance(q) - TOL)
 
     def contains(self, q):
         return self.distance(q) <= TOL
@@ -101,7 +105,7 @@ def any_ofs(draw, children):
 def all_ofs(draw, children):
     kids = draw(st.lists(children, min_size=1, max_size=3))
     projection = None
-    projectable = all(supports(k, SetDistance) and supports(k, SetProjector) for k in kids)
+    projectable = all(supports(k, SetViolation) and supports(k, SetProjector) for k in kids)
     if len(kids) > 1 and projectable and draw(st.booleans()):
         projection = MostViolatedProjection()
     sampling = None
@@ -189,6 +193,29 @@ def test_distance_agrees_with_membership(tree, q):
 
 @settings(max_examples=300, deadline=None)
 @given(trees, configs)
+def test_violation_is_zero_iff_contains(tree, q):
+    if not supports(tree, SetViolation):
+        return
+    v = tree.violation(q)
+    assert v >= 0.0
+    assert tree.contains(q) == (v == 0.0)
+
+
+@settings(max_examples=300, deadline=None)
+@given(trees, configs)
+def test_composite_violation_bounds_children(tree, q):
+    if not isinstance(tree, (AnyOf, AllOf)) or not supports(tree, SetViolation):
+        return
+    v = tree.violation(q)
+    child_vs = [c.violation(q) for c in tree.children]
+    if isinstance(tree, AnyOf):
+        assert all(v <= cv for cv in child_vs)
+    else:
+        assert all(v >= cv for cv in child_vs)
+
+
+@settings(max_examples=300, deadline=None)
+@given(trees, configs)
 def test_composite_distance_bounds_children(tree, q):
     if not isinstance(tree, (AnyOf, AllOf)) or not supports(tree, SetDistance):
         return
@@ -252,6 +279,7 @@ def test_unsupported_capabilities_are_reported_consistently(tree):
     else:
         all_dist = all(supports(c, SetDistance) for c in tree.children)
         assert supports(tree, SetDistance) == all_dist
+        assert supports(tree, SetViolation) == all(supports(c, SetViolation) for c in tree.children)
         if isinstance(tree, AnyOf):
             all_proj = all(supports(c, SetProjector) for c in tree.children)
             all_samp = all(supports(c, SetSampler) for c in tree.children)

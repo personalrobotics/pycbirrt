@@ -71,9 +71,17 @@ providing the method; `supports(s, Capability)` asks.
   validator's job. This matters: which IK branch is collision-free is not
   knowable inside the set, and discarding branches before validation was a
   real bug.
-- **`SetDistance.distance(q) -> float`** is a nonnegative violation measure
-  that is within the set's membership tolerance exactly when `contains(q)`
-  holds. It need not be a metric distance to the set.
+- **`SetDistance.distance(q) -> float`** is a nonnegative geometric measure
+  of how far `q` is from the set, before any tolerance is applied. For a
+  leaf it is within the set's membership tolerance exactly when
+  `contains(q)` holds; for composites it is only a summary (min for unions,
+  max for intersections) with no membership threshold of its own.
+- **`SetViolation.violation(q) -> float`** is nonnegative and exactly zero
+  when `contains(q)` holds, on the set's own scale: for a TSR-induced set it
+  is the TSR distance beyond the membership tolerance. Unions take the min
+  and intersections the max, so `violation(q) == 0` agrees with membership
+  at every level. Strategies that compare violations across children require
+  them to be on a comparable scale, which the strategy cannot verify.
 - **`SetProjector.project(q_previous, q_proposed) -> q | None`** moves a
   configuration onto the set. `q_previous` is where the extension started; a
   projector may use it to seed an iterative solve or to reject results that
@@ -101,7 +109,8 @@ Capabilities of a composite are explicit, never implied:
 | | `AnyOf` | `AllOf` |
 |---|---|---|
 | one child | delegates every capability to it | delegates every capability to it |
-| distance | min over children, if all support it | max over children (largest violation), if all support it |
+| distance | min over children, if all support it | max over children, if all support it (a geometric summary, not membership) |
+| violation | min over children, if all support it | max over children, if all support it (zero iff member) |
 | sampling | needs `weights`, the mixture policy; all children must sample | needs a named strategy, e.g. `RejectionSampling(source)` |
 | projection | nearest successful child projection; all children must project | needs a named strategy, e.g. `MostViolatedProjection()` |
 
@@ -114,8 +123,10 @@ raises `UnsupportedCapability` with the reason.
 Named strategies so far:
 
 - `MostViolatedProjection(max_iters, progress_tolerance)`: repeatedly project
-  onto the child with the largest violation until every child contains the
-  point, or progress stalls.
+  onto the unsatisfied child with the largest `violation` until every child
+  contains the point, or progress stalls. A satisfied child is never
+  selected. Children must support violation and projection, and their
+  violations must be comparable (homogeneous TSR sets are).
 - `RejectionSampling(source)`: draw from one child and keep the candidates the
   others contain. Exact, but wasteful when the intersection is small.
 
