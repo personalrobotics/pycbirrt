@@ -59,11 +59,14 @@ def lowered(planner, **kw):
 
 
 class TestConnectionTolerance:
-    def test_reached_within_connection_tolerance_without_growing(self):
+    def test_reached_within_connection_tolerance_connects_exactly(self):
+        """Within tolerance the target is connected by one validated edge, not merely declared reached."""
         planner = make_planner(connection_tolerance=0.1)
         tree = RRTree(np.zeros(2))
-        idx, reached = planner._grow(unconstrained(planner), tree, np.array([0.05, 0.0]))
-        assert reached and idx == 0 and len(tree) == 1
+        target = np.array([0.05, 0.0])
+        idx, reached = planner._grow(unconstrained(planner), tree, target)
+        assert reached and len(tree) == 2
+        assert np.array_equal(tree.nodes[idx].config, target)
 
     def test_tight_connection_tolerance_grows(self):
         planner = make_planner(connection_tolerance=1e-3)
