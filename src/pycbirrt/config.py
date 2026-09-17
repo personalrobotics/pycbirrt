@@ -56,9 +56,12 @@ class CBiRRTConfig:
     smoothing_iterations: int = 50
     smoothing_patience: int = 15  # Stop early if no improvement in this many attempts
 
-    # Angular joints (for proper distance calculation with wraparound)
-    # If None, all joints are treated as linear
-    # If provided, boolean array where True = angular joint (handles 2*pi wraparound)
+    # Continuous joints: True marks a joint with no limits (a turntable, the UR3e's
+    # wrist 3), whose distance wraps at 2*pi and whose limit check is skipped.
+    # A limited joint is a bounded interval however wide its range: a +-2*pi joint
+    # like the UR5e's can reach any angle, but q and q + 2*pi are different states
+    # and moving between them is a real full rotation. Leave such joints False
+    # (or angular_joints None) so the planner respects their limits.
     angular_joints: tuple[bool, ...] | None = None
 
     # Abort callback — return True to stop planning early
