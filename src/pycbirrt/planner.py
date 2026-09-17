@@ -433,7 +433,7 @@ class CBiRRT:
         Returns:
             Tuple of (node_index, reached) where:
             - node_index: Index of the furthest node reached toward target
-            - reached: True if we reached the target within tsr_tolerance
+            - reached: True if we reached the target within connection_tolerance
         """
         space = problem.space
         constraint = problem.path_constraint
@@ -449,7 +449,7 @@ class CBiRRT:
             direction = space.direction(q_current, q_target)
             distance = np.linalg.norm(direction)
 
-            if distance < self.config.tsr_tolerance:
+            if distance < self.config.connection_tolerance:
                 return current_idx, True
 
             if prev_distance - distance < self.config.progress_tolerance:
@@ -493,9 +493,10 @@ class CBiRRT:
     ) -> tuple[int, bool]:
         """Extend tree along an edge, adding intermediate nodes.
 
-        Checks validity and path-constraint membership at every step. Adds
-        valid intermediate configurations to the tree and stops at the first
-        invalid one, keeping all valid ones added so far.
+        Checks validity and path-constraint membership every ``edge_resolution``
+        (default ``step_size``) along the edge. Adds valid intermediate
+        configurations to the tree and stops at the first invalid one,
+        keeping all valid ones added so far.
 
         Note: This uses linear interpolation which is correct for the small
         step sizes used (already within step_size from _grow). Angular
@@ -507,7 +508,8 @@ class CBiRRT:
         space = problem.space
         q_from = tree.nodes[start_idx].config
         distance = space.distance(q_from, q_target)
-        n_steps = max(1, int(np.ceil(distance / self.config.step_size)))
+        resolution = self.config.edge_resolution or self.config.step_size
+        n_steps = max(1, int(np.ceil(distance / resolution)))
         direction = space.direction(q_from, q_target)
 
         current_idx = start_idx
