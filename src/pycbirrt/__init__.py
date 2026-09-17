@@ -11,7 +11,7 @@ from pycbirrt.exceptions import (
     PlanningError,
     UnsupportedCapability,
 )
-from pycbirrt.motion import DiscreteMotionValidator, LocalMotion, MotionValidator
+from pycbirrt.motion import DiscreteMotionValidator, LocalMotion, MotionValidator, RestrictedMotionValidator
 from pycbirrt.planner import CBiRRT, PlanResult
 from pycbirrt.problem import PlanningProblem
 from pycbirrt.sets import (
@@ -44,6 +44,7 @@ __all__ = [
     "MotionValidator",
     "LocalMotion",
     "DiscreteMotionValidator",
+    "RestrictedMotionValidator",
     "PlanningError",
     "AllStartConfigurationsInCollision",
     "AllGoalConfigurationsInCollision",

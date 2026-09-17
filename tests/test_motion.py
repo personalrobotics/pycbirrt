@@ -358,3 +358,99 @@ class TestLocalMotionContract:
         prob = problem(self.planner, self.q0, self.q1, motion_validator=WrongShape())
         with pytest.raises(MotionContractError):
             self.planner._grow(prob, RRTree(self.q0), self.q1)
+
+
+# ---------------------------------------------------------------------------
+# Replacement vs composition (#56)
+# ---------------------------------------------------------------------------
+
+
+class TestReplacementVsComposition:
+    """A bare custom validator replaces the default; RestrictedMotionValidator composes with it."""
+
+    class Wall:
+        """Invalid inside a thin slab that a validator checking only the endpoint would miss."""
+
+        def is_valid(self, q):
+            return not (0.14 < q[0] < 0.16)
+
+    def make(self):
+        robot = MockRobotModel()
+        wall = self.Wall()
+        cfg = CBiRRTConfig(step_size=0.3, edge_resolution=0.01, connection_tolerance=0.5, smooth_path=False)
+        planner = CBiRRT(robot, MockIKSolver(robot, MockCollisionChecker()), wall, cfg)
+        return planner, wall
+
+    def test_bare_custom_validator_is_trusted_for_the_interior(self):
+        """Documented behavior: the planner does not sample between a custom validator's configurations."""
+        planner, wall = self.make()
+        q0, q1 = np.zeros(2), np.array([0.3, 0.0])
+
+        class EndpointOnly:
+            def validate(self, q_from, q_to):
+                return LocalMotion(configs=[np.array(q_to)], reached=True)
+
+        prob = problem(planner, q0, q1, motion_validator=EndpointOnly())
+        tree = RRTree(q0)
+        idx, reached = planner._grow(prob, tree, q1)
+        assert reached  # trusted: the wall in the interior is not detected by the planner
+        assert wall.is_valid(q1)
+
+    def test_default_catches_the_wall(self):
+        planner, _ = self.make()
+        q0, q1 = np.zeros(2), np.array([0.3, 0.0])
+        tree = RRTree(q0)
+        idx, reached = planner._grow(problem(planner, q0, q1), tree, q1)
+        assert not reached
+
+    def test_restricted_keeps_default_checks_and_adds_a_restriction(self):
+        from pycbirrt import RestrictedMotionValidator
+
+        planner, _ = self.make()
+        q0 = np.zeros(2)
+        prob0 = problem(planner, q0, q0)
+        base = planner.default_motion_validator(prob0)
+
+        # Restriction: no motion may change q[1] by more than 0.05
+        restricted = RestrictedMotionValidator(base, accepts=lambda a, b: abs(b[1] - a[1]) <= 0.05)
+
+        # Still catches the wall (default checks retained)
+        q_wall = np.array([0.3, 0.0])
+        prob = problem(planner, q0, q_wall, motion_validator=restricted)
+        assert not planner._grow(prob, RRTree(q0), q_wall)[1]
+
+        # Rejects a wall-free motion that violates the restriction, and stores nothing
+        q_jump = np.array([0.0, 0.2])
+        prob = problem(planner, q0, q_jump, motion_validator=restricted)
+        tree = RRTree(q0)
+        idx, reached = planner._grow(prob, tree, q_jump)
+        assert not reached and len(tree) == 1
+
+        # Accepts a wall-free motion within the restriction, with the default's samples
+        q_ok = np.array([0.0, 0.04])
+        prob = problem(planner, q0, q_ok, motion_validator=restricted)
+        tree = RRTree(q0)
+        idx, reached = planner._grow(prob, tree, q_ok)
+        assert reached and len(tree) == 1 + 4 and np.array_equal(tree.nodes[idx].config, q_ok)
+
+    def test_default_motion_validator_is_public_and_matches_internal(self):
+        planner, _ = self.make()
+        prob = problem(planner, np.zeros(2), np.zeros(2))
+        assert isinstance(planner.default_motion_validator(prob), DiscreteMotionValidator)
+        assert planner.default_motion_validator(prob).resolution == planner._motion_validator(prob).resolution
+
+    def test_goal_tree_edges_are_validated_from_the_goal_side(self):
+        """Documents the reversibility requirement: half the calls have q_from nearer the goal."""
+        robot = MockRobotModel()
+        cfg = CBiRRTConfig(step_size=0.1, connection_tolerance=0.05, smooth_path=False, goal_bias=0.0, start_bias=0.0)
+        planner = CBiRRT(robot, MockIKSolver(robot, MockCollisionChecker()), MockCollisionChecker(), cfg)
+        q0, q1 = np.zeros(2), np.array([1.0, 0.0])
+        base = planner.default_motion_validator(problem(planner, q0, q1))
+        spy = Spy(base)
+        result = planner.solve(problem(planner, q0, q1, motion_validator=spy), seed=0)
+        assert result.success
+        # Some motions start at the start root (start tree, execution direction) and some start at the
+        # goal root (goal tree, validated in the reverse of execution direction)
+        from_start_root = sum(1 for a, _ in spy.calls if np.array_equal(a, q0))
+        from_goal_root = sum(1 for a, _ in spy.calls if np.array_equal(a, q1))
+        assert from_start_root > 0 and from_goal_root > 0

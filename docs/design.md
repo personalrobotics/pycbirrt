@@ -183,10 +183,19 @@ sampler or projector.
   `edge_resolution` and requires every sample including the endpoint to be
   admissible, so validity is discrete, not continuous; choose the
   resolution against the thinnest obstacle you must not miss. A backend may
-  supply continuous collision checking or a swept-volume check instead. A
-  custom validator can only be stricter: the planner re-checks every
-  configuration it returns for admissibility before storing it, and a
-  motion that claims to reach must end exactly at the target.
+  supply continuous collision checking or a swept-volume check instead.
+  A custom validator **replaces** the default and owns the validity of the
+  complete motion, interior included; the planner does not run the default
+  checks alongside it. Two guarantees hold regardless of validator: every
+  configuration a validator returns is checked for admissibility before it
+  is stored (which says nothing about the motion between nodes), and a
+  `LocalMotion` must satisfy its contract or `MotionContractError` is
+  raised. To add a restriction while keeping the default discrete checks,
+  wrap `planner.default_motion_validator(problem)` in
+  `RestrictedMotionValidator(base, accepts)`. Because the search is
+  bidirectional, goal-tree edges are validated with the goal side as
+  `q_from`, the reverse of execution; motion validity must not depend on
+  direction unless that is acceptable.
 - **Reached means connected.** Growth reports success only once the tree
   contains the exact target, added through a validated edge. Coming within
   `connection_tolerance` triggers that final exact edge; it never substitutes

@@ -7,10 +7,29 @@ A state validator answers whether one configuration is valid. A motion
 validator answers whether the local motion between two configurations is
 valid, and returns the configurations to store along it. The planner uses
 one motion validator for ordinary growth, the final connection between
-trees, and shortcut smoothing. The default discretizes the straight segment
-at ``edge_resolution`` and checks each sample; a backend may supply
-continuous collision checking or any stricter method through
-``PlanningProblem.motion_validator``.
+trees, and shortcut smoothing.
+
+**Replacement, not composition.** A custom ``PlanningProblem.motion_validator``
+*replaces* the default ``DiscreteMotionValidator`` and owns the validity of
+the complete motion between ``q_from`` and ``q_to``, interior included. The
+planner does not run the default checks alongside it. This is what lets a
+backend supply continuous collision checking without paying for redundant
+discrete samples, and it means a custom validator that skips the interior
+is trusted to have checked it. To *add* a restriction while keeping the
+default discrete checks, compose explicitly with ``RestrictedMotionValidator``.
+
+**What the planner guarantees regardless of validator.** Every
+configuration a validator returns is checked for admissibility (joint
+space, state validator, path constraint) before it is stored as a node, and
+a ``LocalMotion`` must satisfy its contract (see ``LocalMotion``; violations
+raise ``MotionContractError``). Node admissibility says nothing about the
+motion *between* nodes; that is the validator's responsibility.
+
+**Reversibility.** The search is bidirectional: the goal tree grows toward
+the start, so its edges are validated with ``q_from`` on the goal side and
+executed in the opposite direction. A custom validator must therefore treat
+a motion as valid independently of direction, or accept that half of the
+path's edges were validated in reverse.
 """
 
 from __future__ import annotations
@@ -51,6 +70,28 @@ class MotionValidator(Protocol):
     """
 
     def validate(self, q_from: np.ndarray, q_to: np.ndarray) -> LocalMotion: ...
+
+
+class RestrictedMotionValidator:
+    """Compose a base validator with an extra motion predicate.
+
+    The base validator (typically the planner's default, from
+    ``CBiRRT.default_motion_validator(problem)``) decides validity and
+    produces the configurations to store; the motion is then accepted only
+    if ``accepts(q_from, q_to)`` is also true. A rejected motion returns an
+    empty ``LocalMotion``. This is the explicit way to be stricter than the
+    default while keeping its discrete checks; a bare custom validator
+    replaces the default instead.
+    """
+
+    def __init__(self, base: MotionValidator, accepts: Callable[[np.ndarray, np.ndarray], bool]):
+        self.base = base
+        self.accepts = accepts
+
+    def validate(self, q_from: np.ndarray, q_to: np.ndarray) -> LocalMotion:
+        if not self.accepts(np.asarray(q_from), np.asarray(q_to)):
+            return LocalMotion()
+        return self.base.validate(q_from, q_to)
 
 
 class DiscreteMotionValidator:

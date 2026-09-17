@@ -226,6 +226,17 @@ result = planner.solve(problem, seed=0)
 result.goal_source   # which alternative the path reached
 ```
 
+Local-motion validation is replaceable too. A custom `motion_validator`
+replaces the default discretized check and owns the whole motion; to add a
+restriction on top of the default instead, compose:
+
+```python
+from pycbirrt import RestrictedMotionValidator
+
+base = planner.default_motion_validator(problem)
+problem.motion_validator = RestrictedMotionValidator(base, accepts=lambda a, b: abs(b[0] - a[0]) < 0.5)
+```
+
 See [docs/design.md](docs/design.md) for the definitions, the composition
 rules, what the planner requires of each role, and how `plan(...)` lowers
 into this representation.
