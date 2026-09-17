@@ -6,6 +6,17 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `PlanningProblem.motion_validator`: local-motion validation is an
+  explicit, replaceable boundary. `MotionValidator.validate(q_from, q_to)`
+  returns a `LocalMotion` (the validated configurations to store, and
+  whether the target was reached), and every tree edge, the final
+  connection between trees, and every shortcut go through it. The default
+  `DiscreteMotionValidator` reproduces the discretized behavior at
+  `edge_resolution`. A custom validator can only be stricter: the planner
+  re-checks everything it returns for admissibility (#46).
+
 ### Fixed
 
 - Membership in the ambient `JointSpace` (shape, finiteness, joint limits)

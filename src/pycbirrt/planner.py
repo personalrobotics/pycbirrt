@@ -17,6 +17,7 @@ from pycbirrt.exceptions import (
 )
 from pycbirrt.interfaces import CollisionChecker, IKSolver, RobotModel
 from pycbirrt.legacy import legacy_index, legacy_problem
+from pycbirrt.motion import DiscreteMotionValidator, MotionValidator
 from pycbirrt.problem import PlanningProblem
 from pycbirrt.sets import Sample, SetProjector, SetSampler, StateSet, is_finite, seeds, supports
 from pycbirrt.space import JointSpace
@@ -542,45 +543,49 @@ class CBiRRT:
         start_idx: int,
         q_target: np.ndarray,
     ) -> tuple[int, bool]:
-        """Extend tree along a straight edge, adding a node every ``edge_resolution``.
+        """Extend the tree along the local motion to ``q_target``.
 
-        This is the single local-motion validation boundary: every sample
-        along the edge, including the endpoint, must be admissible (in the
-        joint space, valid, and inside the path constraint). Nodes are added
-        as they are validated; on the first inadmissible sample the edge
-        stops there and the nodes added so far are kept.
+        This is the single local-motion validation boundary, used for
+        ordinary growth, the final connection between trees, and shortcut
+        smoothing. The problem's ``motion_validator`` (or the default
+        ``DiscreteMotionValidator``) returns the validated configurations to
+        store; they are added as consecutive nodes. A custom validator's
+        configurations are re-checked for admissibility before storing, so a
+        custom validator can only be stricter than the default, and the
+        invariant that every stored node is admissible does not depend on it.
 
-        The endpoint node is the exact target as given, so ``reached_target``
-        means the tree contains the target and paths keep their endpoints
-        exactly. With angular joints the interior samples follow the wrapped
-        direction, so the last raw step may differ by 2π from the target's
-        representation; that is the same physical motion (#35).
-
-        Note: linear interpolation along the wrapped direction is correct for
-        the small step sizes used.
+        ``reached_target`` is True only if the motion was valid all the way
+        and the tree now contains the exact target. With angular joints the
+        last raw step may differ by 2π from the target's representation; that
+        is the same physical motion (#35).
 
         Returns:
             Tuple of (final_idx, reached_target).
         """
-        space = problem.space
-        if not space.contains(q_target):
+        if not problem.space.contains(q_target):
             return start_idx, False
         q_from = tree.nodes[start_idx].config
-        direction = space.direction(q_from, q_target)
-        distance = float(np.linalg.norm(direction))
-        if distance == 0.0:
-            return start_idx, True  # nothing to add
-        resolution = self.config.edge_resolution or self.config.step_size
-        n_steps = max(1, int(np.ceil(distance / resolution)))
+        validator = self._motion_validator(problem)
+        motion = validator.validate(q_from, q_target)
 
+        custom = problem.motion_validator is not None
         current_idx = start_idx
-        for i in range(1, n_steps + 1):
-            q = np.array(q_target, dtype=float) if i == n_steps else q_from + (i / n_steps) * direction
-            if not self._admissible(problem, q)[0]:
+        for i, q in enumerate(motion.configs):
+            q = np.asarray(q, dtype=float)
+            if custom and not self._admissible(problem, q)[0]:
                 return current_idx, False
             current_idx = tree.add_node(q, current_idx)
+        if motion.reached and motion.configs and not np.array_equal(motion.configs[-1], np.asarray(q_target)):
+            # A validator that claims to reach must end exactly at the target
+            return current_idx, False
+        return current_idx, bool(motion.reached)
 
-        return current_idx, True
+    def _motion_validator(self, problem: PlanningProblem) -> MotionValidator:
+        """The problem's motion validator, or the default discretized one."""
+        if problem.motion_validator is not None:
+            return problem.motion_validator
+        resolution = self.config.edge_resolution or self.config.step_size
+        return DiscreteMotionValidator(problem.space, lambda q: self._admissible(problem, q)[0], resolution)
 
     # ------------------------------------------------------------------
     # Path extraction and smoothing

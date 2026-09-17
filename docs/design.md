@@ -166,14 +166,23 @@ sampler or projector.
   every tree extension is projected onto it; otherwise an extension that
   leaves it is rejected. Every intermediate configuration on every edge is
   checked for membership and validity.
-- **The validator** is applied to every root, every extension endpoint, and
-  every intermediate configuration along every edge.
-- **Edges are the single local-motion boundary.** Every tree edge is a
-  straight segment in the space, sampled every `edge_resolution`, and every
-  sample including the endpoint must be admissible. Validity is therefore
-  discrete at `edge_resolution`, not continuous; choose it against the
-  thinnest obstacle you must not miss. Making this boundary replaceable
-  (continuous collision checking, swept volumes) is #46.
+- **The validator** (state validity) is applied to every root and, through
+  the default motion validator, to every configuration along every edge.
+  State validity and motion validity are distinct interfaces:
+  `CollisionChecker.is_valid(q)` for one configuration, `MotionValidator`
+  for the motion between two.
+- **Edges are the single local-motion boundary,** and it is explicit:
+  `PlanningProblem.motion_validator` validates the local motion of every
+  tree edge, the final connection between trees, and every shortcut, and
+  returns the configurations to store (`LocalMotion`). The default,
+  `DiscreteMotionValidator`, samples the straight segment every
+  `edge_resolution` and requires every sample including the endpoint to be
+  admissible, so validity is discrete, not continuous; choose the
+  resolution against the thinnest obstacle you must not miss. A backend may
+  supply continuous collision checking or a swept-volume check instead. A
+  custom validator can only be stricter: the planner re-checks every
+  configuration it returns for admissibility before storing it, and a
+  motion that claims to reach must end exactly at the target.
 - **Reached means connected.** Growth reports success only once the tree
   contains the exact target, added through a validated edge. Coming within
   `connection_tolerance` triggers that final exact edge; it never substitutes

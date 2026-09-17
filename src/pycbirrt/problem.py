@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from pycbirrt.interfaces import CollisionChecker
+from pycbirrt.motion import MotionValidator
 from pycbirrt.sets import StateSet
 from pycbirrt.space import JointSpace
 
@@ -31,6 +32,13 @@ class PlanningProblem:
             extensions are projected onto it; otherwise they are rejected
             when they leave it. Roots are drawn from ``start`` and ``goal``
             and rejected if they are not members.
+        motion_validator: Validates the local motion of every tree edge,
+            including the final connection between trees and shortcuts. None
+            means the default: the straight segment sampled every
+            ``edge_resolution`` and checked for admissibility (space, validator,
+            path constraint). A custom validator may only be stricter: the
+            planner still checks every configuration it returns for
+            admissibility before storing it.
     """
 
     space: JointSpace
@@ -38,3 +46,4 @@ class PlanningProblem:
     goal: StateSet
     validator: CollisionChecker
     path_constraint: StateSet | None = None
+    motion_validator: MotionValidator | None = None
