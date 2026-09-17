@@ -69,10 +69,15 @@ class Sample:
 
 @runtime_checkable
 class SetSampler(Protocol):
-    """Capability: draw a configuration from the set."""
+    """Capability: draw candidate members of the set.
 
-    def sample(self, rng: np.random.Generator) -> Sample | None:
-        """Return a sample, or None if this attempt failed."""
+    One draw may yield several candidates, for example every IK branch of
+    one sampled pose. The caller validates them and keeps what it wants;
+    the set never applies collision or other external filters itself.
+    """
+
+    def sample(self, rng: np.random.Generator) -> list[Sample]:
+        """Return the candidates of one draw; empty if the draw failed."""
         ...
 
 
@@ -160,9 +165,9 @@ class FiniteSet:
     def contains(self, q: np.ndarray) -> bool:
         return self.distance(q) <= self.tolerance
 
-    def sample(self, rng: np.random.Generator) -> Sample | None:
+    def sample(self, rng: np.random.Generator) -> list[Sample]:
         i = int(rng.integers(len(self.configs)))
-        return Sample(self.configs[i].copy(), (i,))
+        return [Sample(self.configs[i].copy(), (i,))]
 
 
 class EmptySet:
@@ -229,8 +234,8 @@ class AnyOf(_Composite):
     Capabilities:
         distance: min over children, if every child supports distance.
         sample: single child delegates. Multiple children require ``weights``
-            (the mixture policy); the chosen child's index is prepended to the
-            sample's ``source``.
+            (the mixture policy); the chosen child's index is prepended to
+            each candidate's ``source``.
         project: single child delegates. Multiple children: project onto each
             child and return the successful result nearest ``q_proposed``
             under ``metric``. Requires every child to support projection.
@@ -282,16 +287,13 @@ class AnyOf(_Composite):
         self._require(SetDistance)
         return min(c.distance(q) for c in self.children)
 
-    def sample(self, rng: np.random.Generator) -> Sample | None:
+    def sample(self, rng: np.random.Generator) -> list[Sample]:
         self._require(SetSampler)
         if len(self.children) == 1:
             i = 0
         else:
             i = int(rng.choice(len(self.children), p=self.weights))
-        s = self.children[i].sample(rng)
-        if s is None:
-            return None
-        return Sample(s.q, (i, *s.source))
+        return [Sample(s.q, (i, *s.source)) for s in self.children[i].sample(rng)]
 
     def project(self, q_previous: np.ndarray, q_proposed: np.ndarray) -> np.ndarray | None:
         self._require(SetProjector)
@@ -359,7 +361,7 @@ class AllOf(_Composite):
         self._require(SetDistance)
         return max(c.distance(q) for c in self.children)
 
-    def sample(self, rng: np.random.Generator) -> Sample | None:
+    def sample(self, rng: np.random.Generator) -> list[Sample]:
         self._require(SetSampler)
         return self.children[0].sample(rng)
 

@@ -301,9 +301,9 @@ class CBiRRT:
     def _sample_admissible(self, problem: PlanningProblem, s: StateSet) -> np.ndarray | None:
         """Draw one admissible configuration from ``s``, or None within the sample budget."""
         for _ in range(self.config.tsr_samples):
-            smp = s.sample(self._rng)
-            if smp is not None and self._admissible(problem, smp.q)[0]:
-                return smp.q
+            for smp in s.sample(self._rng):
+                if self._admissible(problem, smp.q)[0]:
+                    return smp.q
         return None
 
     def _roots(self, problem: PlanningProblem, s: StateSet, role: str) -> list[Sample]:
@@ -313,7 +313,9 @@ class CBiRRT:
         filtered with a warning; if all are invalid an exception is raised.
         If the set is not finite and supports sampling, admissible samples
         are added until ``num_tree_roots`` roots exist or the sample budget
-        is spent.
+        (``tsr_samples`` draws) is spent. Each draw may yield several
+        candidates (for example the IK branches of one pose); at most
+        ``max_ik_per_pose`` admissible ones per draw are kept, for diversity.
 
         Raises:
             AllStartConfigurationsInCollision / AllGoalConfigurationsInCollision:
@@ -346,17 +348,22 @@ class CBiRRT:
             for _ in range(self.config.tsr_samples):
                 if len(roots) >= self.config.num_tree_roots:
                     break
-                smp = s.sample(self._rng)
-                if smp is None:
+                candidates = s.sample(self._rng)
+                if not candidates:
                     stats["sample_failed"] += 1
                     continue
-                ok, reason = self._admissible(problem, smp.q)
-                if ok:
-                    roots.append(smp)
-                elif reason == "in collision":
-                    stats["in_collision"] += 1
-                else:
-                    stats["constraint_violated"] += 1
+                kept = 0
+                for smp in candidates:
+                    if kept >= self.config.max_ik_per_pose or len(roots) >= self.config.num_tree_roots:
+                        break
+                    ok, reason = self._admissible(problem, smp.q)
+                    if ok:
+                        roots.append(smp)
+                        kept += 1
+                    elif reason == "in collision":
+                        stats["in_collision"] += 1
+                    else:
+                        stats["constraint_violated"] += 1
 
         if roots:
             return roots

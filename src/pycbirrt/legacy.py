@@ -60,7 +60,6 @@ def legacy_problem(
             tolerance=config.tsr_tolerance,
             max_projection_iters=config.max_projection_iters,
             progress_tolerance=config.progress_tolerance,
-            max_solutions_per_pose=config.max_ik_per_pose,
         )
 
     def role(configs: Sequence[np.ndarray] | None, tsrs: Sequence[TSR] | None) -> StateSet:

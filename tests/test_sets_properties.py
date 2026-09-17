@@ -60,7 +60,7 @@ class Halfspace(Interval):
         super().__init__(lo, float("inf"))
 
     def sample(self, rng):
-        return Sample(np.array([rng.uniform(self.lo, self.lo + 1.0)]))
+        return [Sample(np.array([rng.uniform(self.lo, self.lo + 1.0)]))]
 
     def __repr__(self):
         return f"Halfspace({self.lo})"
@@ -210,10 +210,11 @@ def test_projection_lands_in_set(tree, q_prev, q):
 def test_samples_are_members_with_valid_provenance(tree, seed):
     if not supports(tree, SetSampler):
         return
-    smp = tree.sample(np.random.default_rng(seed))
-    assert smp is not None  # every leaf sampler here always succeeds
-    assert tree.contains(smp.q)
-    walk_provenance(tree, smp.source, smp.q)
+    candidates = tree.sample(np.random.default_rng(seed))
+    assert candidates  # every leaf sampler here always succeeds
+    for smp in candidates:
+        assert tree.contains(smp.q)
+        walk_provenance(tree, smp.source, smp.q)
 
 
 @settings(max_examples=200, deadline=None)
@@ -229,7 +230,7 @@ def test_zero_weight_children_are_never_chosen(kids, data, seed):
     s = AnyOf(kids, weights=weights)
     rng = np.random.default_rng(seed)
     for _ in range(20):
-        i = s.sample(rng).source[0]
+        i = s.sample(rng)[0].source[0]
         assert weights[i] > 0
 
 

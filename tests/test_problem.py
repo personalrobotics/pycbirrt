@@ -117,3 +117,61 @@ class TestEnumeration:
         assert is_finite(EmptySet())
         assert members(EmptySet()) == []
         assert not EmptySet().contains(np.zeros(2))
+
+
+class TestRootSampling:
+    def test_collision_free_branch_is_found_even_when_not_first(self, planner):
+        """A draw yields several candidates; the valid one may not be first (regression).
+
+        The planar arm has two IK branches per pose. Reject the branch the
+        solver lists first for every pose; the planner must still seed roots
+        from the second branch rather than reporting all samples in collision.
+        """
+        from tsr import TSR
+
+        from pycbirrt.tsr_set import TSRConfigurationSet
+
+        robot, ik = planner.robot, planner.ik
+        first_branch = []
+
+        class RejectFirstBranch:
+            def is_valid(self, q):
+                return not any(np.allclose(q, f) for f in first_branch)
+
+        class RecordingIK:
+            def solve(self, pose, q_init=None):
+                sols = ik.solve(pose, q_init)
+                if sols:
+                    first_branch.append(np.array(sols[0]))
+                return sols
+
+        T0_w = np.eye(4)
+        T0_w[0, 3], T0_w[1, 3] = 1.2, 0.8
+        box = np.array([[-0.05, 0.05], [-0.05, 0.05], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]])
+        goal = TSRConfigurationSet(TSR(T0_w=T0_w, Tw_e=np.eye(4), Bw=box), robot, RecordingIK(), planner.space)
+        validator = RejectFirstBranch()
+        result = planner.solve(
+            problem(planner, FiniteSet([np.array([0.3, 0.9])]), goal, validator=validator),
+            seed=0,
+        )
+        assert result.success
+        assert validator.is_valid(result.path[-1])
+        assert goal.contains(result.path[-1])
+
+    def test_max_ik_per_pose_caps_roots_per_draw(self, planner):
+        """At most max_ik_per_pose admissible candidates of one draw become roots."""
+
+        class ManyCandidates:
+            def contains(self, q):
+                return True
+
+            def sample(self, rng):
+                base = rng.uniform(-1, 1, 2)
+                return [FiniteSet([base + 0.01 * k]).sample(rng)[0] for k in range(5)]
+
+        cfg = CBiRRTConfig(max_ik_per_pose=2, num_tree_roots=4, tsr_samples=10)
+        p = CBiRRT(planner.robot, planner.ik, planner.collision, cfg)
+        roots = p._roots(problem(p, ManyCandidates(), ManyCandidates()), ManyCandidates(), "Start")
+        assert len(roots) == 4
+        # Four roots from two draws of two, not one draw of four
+        assert not np.allclose(roots[0].q + 0.02, roots[2].q)

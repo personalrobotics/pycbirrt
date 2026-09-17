@@ -42,10 +42,6 @@ class TestCapabilities:
         assert supports(s, SetDistance)
         assert supports(s, SetProjector)
 
-    def test_bad_max_solutions(self, arm):
-        with pytest.raises(ValueError):
-            make_set(arm, TSR(Bw=BOX), max_solutions_per_pose=0)
-
 
 class TestMembership:
     def test_contains_and_distance(self, arm):
@@ -70,48 +66,47 @@ class TestMembership:
 
 
 class TestSampling:
-    def test_samples_are_members_within_limits(self, arm):
+    def test_candidates_are_members_within_limits(self, arm):
         robot, ik, space = arm
         s = make_set(arm, TSR(T0_w=frame(1.2, 0.8), Tw_e=np.eye(4), Bw=BOX))
         rng = np.random.default_rng(1)
-        n = 0
+        draws = 0
         for _ in range(50):
-            smp = s.sample(rng)
-            if smp is None:
+            candidates = s.sample(rng)
+            if not candidates:
                 continue
-            n += 1
-            assert smp.source == ()
-            assert space.within_limits(smp.q)
-            assert s.contains(smp.q)
-        assert n > 40
+            draws += 1
+            # The planar arm has two elbow branches per reachable pose; both are returned
+            assert len(candidates) == 2
+            for smp in candidates:
+                assert smp.source == ()
+                assert space.within_limits(smp.q)
+                assert s.contains(smp.q)
+            pa, pb = (robot.forward_kinematics(c.q)[:2, 3] for c in candidates)
+            assert np.allclose(pa, pb)
+        assert draws > 40
 
     def test_sampling_is_seedable(self, arm):
         s = make_set(arm, TSR(T0_w=frame(1.2, 0.8), Tw_e=np.eye(4), Bw=BOX))
         a = s.sample(np.random.default_rng(7))
         b = s.sample(np.random.default_rng(7))
-        assert np.array_equal(a.q, b.q)
+        assert len(a) == len(b) and all(np.array_equal(x.q, y.q) for x, y in zip(a, b))
 
-    def test_unreachable_returns_none(self, arm):
+    def test_unreachable_returns_empty(self, arm):
         s = make_set(arm, TSR(T0_w=frame(10.0, 0.0), Tw_e=np.eye(4), Bw=BOX))
-        assert s.sample(np.random.default_rng(0)) is None
+        assert s.sample(np.random.default_rng(0)) == []
 
-    def test_max_solutions_per_pose_reuses_pose(self, arm):
-        robot, _, _ = arm
-        s = make_set(arm, TSR(T0_w=frame(1.2, 0.8), Tw_e=np.eye(4), Bw=BOX), max_solutions_per_pose=2)
-        rng = np.random.default_rng(3)
-        a, b, c = s.sample(rng), s.sample(rng), s.sample(rng)
-        # a and b are the two elbow solutions of one pose; c comes from a new pose
-        pa, pb, pc = (robot.forward_kinematics(x.q)[:2, 3] for x in (a, b, c))
-        assert np.allclose(pa, pb)
-        assert not np.allclose(pa, pc)
-        assert not np.allclose(a.q, b.q)
-
-    def test_default_one_solution_per_pose(self, arm):
-        robot, _, _ = arm
-        s = make_set(arm, TSR(T0_w=frame(1.2, 0.8), Tw_e=np.eye(4), Bw=BOX))
-        rng = np.random.default_rng(3)
-        a, b = s.sample(rng), s.sample(rng)
-        assert not np.allclose(robot.forward_kinematics(a.q)[:2, 3], robot.forward_kinematics(b.q)[:2, 3])
+    def test_out_of_limit_branches_are_dropped(self, arm):
+        robot, ik, _ = arm
+        # Restrict the elbow to non-negative angles: only one of the two IK branches survives
+        space = JointSpace(np.array([-np.pi, 0.0]), np.array([np.pi, np.pi]))
+        s = TSRConfigurationSet(TSR(T0_w=frame(1.2, 0.8), Tw_e=np.eye(4), Bw=BOX), robot, ik, space)
+        rng = np.random.default_rng(2)
+        for _ in range(20):
+            candidates = s.sample(rng)
+            assert len(candidates) <= 1
+            for c in candidates:
+                assert space.within_limits(c.q)
 
     def test_sample_pose_respects_frames(self, arm):
         Tw_e = frame(0.1, 0.0)
@@ -161,8 +156,7 @@ class TestComposition:
         assert supports(union, SetSampler)
         rng = np.random.default_rng(0)
         for _ in range(20):
-            smp = union.sample(rng)
-            if smp is not None:
+            for smp in union.sample(rng):
                 assert smp.source == (0,)
                 assert union.contains(smp.q)
 
