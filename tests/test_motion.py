@@ -11,7 +11,7 @@ discretized behavior; a custom validator may be stricter but never looser.
 import numpy as np
 import pytest
 
-from pycbirrt import CBiRRT, CBiRRTConfig, DiscreteMotionValidator, LocalMotion, PlanningProblem
+from pycbirrt import CBiRRT, CBiRRTConfig, DiscreteMotionValidator, LocalMotion, MotionContractError, PlanningProblem
 from pycbirrt.sets import FiniteSet, PredicateSet
 from pycbirrt.space import JointSpace
 from pycbirrt.tree import RRTree
@@ -201,8 +201,9 @@ class TestCustomValidator:
 
         prob = problem(planner, q0, q1, motion_validator=OffByABit())
         tree = RRTree(q0)
-        idx, reached = planner._grow(prob, tree, q1)
-        assert not reached
+        with pytest.raises(MotionContractError, match="instead of the exact target"):
+            planner._grow(prob, tree, q1)
+        assert len(tree) == 1  # nothing stored before the contract check
 
     def test_custom_validator_still_subject_to_path_constraint(self):
         planner = make_planner(connection_tolerance=0.5, smooth_path=False)
@@ -216,7 +217,8 @@ class TestCustomValidator:
         prob = problem(planner, q0, q1, motion_validator=PassEverything(), path_constraint=half)
         tree = RRTree(q0)
         idx, reached = planner._grow(prob, tree, q1)
-        assert not reached and len(tree) == 2  # only (0.1, 0) survives
+        # A claimed success containing a state outside the path constraint is rejected whole (#54)
+        assert not reached and len(tree) == 1
 
 
 class TestSingleBoundary:
@@ -259,3 +261,100 @@ class TestSingleBoundary:
         idx, reached = planner._grow(prob, tree, q1)
         assert not reached and len(tree) == 3
         assert np.allclose(tree.nodes[idx].config, [0.02, 0.0])
+
+
+# ---------------------------------------------------------------------------
+# LocalMotion contract enforcement (#54)
+# ---------------------------------------------------------------------------
+
+
+class EmptyButReached:
+    def validate(self, q_from, q_to):
+        return LocalMotion(configs=[], reached=True)
+
+
+class TestLocalMotionContract:
+    def setup_method(self):
+        self.planner = make_planner(connection_tolerance=0.5, step_size=0.1)
+        self.q0, self.q1 = np.zeros(2), np.array([0.3, 0.0])
+
+    def test_empty_reached_on_nonzero_motion_raises_in_grow(self):
+        prob = problem(self.planner, self.q0, self.q1, motion_validator=EmptyButReached())
+        tree = RRTree(self.q0)
+        with pytest.raises(MotionContractError, match="no configurations"):
+            self.planner._grow(prob, tree, self.q1)
+        assert len(tree) == 1
+
+    def test_empty_reached_raises_during_bidirectional_connection(self):
+        prob = problem(self.planner, self.q0, self.q1, motion_validator=EmptyButReached())
+        with pytest.raises(MotionContractError):
+            self.planner.solve(prob, seed=0)
+
+    def test_empty_reached_raises_during_shortcut_smoothing(self):
+        base = self.planner._motion_validator(problem(self.planner, self.q0, self.q1))
+
+        class LiesOnlyForShortcuts:
+            """Honest for growth, but claims an empty success once smoothing asks for a long shortcut."""
+
+            def validate(self, q_from, q_to):
+                if np.linalg.norm(np.asarray(q_to) - np.asarray(q_from)) > 0.25:
+                    return LocalMotion(configs=[], reached=True)
+                return base.validate(q_from, q_to)
+
+        prob = problem(self.planner, self.q0, self.q1, motion_validator=LiesOnlyForShortcuts())
+        path = [np.array([0.0, 0.0]), np.array([0.1, 0.1]), np.array([0.2, 0.0]), np.array([0.3, 0.0])]
+        self.planner._rng = np.random.default_rng(0)
+        with pytest.raises(MotionContractError):
+            self.planner._smooth_path(prob, path)
+
+    def test_claimed_success_with_inadmissible_state_is_rejected_whole(self):
+        class BadMiddle:
+            def validate(self, q_from, q_to):
+                return LocalMotion(configs=[np.array([0.1, 0.0]), np.array([10.0, 0.0]), np.array(q_to)], reached=True)
+
+        prob = problem(self.planner, self.q0, self.q1, motion_validator=BadMiddle())
+        tree = RRTree(self.q0)
+        idx, reached = self.planner._grow(prob, tree, self.q1)
+        assert not reached and len(tree) == 1  # the admissible first config was not stored either
+
+    def test_partial_result_keeps_admissible_prefix(self):
+        class PartialWithBadTail:
+            def validate(self, q_from, q_to):
+                return LocalMotion(configs=[np.array([0.1, 0.0]), np.array([10.0, 0.0])], reached=False)
+
+        prob = problem(self.planner, self.q0, self.q1, motion_validator=PartialWithBadTail())
+        tree = RRTree(self.q0)
+        idx, reached = self.planner._grow(prob, tree, self.q1)
+        assert not reached and len(tree) == 2
+        assert np.array_equal(tree.nodes[idx].config, [0.1, 0.0])
+
+    def test_zero_length_motion_succeeds_without_node_regardless_of_payload(self):
+        class ReturnsTargetForZeroMotion:
+            def validate(self, q_from, q_to):
+                return LocalMotion(configs=[np.array(q_to)], reached=True)
+
+        prob = problem(self.planner, self.q0, self.q0, motion_validator=ReturnsTargetForZeroMotion())
+        tree = RRTree(self.q0)
+        idx, reached = self.planner._grow(prob, tree, self.q0)
+        assert reached and idx == 0 and len(tree) == 1
+        # And the empty-but-reached payload is fine for a zero motion
+        prob = problem(self.planner, self.q0, self.q0, motion_validator=EmptyButReached())
+        tree = RRTree(self.q0)
+        assert self.planner._grow(prob, tree, self.q0) == (0, True)
+
+    def test_default_validator_satisfies_the_contract_everywhere(self):
+        """The default never trips the checks across many seeded plans with smoothing."""
+        planner = make_planner(step_size=0.2, connection_tolerance=0.1, edge_resolution=0.05)
+        for seed in range(5):
+            result = planner.solve(problem(planner, np.zeros(2), np.array([1.0, 0.5])), seed=seed)
+            assert result.success
+            assert np.array_equal(result.path[-1], [1.0, 0.5])
+
+    def test_wrong_shape_final_config_raises(self):
+        class WrongShape:
+            def validate(self, q_from, q_to):
+                return LocalMotion(configs=[np.array([0.3, 0.0, 0.0])], reached=True)
+
+        prob = problem(self.planner, self.q0, self.q1, motion_validator=WrongShape())
+        with pytest.raises(MotionContractError):
+            self.planner._grow(prob, RRTree(self.q0), self.q1)

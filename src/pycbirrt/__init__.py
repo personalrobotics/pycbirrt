@@ -7,6 +7,7 @@ from pycbirrt.exceptions import (
     AllGoalConfigurationsInvalid,
     AllStartConfigurationsInCollision,
     AllStartConfigurationsInvalid,
+    MotionContractError,
     PlanningError,
     UnsupportedCapability,
 )
@@ -49,6 +50,7 @@ __all__ = [
     "AllStartConfigurationsInvalid",
     "AllGoalConfigurationsInvalid",
     "UnsupportedCapability",
+    "MotionContractError",
     "StateSet",
     "SetSampler",
     "SetDistance",

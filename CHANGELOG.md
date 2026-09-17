@@ -19,6 +19,13 @@ follows [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- The planner checks a `MotionValidator`'s whole `LocalMotion` before
+  touching the tree. `reached=True` with no configurations on a nonzero
+  motion, or ending anywhere but the exact target, raises the new
+  `MotionContractError` (a validator bug, not a planning failure). A
+  claimed success containing an inadmissible configuration is rejected
+  whole; a partial result keeps its admissible prefix; a zero-length
+  motion succeeds without adding a node whatever the payload (#54).
 - `MostViolatedProjection` required the single largest violation to
   decrease after every projection, so an intersection with tied
   violations (two axes from a corner) was reported as stalled after the

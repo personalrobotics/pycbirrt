@@ -31,7 +31,9 @@ class LocalMotion:
     Attributes:
         configs: Validated configurations after ``q_from``, in order, to be
             stored as consecutive tree nodes. Empty if the first sample was
-            invalid. If ``reached`` is True the last entry is ``q_to`` exactly.
+            invalid. If ``reached`` is True the last entry is ``q_to`` exactly
+            and, for a nonzero motion, ``configs`` is nonempty; the planner
+            raises ``MotionContractError`` otherwise.
         reached: Whether the whole motion was valid and ends at ``q_to``.
     """
 

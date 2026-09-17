@@ -66,3 +66,15 @@ class UnsupportedCapability(TypeError):
     """
 
     pass
+
+
+class MotionContractError(ValueError):
+    """Raised when a MotionValidator returns a LocalMotion that violates its contract.
+
+    For example: ``reached=True`` with no configurations on a nonzero motion,
+    or a final configuration that is not the exact target. These are bugs in
+    the validator, not planning failures, so they are raised rather than
+    treated as an unreachable motion.
+    """
+
+    pass
