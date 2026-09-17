@@ -47,7 +47,9 @@ def ur5e():
     robot = MuJoCoRobotModel(model, data, "attachment_site", JOINTS)
     collision = MuJoCoCollisionChecker(model, data, JOINTS)
     ik = EAIKSolver.for_ur5e(robot.joint_limits, collision)
-    config = CBiRRTConfig(max_iterations=5000, step_size=0.2, tsr_samples=100, angular_joints=(True,) * 6)
+    # The UR5e's joints are bounded intervals (±2π, elbow ±π), not continuous circles, so they are
+    # modeled with limits rather than as angular joints; see #35.
+    config = CBiRRTConfig(max_iterations=5000, step_size=0.2, tsr_samples=100)
     return robot, collision, CBiRRT(robot, ik, collision, config)
 
 
@@ -75,6 +77,11 @@ def test_constrained_transport_keeps_gripper_down(ur5e, seed):
         assert upright.distance(robot.forward_kinematics(q))[0] <= planner.config.tsr_tolerance
     assert start_tsr.distance(robot.forward_kinematics(result.path[0]))[0] <= planner.config.tsr_tolerance
     assert goal_tsr.distance(robot.forward_kinematics(result.path[-1]))[0] <= planner.config.tsr_tolerance
+    # Executable as raw joint values: no waypoint outside the real limits, no jump larger than one step
+    lo, hi = robot.joint_limits
+    P = np.array(result.path)
+    assert np.all((P >= lo) & (P <= hi))
+    assert np.abs(np.diff(P, axis=0)).max() <= planner.config.step_size + 1e-9
 
 
 def test_unconstrained_baseline_violates_constraint(ur5e):
