@@ -165,6 +165,16 @@ class FiniteSet:
         return Sample(self.configs[i].copy(), (i,))
 
 
+class EmptySet:
+    """The empty set: finite with no members. Useful as a placeholder role."""
+
+    def contains(self, q: np.ndarray) -> bool:
+        return False
+
+    def __repr__(self) -> str:
+        return "EmptySet()"
+
+
 class PredicateSet:
     """A set defined by an arbitrary membership predicate. Membership only."""
 
@@ -359,6 +369,52 @@ class AllOf(_Composite):
             return self.children[0].project(q_previous, q_proposed)
         assert self.projection is not None
         return self.projection.project(self.children, q_previous, q_proposed)
+
+
+# ---------------------------------------------------------------------------
+# Enumeration of finite sets
+# ---------------------------------------------------------------------------
+
+
+def is_finite(s: StateSet) -> bool:
+    """Whether every member of ``s`` can be enumerated by ``members``.
+
+    A ``FiniteSet`` is finite. A union is finite when all children are.
+    An intersection is finite when any child is, since intersecting with
+    a finite set yields a finite set.
+    """
+    if isinstance(s, (FiniteSet, EmptySet)):
+        return True
+    if isinstance(s, AnyOf):
+        return all(is_finite(c) for c in s.children)
+    if isinstance(s, AllOf):
+        return any(is_finite(c) for c in s.children)
+    return False
+
+
+def members(s: StateSet) -> list[Sample]:
+    """Enumerate the members of a finite set, with provenance.
+
+    Returns an empty list for sets that are not finite. For an
+    intersection, enumerates the first finite child and keeps the members
+    the other children contain.
+    """
+    if isinstance(s, FiniteSet):
+        return [Sample(c.copy(), (i,)) for i, c in enumerate(s.configs)]
+    if isinstance(s, AnyOf):
+        if not is_finite(s):
+            return []
+        out = []
+        for i, c in enumerate(s.children):
+            out.extend(Sample(m.q, (i, *m.source)) for m in members(c))
+        return out
+    if isinstance(s, AllOf):
+        for i, c in enumerate(s.children):
+            if is_finite(c):
+                others = s.children[:i] + s.children[i + 1 :]
+                return [m for m in members(c) if all(o.contains(m.q) for o in others)]
+        return []
+    return []
 
 
 # ---------------------------------------------------------------------------

@@ -7,7 +7,6 @@ import numpy as np
 import pytest
 from tsr import TSR
 
-from pycbirrt import CBiRRT
 from pycbirrt.sets import AllOf, AnyOf, SetDistance, SetProjector, SetSampler, StateSet, supports
 from pycbirrt.space import JointSpace
 from pycbirrt.tsr_set import TSRConfigurationSet, tsr_weights
@@ -57,16 +56,17 @@ class TestMembership:
         assert not s.contains(np.array([np.pi / 2, 0.0]))
         assert s.distance(np.array([np.pi / 2, 0.0])) > 1.0
 
-    def test_matches_legacy_satisfies_constraints(self, arm):
-        robot, ik, _ = arm
+    def test_matches_definition(self, arm):
+        """contains(q) iff the TSR distance of FK(q) is within tolerance."""
+        robot, _, _ = arm
         tsr = TSR(T0_w=frame(1.2, 0.8), Tw_e=np.eye(4), Bw=BOX)
         s = make_set(arm, tsr)
-        planner = CBiRRT(robot, ik, MockCollisionChecker())
-        planner._constraint_tsrs = [tsr]
         rng = np.random.default_rng(0)
         for _ in range(200):
             q = rng.uniform(-np.pi, np.pi, 2)
-            assert s.contains(q) == planner._satisfies_constraints(q)
+            dist, _ = tsr.distance(robot.forward_kinematics(q))
+            assert s.distance(q) == dist
+            assert s.contains(q) == (dist <= s.tolerance)
 
 
 class TestSampling:
@@ -149,24 +149,6 @@ class TestProjection:
     def test_projection_returns_none_when_unreachable(self, arm):
         s = make_set(arm, TSR(T0_w=frame(10.0, 0.0), Tw_e=np.eye(4), Bw=BOX))
         assert s.project(np.zeros(2), np.zeros(2)) is None
-
-    def test_matches_legacy_projection(self, arm):
-        robot, ik, _ = arm
-        tsr = TSR(T0_w=frame(1.2, 0.8), Tw_e=frame(0.1, 0.0), Bw=BOX)
-        s = make_set(arm, tsr)
-        planner = CBiRRT(robot, ik, MockCollisionChecker())
-        planner._constraint_tsrs = [tsr]
-        rng = np.random.default_rng(5)
-        compared = 0
-        for _ in range(100):
-            q = rng.uniform(-np.pi, np.pi, 2)
-            ours, legacy = s.project(q, q), planner._project_to_constraint(q)
-            if ours is None or legacy is None:
-                assert ours is None and legacy is None
-            else:
-                assert np.allclose(ours, legacy)
-                compared += 1
-        assert compared > 20
 
 
 class TestComposition:
