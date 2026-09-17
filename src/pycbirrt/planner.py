@@ -420,16 +420,21 @@ class CBiRRT:
     # Tree growth
     # ------------------------------------------------------------------
 
-    def _nearest_node(self, tree: RRTree, q_target: np.ndarray) -> int:
-        """Find nearest node in tree under the joint-space metric."""
-        if self.space.angular_joints is None:
-            # Use tree's built-in nearest (faster)
+    def _nearest_node(self, space: JointSpace, tree: RRTree, q_target: np.ndarray) -> int:
+        """Find nearest node in tree under the query space's metric.
+
+        ``space`` is the problem's space, never the planner's default: a
+        direct ``solve(problem)`` may use a different topology, and every
+        geometric operation in a query must agree.
+        """
+        if space.angular_joints is None:
+            # Use tree's built-in nearest (faster); Euclidean matches the space metric
             return tree.nearest(q_target)
 
         best_idx = 0
         best_dist = float("inf")
         for i, node in enumerate(tree.nodes):
-            dist = self.space.distance(node.config, q_target)
+            dist = space.distance(node.config, q_target)
             if dist < best_dist:
                 best_dist = dist
                 best_idx = i
@@ -463,7 +468,7 @@ class CBiRRT:
         constraint = problem.path_constraint
         projector = constraint if constraint is not None and supports(constraint, SetProjector) else None
 
-        current_idx = self._nearest_node(tree, q_target)
+        current_idx = self._nearest_node(space, tree, q_target)
         steps_taken = 0
         prev_distance = float("inf")
 
