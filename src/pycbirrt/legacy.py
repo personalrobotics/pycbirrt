@@ -57,15 +57,15 @@ def legacy_problem(
             robot,
             ik,
             space,
-            tolerance=config.tsr_tolerance,
+            tolerance=config.membership_tolerance,
             max_projection_iters=config.max_projection_iters,
-            progress_tolerance=config.progress_tolerance,
+            progress_tolerance=config.projection_progress_tolerance,
         )
 
     def role(configs: Sequence[np.ndarray] | None, tsrs: Sequence[TSR] | None) -> StateSet:
         parts: list[StateSet] = []
         if configs:
-            parts.append(FiniteSet(configs, tolerance=config.tsr_tolerance, metric=space.distance))
+            parts.append(FiniteSet(configs, tolerance=config.membership_tolerance, metric=space.distance))
         if tsrs:
             sets = [tsr_set(t) for t in tsrs]
             parts.append(AnyOf(sets, weights=tsr_weights(sets)))
@@ -88,7 +88,7 @@ def legacy_problem(
                 sets,
                 projection=MostViolatedProjection(
                     max_iters=config.max_projection_iters,
-                    progress_tolerance=config.progress_tolerance,
+                    progress_tolerance=config.projection_progress_tolerance,
                 ),
             )
 

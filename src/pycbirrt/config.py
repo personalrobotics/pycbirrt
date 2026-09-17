@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Siddhartha Srinivasa
 
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
@@ -23,8 +24,15 @@ class CBiRRTConfig:
     # Termination
     timeout: float = 30.0  # Wall-clock timeout in seconds
     max_iterations: int = 100000  # Safety limit (timeout is the primary control)
-    tsr_tolerance: float = 1e-3  # Distance tolerance for TSR satisfaction (tree connection + path constraints)
-    progress_tolerance: float = 1e-6  # Minimum progress required to continue growing
+
+    # Tolerances. Each has one meaning:
+    membership_tolerance: float = 1e-3  # A configuration is in a TSR-induced set if its TSR distance is within this
+    connection_tolerance: float = 1e-3  # Tree growth counts as reaching its target within this joint-space distance
+    edge_resolution: float | None = None  # Spacing of validity checks along an edge; None means step_size
+    progress_tolerance: float = 1e-6  # Tree growth stops when the distance to target shrinks by less than this
+    projection_progress_tolerance: float = 1e-6  # Projection gives up when the violation shrinks by less than this
+    # Deprecated: sets both membership_tolerance and connection_tolerance. Reading it returns membership_tolerance.
+    tsr_tolerance: float | None = None
 
     # Tree growth parameters
     step_size: float = 0.1  # Maximum joint space step
@@ -55,3 +63,18 @@ class CBiRRTConfig:
 
     # Abort callback — return True to stop planning early
     abort_fn: Callable[[], bool] | None = field(default=None, repr=False)
+
+    def __post_init__(self):
+        if self.tsr_tolerance is not None:
+            warnings.warn(
+                "CBiRRTConfig.tsr_tolerance is deprecated; set membership_tolerance and "
+                "connection_tolerance separately",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            self.membership_tolerance = self.tsr_tolerance
+            self.connection_tolerance = self.tsr_tolerance
+        # Keep the old attribute readable for callers that inspect it
+        self.tsr_tolerance = self.membership_tolerance
+        if self.edge_resolution is not None and self.edge_resolution <= 0:
+            raise ValueError("edge_resolution must be positive")

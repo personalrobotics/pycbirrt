@@ -837,7 +837,7 @@ class TestConstraintTSRs:
             q_proj = problem.path_constraint.project(q, q)
             assert q_proj is not None
             dist, _ = tsr.distance(robot.forward_kinematics(q_proj))
-            assert dist <= planner.config.tsr_tolerance
+            assert dist <= planner.config.membership_tolerance
 
     def test_multiple_constraints_lower_to_allof_with_named_strategy(self):
         """Two constraint TSRs become an AllOf with an explicit projection strategy."""

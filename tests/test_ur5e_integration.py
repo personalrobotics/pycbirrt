@@ -74,9 +74,9 @@ def test_constrained_transport_keeps_gripper_down(ur5e, seed):
     assert result.success, result.failure_reason
     for q in result.path:
         assert collision.is_valid(q)
-        assert upright.distance(robot.forward_kinematics(q))[0] <= planner.config.tsr_tolerance
-    assert start_tsr.distance(robot.forward_kinematics(result.path[0]))[0] <= planner.config.tsr_tolerance
-    assert goal_tsr.distance(robot.forward_kinematics(result.path[-1]))[0] <= planner.config.tsr_tolerance
+        assert upright.distance(robot.forward_kinematics(q))[0] <= planner.config.membership_tolerance
+    assert start_tsr.distance(robot.forward_kinematics(result.path[0]))[0] <= planner.config.membership_tolerance
+    assert goal_tsr.distance(robot.forward_kinematics(result.path[-1]))[0] <= planner.config.membership_tolerance
     # Executable as raw joint values: no waypoint outside the real limits, no jump larger than one step
     lo, hi = robot.joint_limits
     P = np.array(result.path)
