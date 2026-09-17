@@ -19,6 +19,13 @@ follows [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- `members` of a finite intersection enumerates a child that is itself
+  finite, not the first child that merely has explicit seeds, so an
+  `AllOf` whose first seed-bearing child is a mixed union still
+  enumerates exhaustively and can seed a search. `seeds` of a non-finite
+  intersection now collects from every seed-bearing child, keeps what the
+  whole intersection contains, and deduplicates equal configurations by
+  first occurrence (#55).
 - Membership in the ambient `JointSpace` (shape, finiteness, joint limits)
   is now the first admissibility check for every root, sample, projected
   extension, and edge sample. Out-of-limit or malformed fixed starts and

@@ -453,16 +453,31 @@ def is_finite(s: StateSet) -> bool:
 
 
 def members(s: StateSet) -> list[Sample]:
-    """Enumerate the members of a finite set, with provenance.
+    """Enumerate every member of a finite set, with provenance.
 
-    Returns an empty list for sets that are not finite. For an
-    intersection, enumerates the first finite child and keeps the members
-    the other children contain. See ``seeds`` for the explicit candidates
-    embedded in a set that is not finite.
+    Exhaustive exactly when ``is_finite(s)``; an empty list otherwise. A
+    union enumerates every child (all finite). An intersection enumerates a
+    child that is itself finite, whichever comes first, and keeps the
+    members every other child contains; the resulting configurations do not
+    depend on child order, only their provenance does. See ``seeds`` for the
+    explicit candidates embedded in a set that is not finite.
     """
-    if not is_finite(s):
+    if isinstance(s, FiniteSet):
+        return [Sample(c.copy(), (i,)) for i, c in enumerate(s.configs)]
+    if isinstance(s, AnyOf):
+        if not is_finite(s):
+            return []
+        out = []
+        for i, c in enumerate(s.children):
+            out.extend(Sample(m.q, (i, *m.source)) for m in members(c))
+        return out
+    if isinstance(s, AllOf):
+        for i, c in enumerate(s.children):
+            if is_finite(c):
+                others = s.children[:i] + s.children[i + 1 :]
+                return [m for m in members(c) if all(o.contains(m.q) for o in others)]
         return []
-    return seeds(s)
+    return []
 
 
 def seeds(s: StateSet) -> list[Sample]:
@@ -475,8 +490,11 @@ def seeds(s: StateSet) -> list[Sample]:
 
     - ``FiniteSet``: every member.
     - ``AnyOf``: the seeds of every child, with the child index prepended.
-    - ``AllOf``: the seeds of the first child that has any, kept only if
-      every other child contains them (``AllOf`` adds no provenance).
+    - ``AllOf``: if the intersection is finite, its exhaustive ``members``.
+      Otherwise the seeds of every seed-bearing child that the complete
+      intersection contains, in child order, with equal configurations
+      deduplicated by keeping the first occurrence (``AllOf`` adds no
+      provenance, so the kept provenance is the earliest child's).
     - Other leaves: none.
     """
     if isinstance(s, FiniteSet):
@@ -487,12 +505,14 @@ def seeds(s: StateSet) -> list[Sample]:
             out.extend(Sample(m.q, (i, *m.source)) for m in seeds(c))
         return out
     if isinstance(s, AllOf):
-        for i, c in enumerate(s.children):
-            found = seeds(c)
-            if found:
-                others = s.children[:i] + s.children[i + 1 :]
-                return [m for m in found if all(o.contains(m.q) for o in others)]
-        return []
+        if is_finite(s):
+            return members(s)
+        out: list[Sample] = []
+        for c in s.children:
+            for m in seeds(c):
+                if s.contains(m.q) and not any(np.array_equal(m.q, kept.q) for kept in out):
+                    out.append(m)
+        return out
     return []
 
 
