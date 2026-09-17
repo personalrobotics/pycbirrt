@@ -18,6 +18,7 @@ from pycbirrt.sets import (
     FiniteSet,
     MostViolatedProjection,
     PredicateSet,
+    RejectionSampling,
     Sample,
     SetDistance,
     SetProjector,
@@ -103,7 +104,11 @@ def all_ofs(draw, children):
     projectable = all(supports(k, SetDistance) and supports(k, SetProjector) for k in kids)
     if len(kids) > 1 and projectable and draw(st.booleans()):
         projection = MostViolatedProjection()
-    return AllOf(kids, projection=projection)
+    sampling = None
+    sources = [i for i, k in enumerate(kids) if supports(k, SetSampler)]
+    if len(kids) > 1 and sources and draw(st.booleans()):
+        sampling = RejectionSampling(source=draw(st.sampled_from(sources)))
+    return AllOf(kids, projection=projection, sampling=sampling)
 
 
 trees = st.recursive(leaves, lambda ch: st.one_of(any_ofs(ch), all_ofs(ch)), max_leaves=8)
@@ -145,8 +150,8 @@ def walk_provenance(node, source, q):
         i, *rest = source
         walk_provenance(node.children[i], tuple(rest), q)
     elif isinstance(node, AllOf):
-        assert len(node.children) == 1, "only single-child AllOf can sample"
-        walk_provenance(node.children[0], source, q)
+        child = node.children[0] if len(node.children) == 1 else node.children[node.sampling.source]
+        walk_provenance(child, source, q)
     elif isinstance(node, FiniteSet):
         (i,) = source
         assert np.array_equal(q, node.configs[i])
@@ -211,7 +216,7 @@ def test_samples_are_members_with_valid_provenance(tree, seed):
     if not supports(tree, SetSampler):
         return
     candidates = tree.sample(np.random.default_rng(seed))
-    assert candidates  # every leaf sampler here always succeeds
+    # Leaf samplers always succeed; rejection sampling inside an AllOf may legitimately reject all
     for smp in candidates:
         assert tree.contains(smp.q)
         walk_provenance(tree, smp.source, smp.q)
@@ -253,5 +258,5 @@ def test_unsupported_capabilities_are_reported_consistently(tree):
             assert supports(tree, SetProjector) == all_proj
             assert supports(tree, SetSampler) == (all_samp and tree.weights is not None)
         else:
-            assert not supports(tree, SetSampler)
+            assert supports(tree, SetSampler) == (tree.sampling is not None)
             assert supports(tree, SetProjector) == (tree.projection is not None)

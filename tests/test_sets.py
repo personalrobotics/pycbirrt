@@ -13,6 +13,7 @@ from pycbirrt.sets import (
     FiniteSet,
     MostViolatedProjection,
     PredicateSet,
+    RejectionSampling,
     Sample,
     SetDistance,
     SetProjector,
@@ -258,11 +259,35 @@ class TestAllOf:
         with pytest.raises(UnsupportedCapability, match="projection strategy"):
             s.project(np.array([0.0]), np.array([0.0]))
 
-    def test_multi_child_sampling_unsupported(self):
+    def test_multi_child_sampling_requires_strategy(self):
         s = AllOf([Halfspace(0.0), Halfspace(1.0)])
         assert not supports(s, SetSampler)
-        with pytest.raises(UnsupportedCapability):
+        with pytest.raises(UnsupportedCapability, match="sampling strategy"):
             s.sample(np.random.default_rng(0))
+
+    def test_rejection_sampling_keeps_members_of_all_children(self):
+        # Halfspace(0) samples in [0, 1]; Interval(0.5, 2) keeps the upper half
+        s = AllOf([Halfspace(0.0, 1.0), Interval(0.5, 2.0)], sampling=RejectionSampling(source=0))
+        assert supports(s, SetSampler)
+        rng = np.random.default_rng(0)
+        kept = empty = 0
+        for _ in range(200):
+            cands = s.sample(rng)
+            if not cands:
+                empty += 1
+            for c in cands:
+                assert s.contains(c.q)
+                assert c.source == ()  # AllOf adds no provenance
+                kept += 1
+        assert kept > 50 and empty > 50
+
+    def test_rejection_sampling_requires_sampleable_source(self):
+        with pytest.raises(UnsupportedCapability, match="support sampling"):
+            AllOf([Interval(0, 1), Halfspace(0.0)], sampling=RejectionSampling(source=0))
+        with pytest.raises(ValueError):
+            AllOf([Interval(0, 1), Halfspace(0.0)], sampling=RejectionSampling(source=5))
+        s = AllOf([Interval(0, 1), Halfspace(0.0, 1.0)], sampling=RejectionSampling(source=1))
+        assert supports(s, SetSampler)
 
     def test_most_violated_projection(self):
         s = AllOf([Interval(0, 2), Interval(1, 3)], projection=MostViolatedProjection())
