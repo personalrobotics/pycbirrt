@@ -439,7 +439,6 @@ def main():
         config = CBiRRTConfig(
             timeout=30.0,
             goal_bias=0.15,
-            angular_joints=(True, True, True, True, True, True),
         )
     else:
         print("Using MuJoCo differential IK solver")
@@ -449,7 +448,6 @@ def main():
             timeout=30.0,
             goal_bias=0.15,
             tsr_samples=100,
-            angular_joints=(True, True, True, True, True, True),
         )
 
     planner = CBiRRT(robot, ik_solver, collision, config)
