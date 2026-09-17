@@ -41,6 +41,10 @@ class PlanResult:
         failure_reason: Human-readable reason for failure, or None if success.
         start_source: Provenance of the start root (see ``Sample.source``).
         goal_source: Provenance of the goal root.
+        tree_start: The search tree rooted at the start set, for inspection
+            and visualization. Shares memory with the planner's run; do not
+            mutate.
+        tree_goal: The search tree rooted at the goal set.
     """
 
     path: list[np.ndarray] | None
@@ -53,6 +57,8 @@ class PlanResult:
     failure_reason: str | None = None
     start_source: tuple[int, ...] = field(default=())
     goal_source: tuple[int, ...] = field(default=())
+    tree_start: RRTree | None = field(default=None, repr=False)
+    tree_goal: RRTree | None = field(default=None, repr=False)
 
 
 class CBiRRT:
@@ -216,6 +222,8 @@ class CBiRRT:
                 tree_sizes=(len(tree_start), len(tree_goal)),
                 success=False,
                 failure_reason=reason,
+                tree_start=tree_start,
+                tree_goal=tree_goal,
             )
 
         goal_biased = supports(problem.goal, SetSampler)
@@ -277,6 +285,8 @@ class CBiRRT:
                     success=True,
                     start_source=start_source,
                     goal_source=goal_source,
+                    tree_start=tree_start,
+                    tree_goal=tree_goal,
                 )
 
         return _failure(
