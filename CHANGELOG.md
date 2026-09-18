@@ -4,10 +4,31 @@ All notable changes to pycbirrt. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.2.0] - 2026-09-17
+
+A hardening release after two adversarial reviews of the 1.1.0 set-based
+planner (#42 to #47, #54 to #57). Every item below was reproduced on 1.1.0
+and is guarded by tests written against the invariant it restores. The
+`plan(...)` signature is unchanged; the minor bump is for the new
+motion-validation API and the new set capabilities. Users of custom sets or
+validators should read the Fixed section: paths, roots, and projection
+results can differ from 1.1.0 where 1.1.0 was wrong.
 
 ### Added
 
+- `JointSpace.contains(q)` and `why_invalid(q)`: the authoritative
+  membership test for the joint space (shape, finiteness, limits) with a
+  reason naming the offending joint (#43).
+- `seeds(s)`: the explicit configurations embedded in any set expression,
+  distinct from exhaustive `members(s)` (#42, #55).
+- `SetViolation` capability: `violation(q)` is zero exactly when the set
+  contains `q`; `TSRConfigurationSet` and `FiniteSet` implement it, and
+  `AnyOf`/`AllOf` compose it (#44).
+- `MotionContractError`, raised when a `MotionValidator` violates the
+  `LocalMotion` contract (#54).
+- `RestrictedMotionValidator(base, accepts)` and
+  `CBiRRT.default_motion_validator(problem)` for explicit composition of a
+  motion restriction with the default checks (#56).
 - `PlanningProblem.motion_validator`: local-motion validation is an
   explicit, replaceable boundary. `MotionValidator.validate(q_from, q_to)`
   returns a `LocalMotion` (the validated configurations to store, and
@@ -166,5 +187,6 @@ semantics; every 1.0.0 test passes unchanged.
 Initial release: CBiRRT with TSR start, goal, and path constraints; MuJoCo
 and EAIK backends; planar arm and UR5e examples.
 
+[1.2.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/personalrobotics/pycbirrt/releases/tag/v1.0.0
