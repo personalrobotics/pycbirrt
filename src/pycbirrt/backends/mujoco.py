@@ -181,6 +181,8 @@ class MuJoCoIKSolver:
         damping: float = 0.1,
         max_iterations: int = 200,
         tolerance: float = 1e-3,
+        restarts: int = 3,
+        seed: int | None = None,
     ):
         """Initialize MuJoCo IK solver.
 
@@ -193,6 +195,13 @@ class MuJoCoIKSolver:
             collision_checker: Optional collision checker for validation
             damping: Damping factor for damped least squares
             max_iterations: Maximum iterations for IK convergence
+            restarts: When ``solve`` is called without ``q_init``, number of
+                random initial configurations tried after the current state.
+                Differential IK from a single start converges on only part of
+                the workspace and depends on whatever the shared MjData was
+                last left in; restarts make unseeded solves (e.g. TSR goal
+                sampling) reliable and surface several distinct solutions.
+            seed: Seed for the restart generator.
             tolerance: Position/orientation error tolerance for convergence
         """
         self.model = model
@@ -201,6 +210,10 @@ class MuJoCoIKSolver:
         self.max_iterations = max_iterations
         self.tolerance = tolerance
         self.joint_limits = joint_limits
+        if restarts < 0:
+            raise ValueError("restarts must be nonnegative")
+        self.restarts = restarts
+        self._rng = np.random.default_rng(seed)
         self.collision_checker = collision_checker
 
         # Get site ID
@@ -307,14 +320,34 @@ class MuJoCoIKSolver:
 
         Args:
             pose: 4x4 homogeneous transform of desired end-effector pose
-            q_init: Initial configuration (if None, uses current model state)
+            q_init: Initial configuration. If given, one solve runs from it
+                (the seed-nearest solution, as projection wants). If None, one
+                solve runs from the current model state and then from
+                ``restarts`` random configurations within the joint limits,
+                and every distinct converged solution is returned.
 
         Returns:
-            List containing one solution if found, empty list otherwise
+            Converged solutions (possibly empty). One when seeded.
         """
-        # Set initial configuration
         if q_init is not None:
-            self._set_config(q_init)
+            return self._solve_from(pose, np.asarray(q_init, dtype=float))
+
+        solutions: list[np.ndarray] = []
+        inits = [self._get_config()]
+        if self.restarts and self.joint_limits is not None:
+            lower, upper = self.joint_limits
+            # Start within one turn: a differential solver has no use for far windings
+            lo, hi = np.maximum(lower, -np.pi), np.minimum(upper, np.pi)
+            inits += [self._rng.uniform(lo, hi) for _ in range(self.restarts)]
+        for q0 in inits:
+            for q in self._solve_from(pose, q0):
+                if not any(np.linalg.norm(q - s) < 1e-3 for s in solutions):
+                    solutions.append(q)
+        return solutions
+
+    def _solve_from(self, pose: np.ndarray, q_init: np.ndarray) -> list[np.ndarray]:
+        """Damped least squares from one initial configuration; one solution or none."""
+        self._set_config(q_init)
 
         for _ in range(self.max_iterations):
             # Forward kinematics

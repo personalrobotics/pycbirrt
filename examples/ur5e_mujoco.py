@@ -72,6 +72,28 @@ def get_menagerie_path() -> Path:
 # =============================================================================
 
 
+def build_ik_solver(model, data, joint_names, collision_checker, menagerie_path: Path, backend: str = "auto"):
+    """Choose the IK backend: SSIK (enumerative analytical) or MuJoCo differential IK.
+
+    ``backend`` is "auto" (SSIK if installed, else MuJoCo), "ssik", or "mujoco".
+    SSIK is built from the same MJCF as the scene, with the world as base and the
+    attachment site's offset as T_ee, so its frames match MuJoCoRobotModel exactly.
+    Returns ``(solver, name)`` where ``name`` is "ssik" or "mujoco".
+    """
+    if backend not in ("auto", "ssik", "mujoco"):
+        raise ValueError(f"backend must be 'auto', 'ssik', or 'mujoco', got {backend!r}")
+    if backend == "ssik" and not SSIK_AVAILABLE:
+        raise RuntimeError('SSIK backend requested but ssik is not installed: pip install "pycbirrt[ssik]"')
+    if backend in ("auto", "ssik") and SSIK_AVAILABLE:
+        arm = ssik.Manipulator.from_mjcf(
+            menagerie_path / "universal_robots_ur5e" / "ur5e.xml", base="world", ee="wrist_3_link"
+        )
+        return SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site")), "ssik"
+    # Joint limits come from the MuJoCo model; the collision checker must be passed by keyword (#65).
+    solver = MuJoCoIKSolver(model, data, "attachment_site", joint_names, collision_checker=collision_checker)
+    return solver, "mujoco"
+
+
 def create_grasp_tsr(target_pos: np.ndarray) -> TSR:
     """Create a TSR for top-down grasp of a cylinder.
 
@@ -315,6 +337,9 @@ def main():
     parser.add_argument("--render", type=str, help="Render to video file (e.g., output.mp4)")
     parser.add_argument("--no-viz", action="store_true", help="Skip visualization")
     parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
+    parser.add_argument(
+        "--ik", choices=["auto", "ssik", "mujoco"], default="auto", help="IK backend (default: SSIK if installed)"
+    )
     args = parser.parse_args()
 
     menagerie_path = get_menagerie_path()
@@ -338,18 +363,12 @@ def main():
     robot = MuJoCoRobotModel(model, data, "attachment_site", ur5e_joints)
     collision_checker = MuJoCoCollisionChecker(model, data, ur5e_joints)
 
-    # IK solver: prefer SSIK (enumerative analytical), fall back to MuJoCo (differential).
-    # SSIK is built from the same MJCF as the scene, with the world as base and the
-    # attachment site's offset as T_ee, so its frames match MuJoCoRobotModel exactly.
-    if SSIK_AVAILABLE:
+    # IK solver: prefer SSIK (enumerative analytical), fall back to MuJoCo (differential)
+    ik_solver, ik_name = build_ik_solver(model, data, ur5e_joints, collision_checker, menagerie_path, args.ik)
+    if ik_name == "ssik":
         print("Using SSIK (analytical) IK solver")
-        arm = ssik.Manipulator.from_mjcf(
-            menagerie_path / "universal_robots_ur5e" / "ur5e.xml", base="world", ee="wrist_3_link"
-        )
-        ik_solver = SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site"))
     else:
         print('Using MuJoCo (differential) IK solver (pip install "pycbirrt[ssik]" for faster planning)')
-        ik_solver = MuJoCoIKSolver(model, data, "attachment_site", ur5e_joints, collision_checker)
 
     config = CBiRRTConfig(
         max_iterations=5000,
