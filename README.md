@@ -280,8 +280,12 @@ from pycbirrt.backends.mujoco import (
 
 robot = MuJoCoRobotModel(model, data, ee_site="end_effector")
 collision = MuJoCoCollisionChecker(model, data)
-ik = MuJoCoIKSolver(model, data, ee_site="end_effector", collision_checker=collision)
+ik = MuJoCoIKSolver(model, data, ee_site="end_effector", collision_checker=collision, seed=0)
 ```
+
+The differential solver is stateful and, when called without a seed
+configuration, tries a few random restarts within each joint's limits. Pass
+`seed=` for reproducible runs; `CBiRRT.plan(seed=...)` seeds the planner only.
 
 ### SSIK (enumerative analytical IK, recommended)
 
