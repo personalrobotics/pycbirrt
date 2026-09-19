@@ -21,6 +21,12 @@ follows [Semantic Versioning](https://semver.org/).
   end-effector body as `ee`; the UR5e examples and integration test use it and
   match MuJoCo's forward kinematics to machine precision.
 
+### Fixed
+
+- `SSIKSolver` copies `T_base` and `T_ee` at construction and stores them
+  read-only, so mutating the caller's array can no longer desynchronize the
+  stored transform from its cached inverse (#66).
+
 ### Changed
 
 - The `IKSolver` protocol requires only `solve(pose, q_init)`. `solve_valid`
