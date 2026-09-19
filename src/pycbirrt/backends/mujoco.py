@@ -404,3 +404,22 @@ class MuJoCoIKSolver:
                 if not return_all:
                     return solutions
         return solutions
+
+
+def site_offset_in_body(model: "mujoco.MjModel", site_name: str) -> np.ndarray:
+    """The fixed 4x4 transform of a site within its parent body's frame.
+
+    Use it as ``T_ee`` for ``SSIKSolver`` when the SSIK model ends at the
+    site's parent body (``ssik.Manipulator.from_mjcf(xml, base="world", ee=<body>)``),
+    so that SSIK's forward kinematics lands on the site, as
+    ``MuJoCoRobotModel.forward_kinematics`` does.
+    """
+    site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, site_name)
+    if site_id < 0:
+        raise ValueError(f"Site '{site_name}' not found in model")
+    rot = np.zeros(9)
+    mujoco.mju_quat2Mat(rot, model.site_quat[site_id])
+    T = np.eye(4)
+    T[:3, :3] = rot.reshape(3, 3)
+    T[:3, 3] = model.site_pos[site_id]
+    return T

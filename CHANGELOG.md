@@ -4,6 +4,39 @@ All notable changes to pycbirrt. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **SSIK backend** (`pycbirrt.backends.ssik.SSIKSolver`, extra
+  `pycbirrt[ssik]`, requires `ssik>=6.0.1,<7`): enumerative analytical IK
+  for 6R and 7R arms. The adapter wraps an `ssik.Manipulator` or a prebuilt
+  artifact, forwards `q_init` as SSIK's seed, requests limit-respecting
+  solutions with in-limit winding enumeration, applies no solution cap, does
+  no collision checking, and accepts optional fixed `T_base` / `T_ee`
+  transforms for frame conformance. Its `fk` lets you assert the frame
+  contract against your `RobotModel` before planning (#63).
+- `pycbirrt.backends.mujoco.site_offset_in_body(model, site)`: the fixed
+  transform to pass as `T_ee` when SSIK is built from the same MJCF with the
+  end-effector body as `ee`; the UR5e examples and integration test use it and
+  match MuJoCo's forward kinematics to machine precision.
+
+### Changed
+
+- The `IKSolver` protocol requires only `solve(pose, q_init)`. `solve_valid`
+  is no longer part of the interface; the planner never called it, and joint
+  limits and collision are the planner's responsibility. Existing backends
+  keep it as a convenience.
+- The UR5e examples prefer SSIK and fall back to MuJoCo differential IK.
+- Because SSIK returns every in-limit winding, the TSR-induced set on
+  joints wider than one turn is now complete; #36 is resolved in the IK
+  backend, not in the planner.
+
+### Deprecated
+
+- `EAIKSolver` warns on construction. It, the `eaik` extra, and its
+  documentation will be removed in pycbirrt 2.0.
+
 ## [1.2.0] - 2026-09-17
 
 A hardening release after two adversarial reviews of the 1.1.0 set-based

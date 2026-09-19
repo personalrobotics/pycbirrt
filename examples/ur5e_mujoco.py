@@ -43,13 +43,16 @@ from pycbirrt.backends.mujoco import (
     MuJoCoRobotModel,
 )
 
-# Optional EAIK import (analytical IK, faster than differential)
+# Optional SSIK import (enumerative analytical IK; pip install "pycbirrt[ssik]")
 try:
-    from pycbirrt.backends.eaik import EAIKSolver
+    import ssik
 
-    EAIK_AVAILABLE = True
+    from pycbirrt.backends.mujoco import site_offset_in_body
+    from pycbirrt.backends.ssik import SSIKSolver
+
+    SSIK_AVAILABLE = True
 except ImportError:
-    EAIK_AVAILABLE = False
+    SSIK_AVAILABLE = False
 
 
 def get_menagerie_path() -> Path:
@@ -335,12 +338,17 @@ def main():
     robot = MuJoCoRobotModel(model, data, "attachment_site", ur5e_joints)
     collision_checker = MuJoCoCollisionChecker(model, data, ur5e_joints)
 
-    # IK solver: prefer EAIK (analytical, faster), fall back to MuJoCo (differential)
-    if EAIK_AVAILABLE:
-        print("Using EAIK (analytical) IK solver")
-        ik_solver = EAIKSolver.for_ur5e(robot.joint_limits, collision_checker)
+    # IK solver: prefer SSIK (enumerative analytical), fall back to MuJoCo (differential).
+    # SSIK is built from the same MJCF as the scene, with the world as base and the
+    # attachment site's offset as T_ee, so its frames match MuJoCoRobotModel exactly.
+    if SSIK_AVAILABLE:
+        print("Using SSIK (analytical) IK solver")
+        arm = ssik.Manipulator.from_mjcf(
+            menagerie_path / "universal_robots_ur5e" / "ur5e.xml", base="world", ee="wrist_3_link"
+        )
+        ik_solver = SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site"))
     else:
-        print("Using MuJoCo (differential) IK solver (install eaik for faster planning)")
+        print('Using MuJoCo (differential) IK solver (pip install "pycbirrt[ssik]" for faster planning)')
         ik_solver = MuJoCoIKSolver(model, data, "attachment_site", ur5e_joints, collision_checker)
 
     config = CBiRRTConfig(
