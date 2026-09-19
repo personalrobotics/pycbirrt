@@ -3,11 +3,15 @@
 
 """SSIK backend: adapter contract (with a fake solver) and SSIK integration (#63).
 
-The adapter tests run without SSIK installed by stubbing the ``ssik`` module.
-The integration tests skip unless the optional dependency is present.
+The adapter tests run without SSIK installed: if the optional dependency is
+absent, a stub ``ssik`` module is registered once, before the backend is
+imported, so the backend's import guard passes. The production module is
+imported exactly once and never reloaded, so the ``SSIKSolver`` class identity
+seen here is the one every other module sees (#70). The integration tests skip
+unless the real dependency is present.
 """
 
-import importlib
+import subprocess
 import sys
 import types
 
@@ -15,6 +19,18 @@ import numpy as np
 import pytest
 
 from pycbirrt.space import JointSpace
+
+try:
+    import ssik  # noqa: F401
+
+    SSIK_AVAILABLE = True
+except ImportError:
+    # Register a stub so the adapter (which only needs the import to succeed) can load.
+    # Nothing else in the process uses the real package in this case.
+    SSIK_AVAILABLE = False
+    sys.modules.setdefault("ssik", types.ModuleType("ssik"))
+
+import pycbirrt.backends.ssik as adapter  # noqa: E402
 
 
 class FakeSolution:
@@ -40,16 +56,9 @@ class FakeSSIK:
 
 
 @pytest.fixture
-def adapter_module(monkeypatch):
-    """Import pycbirrt.backends.ssik with a stub ``ssik`` module if the real one is absent."""
-    if "ssik" not in sys.modules:
-        try:
-            import ssik  # noqa: F401
-        except ImportError:
-            monkeypatch.setitem(sys.modules, "ssik", types.ModuleType("ssik"))
-    import pycbirrt.backends.ssik as mod
-
-    return importlib.reload(mod)
+def adapter_module():
+    """The production adapter module, imported once at collection and never reloaded."""
+    return adapter
 
 
 class TestAdapterContract:
@@ -153,10 +162,9 @@ class TestAdapterContract:
 
 
 class TestImportWithoutSSIK:
-    def test_core_import_does_not_pull_in_ssik(self):
-        """Importing pycbirrt never imports ssik or the backend module (checked in a fresh interpreter)."""
-        import subprocess
+    """Import-state behavior is checked in fresh interpreters so this process's modules are never mutated."""
 
+    def test_core_import_does_not_pull_in_ssik(self):
         code = (
             "import sys, pycbirrt; "
             "assert 'ssik' not in sys.modules, 'ssik imported'; "
@@ -165,19 +173,33 @@ class TestImportWithoutSSIK:
         proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
         assert proc.returncode == 0, proc.stderr
 
-    def test_actionable_message_when_missing(self, monkeypatch):
-        monkeypatch.setitem(sys.modules, "ssik", None)  # makes `import ssik` raise ImportError
-        sys.modules.pop("pycbirrt.backends.ssik", None)
-        with pytest.raises(ImportError, match=r'pip install "pycbirrt\[ssik\]"'):
-            importlib.import_module("pycbirrt.backends.ssik")
-        sys.modules.pop("pycbirrt.backends.ssik", None)
+    def test_actionable_message_when_missing(self):
+        code = (
+            "import sys; sys.modules['ssik'] = None\n"  # makes `import ssik` raise ImportError
+            "try:\n"
+            "    import pycbirrt.backends.ssik\n"
+            "except ImportError as e:\n"
+            "    print(e)\n"
+            "else:\n"
+            "    raise SystemExit('no ImportError')\n"
+        )
+        proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+        assert proc.returncode == 0, proc.stderr
+        assert 'pip install "pycbirrt[ssik]"' in proc.stdout
+
+    def test_class_identity_is_stable_across_modules(self):
+        """The adapter is never reloaded, so the class other modules cached is this one (#70)."""
+        import pycbirrt.backends.ssik as again
+
+        assert again.SSIKSolver is adapter.SSIKSolver
 
 
 # ---------------------------------------------------------------------------
 # Integration with the real SSIK
 # ---------------------------------------------------------------------------
 
-ssik = pytest.importorskip("ssik")
+# Not importorskip: the stub above would satisfy it. Key off the real import instead.
+needs_ssik = pytest.mark.skipif(not SSIK_AVAILABLE, reason="ssik not installed")
 
 
 @pytest.fixture(scope="module")
@@ -189,6 +211,7 @@ def ur5e():
     return SSIKSolver(ur5e_ik), ur5e_ik
 
 
+@needs_ssik
 class TestSSIKIntegration:
     Q = np.array([0.1, -1.2, 1.0, -0.5, 0.3, 0.2])
 
