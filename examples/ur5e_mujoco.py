@@ -72,12 +72,15 @@ def get_menagerie_path() -> Path:
 # =============================================================================
 
 
-def build_ik_solver(model, data, joint_names, collision_checker, menagerie_path: Path, backend: str = "auto"):
+def build_ik_solver(
+    model, data, joint_names, collision_checker, menagerie_path: Path, backend: str = "auto", seed: int | None = None
+):
     """Choose the IK backend: SSIK (enumerative analytical) or MuJoCo differential IK.
 
     ``backend`` is "auto" (SSIK if installed, else MuJoCo), "ssik", or "mujoco".
     SSIK is built from the same MJCF as the scene, with the world as base and the
     attachment site's offset as T_ee, so its frames match MuJoCoRobotModel exactly.
+    ``seed`` makes the MuJoCo fallback's random restarts reproducible; SSIK is deterministic.
     Returns ``(solver, name)`` where ``name`` is "ssik" or "mujoco".
     """
     if backend not in ("auto", "ssik", "mujoco"):
@@ -90,7 +93,7 @@ def build_ik_solver(model, data, joint_names, collision_checker, menagerie_path:
         )
         return SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site")), "ssik"
     # Joint limits come from the MuJoCo model; the collision checker must be passed by keyword (#65).
-    solver = MuJoCoIKSolver(model, data, "attachment_site", joint_names, collision_checker=collision_checker)
+    solver = MuJoCoIKSolver(model, data, "attachment_site", joint_names, collision_checker=collision_checker, seed=seed)
     return solver, "mujoco"
 
 
@@ -364,7 +367,9 @@ def main():
     collision_checker = MuJoCoCollisionChecker(model, data, ur5e_joints)
 
     # IK solver: prefer SSIK (enumerative analytical), fall back to MuJoCo (differential)
-    ik_solver, ik_name = build_ik_solver(model, data, ur5e_joints, collision_checker, menagerie_path, args.ik)
+    ik_solver, ik_name = build_ik_solver(
+        model, data, ur5e_joints, collision_checker, menagerie_path, args.ik, seed=args.seed
+    )
     if ik_name == "ssik":
         print("Using SSIK (analytical) IK solver")
     else:

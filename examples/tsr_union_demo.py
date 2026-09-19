@@ -50,10 +50,13 @@ except ImportError:
     SSIK_AVAILABLE = False
 
 
-def build_ik_solver(model, data, joint_names, collision, menagerie_path: Path, backend: str = "auto"):
+def build_ik_solver(
+    model, data, joint_names, collision, menagerie_path: Path, backend: str = "auto", seed: int | None = None
+):
     """Choose the IK backend: SSIK (enumerative analytical) or MuJoCo differential IK.
 
     ``backend`` is "auto" (SSIK if installed, else MuJoCo), "ssik", or "mujoco".
+    ``seed`` makes the MuJoCo fallback's random restarts reproducible; SSIK is deterministic.
     Returns ``(solver, name)`` where ``name`` is "ssik" or "mujoco".
     """
     if backend not in ("auto", "ssik", "mujoco"):
@@ -66,7 +69,8 @@ def build_ik_solver(model, data, joint_names, collision, menagerie_path: Path, b
         )
         return SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site")), "ssik"
     # Joint limits come from the MuJoCo model; the collision checker must be passed by keyword (#65).
-    return MuJoCoIKSolver(model, data, "attachment_site", joint_names, collision_checker=collision), "mujoco"
+    solver = MuJoCoIKSolver(model, data, "attachment_site", joint_names, collision_checker=collision, seed=seed)
+    return solver, "mujoco"
 
 
 def get_menagerie_path() -> Path:
@@ -458,7 +462,7 @@ def main():
     robot = MuJoCoRobotModel(model, data, "attachment_site", joints)
     collision = MuJoCoCollisionChecker(model, data, joints)
 
-    ik_solver, ik_name = build_ik_solver(model, data, joints, collision, menagerie, args.ik)
+    ik_solver, ik_name = build_ik_solver(model, data, joints, collision, menagerie, args.ik, seed=args.seed)
     if ik_name == "ssik":
         print("Using SSIK analytical IK solver")
         config = CBiRRTConfig(timeout=30.0, goal_bias=0.15)

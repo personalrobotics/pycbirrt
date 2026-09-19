@@ -201,7 +201,16 @@ class MuJoCoIKSolver:
                 the workspace and depends on whatever the shared MjData was
                 last left in; restarts make unseeded solves (e.g. TSR goal
                 sampling) reliable and surface several distinct solutions.
-            seed: Seed for the restart generator.
+                Restart windows are anchored at the current configuration
+                (clamped into the limits) and derived from each joint's MuJoCo
+                type: a hinge samples within one turn of the anchor,
+                intersected with its limits; a limited slide samples its whole
+                interval; an unlimited slide samples ±1 (model units) around
+                the anchor. The window always contains the anchor, so it is
+                never empty.
+            seed: Seed for the restart generator. This solver is stateful and
+                stochastic when unseeded; seed it explicitly for reproducible
+                runs (``CBiRRT.plan(seed=...)`` seeds the planner only).
             tolerance: Position/orientation error tolerance for convergence
         """
         self.model = model
@@ -242,6 +251,12 @@ class MuJoCoIKSolver:
             self.dof_adrs = np.array([model.jnt_dofadr[i] for i in range(model.njnt)])
 
         self._dof = len(self.joint_ids)
+
+        # Joint topology for restart windows: hinge joints get a one-turn window,
+        # anything else (slide) a translational one. Limited from the model, or
+        # from explicit joint_limits when those were given.
+        self._is_hinge = self.model.jnt_type[self.joint_ids] == mujoco.mjtJoint.mjJNT_HINGE
+        self._restart_limited = self.model.jnt_limited[self.joint_ids].astype(bool) | (joint_limits is not None)
 
         # Get joint limits from model if not provided
         if self.joint_limits is None:
@@ -333,17 +348,37 @@ class MuJoCoIKSolver:
             return self._solve_from(pose, np.asarray(q_init, dtype=float))
 
         solutions: list[np.ndarray] = []
-        inits = [self._get_config()]
-        if self.restarts and self.joint_limits is not None:
-            lower, upper = self.joint_limits
-            # Start within one turn: a differential solver has no use for far windings
-            lo, hi = np.maximum(lower, -np.pi), np.minimum(upper, np.pi)
+        q_current = self._get_config()
+        inits = [q_current]
+        if self.restarts:
+            lo, hi = self._restart_bounds(q_current)
             inits += [self._rng.uniform(lo, hi) for _ in range(self.restarts)]
         for q0 in inits:
             for q in self._solve_from(pose, q0):
                 if not any(np.linalg.norm(q - s) < 1e-3 for s in solutions):
                     solutions.append(q)
         return solutions
+
+    def _restart_bounds(self, q_anchor: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Per-joint sampling window for restarts, anchored at ``q_anchor`` (see ``__init__``).
+
+        Never empty: the anchor is clamped into the limits and every window
+        contains it. Hinge joints use one turn around the anchor intersected
+        with the limits (a differential solver has no use for far windings);
+        limited slides use their full interval; unlimited slides use ±1.
+        """
+        if self.joint_limits is not None:
+            lower, upper = self.joint_limits
+        else:
+            lower, upper = np.full(self._dof, -np.inf), np.full(self._dof, np.inf)
+        c = np.clip(np.asarray(q_anchor, dtype=float), lower, upper)
+        hinge_lo, hinge_hi = np.maximum(lower, c - np.pi), np.minimum(upper, c + np.pi)
+        slide_lo = np.where(self._restart_limited, lower, c - 1.0)
+        slide_hi = np.where(self._restart_limited, upper, c + 1.0)
+        lo = np.where(self._is_hinge, hinge_lo, slide_lo)
+        hi = np.where(self._is_hinge, hinge_hi, slide_hi)
+        assert np.all(lo <= hi), (lo, hi)
+        return lo, hi
 
     def _solve_from(self, pose: np.ndarray, q_init: np.ndarray) -> list[np.ndarray]:
         """Damped least squares from one initial configuration; one solution or none."""

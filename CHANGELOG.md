@@ -34,6 +34,13 @@ follows [Semantic Versioning](https://semver.org/).
   whatever the shared MuJoCo state was last left in and converged on only
   about half of reachable poses, which made TSR goal sampling through the
   fallback unreliable.
+- `MuJoCoIKSolver` restart windows are anchored at the current configuration
+  and derived from each joint's MuJoCo type and limits: hinges sample one
+  turn around the anchor intersected with their limits, limited slides their
+  whole interval, unlimited slides ±1 around the anchor. The previous blanket
+  intersection with [-π, π] raised for a valid interval such as [4, 5] and
+  applied a revolute rule to prismatic joints. The examples forward their
+  `--seed` to the fallback so runs are reproducible (#69).
 - `SSIKSolver` copies `T_base` and `T_ee` at construction and stores them
   read-only, so mutating the caller's array can no longer desynchronize the
   stored transform from its cached inverse (#66).
