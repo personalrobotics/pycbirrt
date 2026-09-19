@@ -50,6 +50,25 @@ except ImportError:
     SSIK_AVAILABLE = False
 
 
+def build_ik_solver(model, data, joint_names, collision, menagerie_path: Path, backend: str = "auto"):
+    """Choose the IK backend: SSIK (enumerative analytical) or MuJoCo differential IK.
+
+    ``backend`` is "auto" (SSIK if installed, else MuJoCo), "ssik", or "mujoco".
+    Returns ``(solver, name)`` where ``name`` is "ssik" or "mujoco".
+    """
+    if backend not in ("auto", "ssik", "mujoco"):
+        raise ValueError(f"backend must be 'auto', 'ssik', or 'mujoco', got {backend!r}")
+    if backend == "ssik" and not SSIK_AVAILABLE:
+        raise RuntimeError('SSIK backend requested but ssik is not installed: pip install "pycbirrt[ssik]"')
+    if backend in ("auto", "ssik") and SSIK_AVAILABLE:
+        arm = ssik.Manipulator.from_mjcf(
+            menagerie_path / "universal_robots_ur5e" / "ur5e.xml", base="world", ee="wrist_3_link"
+        )
+        return SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site")), "ssik"
+    # Joint limits come from the MuJoCo model; the collision checker must be passed by keyword (#65).
+    return MuJoCoIKSolver(model, data, "attachment_site", joint_names, collision_checker=collision), "mujoco"
+
+
 def get_menagerie_path() -> Path:
     """Get path to MuJoCo Menagerie."""
     path = os.environ.get("MUJOCO_MENAGERIE_PATH")
@@ -411,6 +430,9 @@ def main():
     parser.add_argument("--grasps", type=int, default=6, help="Number of grasp cycles to show")
     parser.add_argument("--seed", type=int, default=None, help="Random seed (None = random each run)")
     parser.add_argument("--interactive", "-i", action="store_true", help="Use interactive viewer instead of video")
+    parser.add_argument(
+        "--ik", choices=["auto", "ssik", "mujoco"], default="auto", help="IK backend (default: SSIK if installed)"
+    )
     args = parser.parse_args()
 
     menagerie = get_menagerie_path()
@@ -436,25 +458,14 @@ def main():
     robot = MuJoCoRobotModel(model, data, "attachment_site", joints)
     collision = MuJoCoCollisionChecker(model, data, joints)
 
-    if SSIK_AVAILABLE:
+    ik_solver, ik_name = build_ik_solver(model, data, joints, collision, menagerie, args.ik)
+    if ik_name == "ssik":
         print("Using SSIK analytical IK solver")
-        arm = ssik.Manipulator.from_mjcf(
-            menagerie / "universal_robots_ur5e" / "ur5e.xml", base="world", ee="wrist_3_link"
-        )
-        ik_solver = SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site"))
-        config = CBiRRTConfig(
-            timeout=30.0,
-            goal_bias=0.15,
-        )
+        config = CBiRRTConfig(timeout=30.0, goal_bias=0.15)
     else:
         print("Using MuJoCo differential IK solver")
-        ik_solver = MuJoCoIKSolver(model, data, "attachment_site", joints, collision)
         # Differential solver may need more pose samples
-        config = CBiRRTConfig(
-            timeout=30.0,
-            goal_bias=0.15,
-            tsr_samples=100,
-        )
+        config = CBiRRTConfig(timeout=30.0, goal_bias=0.15, tsr_samples=100)
 
     planner = CBiRRT(robot, ik_solver, collision, config)
 
