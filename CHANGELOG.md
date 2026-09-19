@@ -23,6 +23,17 @@ follows [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- The UR5e examples' MuJoCo differential-IK fallback crashed on the first
+  IK update because the collision checker was passed in the `joint_limits`
+  positional slot. Both examples now select the backend through
+  `build_ik_solver(..., backend)` with a `--ik {auto,ssik,mujoco}` flag, and
+  the fallback is exercised by tests even when SSIK is installed (#65).
+- `MuJoCoIKSolver.solve` without a seed tries the current state and then
+  `restarts` (default 3) random initial configurations within limits and
+  returns every distinct converged solution. Previously it depended on
+  whatever the shared MuJoCo state was last left in and converged on only
+  about half of reachable poses, which made TSR goal sampling through the
+  fallback unreliable.
 - `SSIKSolver` copies `T_base` and `T_ee` at construction and stores them
   read-only, so mutating the caller's array can no longer desynchronize the
   stored transform from its cached inverse (#66).
