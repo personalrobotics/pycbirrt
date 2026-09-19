@@ -21,7 +21,8 @@ tsr = { workspace = true }
 
 [project.optional-dependencies]
 mujoco = ["mujoco>=3.0"]
-eaik = ["eaik"]
+ssik = ["ssik>=6.0.1,<7"]  # 6.0.1 has seed-nearest rewrapping and in-limit winding enumeration (ssik#562)
+eaik = ["eaik"]  # deprecated; removed in pycbirrt 2.0
 examples = [
     "matplotlib",
     "mediapy",
@@ -32,7 +33,7 @@ dev = [
     "ruff>=0.15,<0.16",  # formatter style only changes in minor releases; bump deliberately
     "hypothesis>=6.100",
 ]
-all = ["pycbirrt[mujoco,eaik,examples,dev]"]
+all = ["pycbirrt[mujoco,ssik,eaik,examples,dev]"]
 
 [build-system]
 requires = ["setuptools>=61.0"]

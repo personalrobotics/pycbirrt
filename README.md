@@ -258,8 +258,8 @@ class RobotModel(Protocol):
 
 
 class IKSolver(Protocol):
-    def solve(self, pose: np.ndarray) -> list[np.ndarray]:
-        """Return IK solutions (may include invalid ones)."""
+    def solve(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
+        """Return every IK solution, unfiltered; q_init is an optional seed."""
 
 
 class CollisionChecker(Protocol):
@@ -283,17 +283,55 @@ collision = MuJoCoCollisionChecker(model, data)
 ik = MuJoCoIKSolver(model, data, ee_site="end_effector", collision_checker=collision)
 ```
 
-### EAIK (Analytical IK for UR robots)
+### SSIK (enumerative analytical IK, recommended)
 
 ```bash
-uv pip install eaik
+uv pip install "pycbirrt[ssik]"
 ```
+
+SSIK solves 6R and 7R arms in closed form, accepts a seed, and returns every
+in-limit winding of each geometric branch on joints wider than one turn, so
+the planner sees the complete TSR-induced configuration set. The adapter does
+no collision checking and applies no solution cap; joint limits are enforced
+by `JointSpace` and collision by the planner's validator.
 
 ```python
-from pycbirrt.backends.eaik import EAIKSolver
+from pycbirrt.backends.ssik import SSIKSolver
 
-ik = EAIKSolver("robot.urdf", joint_limits=(lower, upper), collision_checker=collision)
+# A prebuilt artifact (vendor nominal geometry)...
+from ssik.prebuilt import ur5e_ik
+ik = SSIKSolver(ur5e_ik)
+
+# ...or your own robot (needs SSIK's URDF support installed)
+import ssik
+arm = ssik.Manipulator.from_urdf(path, base=base_link, ee=ee_link)
+ik = SSIKSolver(arm)
 ```
+
+**Frame and joint-order contract.** The SSIK model and your `RobotModel` must
+agree on joint order and sign, base frame, end-effector frame, and which
+joints are continuous. The adapter never guesses; if the frames differ by
+fixed transforms, pass `T_base` and `T_ee` so that
+`robot.forward_kinematics(q) == ik.fk(q)`, and assert that in a test before
+planning. For a MuJoCo model, build SSIK from the same MJCF with the world as
+base and the end-effector body as `ee`, and pass the site's offset as `T_ee`;
+this matches `MuJoCoRobotModel` to machine precision:
+
+```python
+from pycbirrt.backends.mujoco import site_offset_in_body
+
+arm = ssik.Manipulator.from_mjcf("ur5e.xml", base="world", ee="wrist_3_link")
+ik = SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site"))
+```
+
+Prebuilt artifacts use the vendor's nominal geometry and can differ from a
+simulator model by a millimeter, which matters at the default membership
+tolerance; check before relying on them against a simulated robot.
+
+### EAIK (deprecated)
+
+`pycbirrt.backends.eaik.EAIKSolver` still works but warns on construction and
+will be removed, with the `eaik` extra, in pycbirrt 2.0. Use SSIK.
 
 ## Examples
 

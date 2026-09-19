@@ -38,13 +38,16 @@ from pycbirrt.backends.mujoco import (
     MuJoCoRobotModel,
 )
 
-# Optional EAIK for faster planning
+# Optional SSIK for faster planning (pip install "pycbirrt[ssik]")
 try:
-    from pycbirrt.backends.eaik import EAIKSolver
+    import ssik
 
-    EAIK_AVAILABLE = True
+    from pycbirrt.backends.mujoco import site_offset_in_body
+    from pycbirrt.backends.ssik import SSIKSolver
+
+    SSIK_AVAILABLE = True
 except ImportError:
-    EAIK_AVAILABLE = False
+    SSIK_AVAILABLE = False
 
 
 def get_menagerie_path() -> Path:
@@ -433,9 +436,12 @@ def main():
     robot = MuJoCoRobotModel(model, data, "attachment_site", joints)
     collision = MuJoCoCollisionChecker(model, data, joints)
 
-    if EAIK_AVAILABLE:
-        print("Using EAIK analytical IK solver")
-        ik_solver = EAIKSolver.for_ur5e(robot.joint_limits, collision)
+    if SSIK_AVAILABLE:
+        print("Using SSIK analytical IK solver")
+        arm = ssik.Manipulator.from_mjcf(
+            menagerie / "universal_robots_ur5e" / "ur5e.xml", base="world", ee="wrist_3_link"
+        )
+        ik_solver = SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site"))
         config = CBiRRTConfig(
             timeout=30.0,
             goal_bias=0.15,

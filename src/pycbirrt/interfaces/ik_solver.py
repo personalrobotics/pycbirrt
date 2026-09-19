@@ -7,38 +7,29 @@ import numpy as np
 
 
 class IKSolver(Protocol):
-    """Protocol for inverse kinematics solvers.
+    """Protocol for inverse kinematics solvers: one capability, ``solve``.
 
-    Implementations should provide both raw IK solving and validated solving.
-    The raw `solve()` returns all kinematic solutions quickly.
-    The `solve_valid()` filters for collision-free solutions within joint limits.
+    The planner never filters inside the solver. Joint limits are enforced by
+    ``JointSpace`` and collision by the problem's validator, so a solver should
+    return every kinematic solution it knows of, including, for a joint whose
+    range exceeds one turn, every in-limit winding of each geometric branch.
+    Discarding branches here would hide admissible configurations from the
+    planner (see #36 and #63).
     """
 
     def solve(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
-        """Solve IK for a single end-effector pose (raw, unvalidated).
+        """Solve IK for a single end-effector pose.
 
         Args:
-            pose: 4x4 homogeneous transform of desired end-effector pose
-            q_init: Optional initial configuration hint for iterative solvers.
-                Analytical solvers may ignore this parameter.
+            pose: 4x4 homogeneous transform of the desired end-effector pose,
+                in the same base frame and end-effector frame the robot model
+                uses for forward kinematics.
+            q_init: Optional configuration hint. Iterative solvers start from
+                it; enumerative solvers may use it as a seed to order and
+                rewrap solutions. May be ignored.
 
         Returns:
-            List of joint configurations (may include invalid ones)
-        """
-        ...
-
-    def solve_valid(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
-        """Solve IK and return only valid solutions.
-
-        Filters solutions to return only those that are:
-        - Within joint limits
-        - Collision-free
-
-        Args:
-            pose: 4x4 homogeneous transform of desired end-effector pose
-            q_init: Optional initial configuration for iterative solvers
-
-        Returns:
-            List of valid joint configurations (may be empty)
+            All joint configurations found, each a 1-D array of length dof,
+            possibly empty. No collision or limit filtering is implied.
         """
         ...

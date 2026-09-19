@@ -241,7 +241,10 @@ semantics the arguments always had:
 
 `TSRConfigurationSet` samples poses from the TSR bounds with the planner's
 random generator, solves IK, and returns every solution inside the joint
-limits as candidates. Its projection moves the pose to the closest point of
+limits as candidates. Completeness of that candidate set is the IK
+backend's job: on a joint whose range exceeds one turn, the same geometric
+branch has several in-limit windings, and an enumerative backend such as
+SSIK returns all of them (#36, #63). The set never filters by collision. Its projection moves the pose to the closest point of
 the TSR, composed with the TSR's `T0_w` and `Tw_e` frames, and takes the IK
 solution nearest the current configuration under the space metric.
 

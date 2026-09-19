@@ -1,7 +1,16 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Siddhartha Srinivasa
 
-"""EAIK backend for analytical inverse kinematics."""
+"""EAIK backend for analytical inverse kinematics.
+
+Deprecated since pycbirrt 1.3: use ``pycbirrt.backends.ssik.SSIKSolver``
+(``pip install "pycbirrt[ssik]"``). SSIK covers more manipulator
+geometries, accepts a seed, and enumerates in-limit windings on joints
+wider than one turn, which EAIK's principal representatives cannot (#36).
+``EAIKSolver`` and the ``eaik`` extra will be removed in pycbirrt 2.0.
+"""
+
+import warnings
 
 import numpy as np
 
@@ -43,6 +52,12 @@ class EAIKSolver:
             joint_limits: Optional (lower, upper) joint limit arrays for validation
             collision_checker: Optional collision checker for validation
         """
+        warnings.warn(
+            "EAIKSolver is deprecated and will be removed in pycbirrt 2.0; "
+            'use pycbirrt.backends.ssik.SSIKSolver (pip install "pycbirrt[ssik]")',
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.robot = robot
         self.joint_limits = joint_limits
         self.collision_checker = collision_checker
