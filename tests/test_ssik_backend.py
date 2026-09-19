@@ -115,6 +115,34 @@ class TestAdapterContract:
         assert np.allclose(target, np.linalg.inv(T_base) @ pose @ np.linalg.inv(T_ee))
         assert np.allclose(ik.fk(np.array([1.0, 2.0, 3.0, 0, 0, 0])), T_base @ fake.fk([1.0, 2.0, 3.0]) @ T_ee)
 
+    @pytest.mark.parametrize("which", ["T_base", "T_ee"])
+    def test_transforms_are_copied_so_caller_mutation_cannot_desync_inverse(self, adapter_module, which):
+        fake = FakeSSIK([FakeSolution(np.zeros(6))])
+        T = np.eye(4)
+        ik = adapter_module.SSIKSolver(fake, **{which: T})
+        pose = np.eye(4)
+        pose[:3, 3] = [2.0, 3.0, 4.0]
+        q = np.array([1.0, 2.0, 3.0, 0, 0, 0])
+        ik.solve(pose)
+        target_before, _ = fake.calls[-1]
+        fk_before = ik.fk(q)
+
+        T[0, 3] = 1.0  # caller mutates their array after construction
+
+        ik.solve(pose)
+        target_after, _ = fake.calls[-1]
+        assert np.array_equal(target_after, target_before)
+        assert np.array_equal(ik.fk(q), fk_before)
+        stored = getattr(ik, which)
+        assert stored[0, 3] == 0.0 and not stored.flags.writeable
+        inv = ik._T_base_inv if which == "T_base" else ik._T_ee_inv
+        assert np.allclose(stored @ inv, np.eye(4))
+
+    def test_stored_transform_is_read_only(self, adapter_module):
+        ik = adapter_module.SSIKSolver(FakeSSIK([]), T_base=np.eye(4))
+        with pytest.raises(ValueError):
+            ik.T_base[0, 3] = 5.0
+
     def test_bad_transform_rejected(self, adapter_module):
         with pytest.raises(ValueError, match="T_ee"):
             adapter_module.SSIKSolver(FakeSSIK([]), T_ee=np.eye(3))
