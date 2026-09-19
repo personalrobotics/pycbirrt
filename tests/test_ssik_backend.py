@@ -21,10 +21,13 @@ import pytest
 from pycbirrt.space import JointSpace
 
 try:
-    import ssik as _real_ssik  # noqa: F401
+    import ssik  # noqa: F401
+
+    SSIK_AVAILABLE = True
 except ImportError:
     # Register a stub so the adapter (which only needs the import to succeed) can load.
     # Nothing else in the process uses the real package in this case.
+    SSIK_AVAILABLE = False
     sys.modules.setdefault("ssik", types.ModuleType("ssik"))
 
 import pycbirrt.backends.ssik as adapter  # noqa: E402
@@ -195,7 +198,8 @@ class TestImportWithoutSSIK:
 # Integration with the real SSIK
 # ---------------------------------------------------------------------------
 
-ssik = pytest.importorskip("ssik")
+# Not importorskip: the stub above would satisfy it. Key off the real import instead.
+needs_ssik = pytest.mark.skipif(not SSIK_AVAILABLE, reason="ssik not installed")
 
 
 @pytest.fixture(scope="module")
@@ -207,6 +211,7 @@ def ur5e():
     return SSIKSolver(ur5e_ik), ur5e_ik
 
 
+@needs_ssik
 class TestSSIKIntegration:
     Q = np.array([0.1, -1.2, 1.0, -0.5, 0.3, 0.2])
 
