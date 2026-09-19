@@ -63,9 +63,10 @@ class SSIKSolver:
             with ``solve(T, q_seed=..., respect_limits=..., enumerate_windings=...)``
             returning objects with a ``q`` attribute, and ``fk(q)``.
         T_base: Optional 4x4 transform from SSIK's base frame to the robot
-            model's base frame.
+            model's base frame. Copied at construction; fixed thereafter.
         T_ee: Optional 4x4 transform from SSIK's end-effector frame to the
-            robot model's end-effector frame.
+            robot model's end-effector frame. Copied at construction; fixed
+            thereafter.
 
     ``solve`` requests limit-respecting solutions with winding enumeration on
     (SSIK's default), forwards ``q_init`` as ``q_seed``, imposes no solution
@@ -114,7 +115,14 @@ class SSIKSolver:
 
 
 def _check_transform(T: np.ndarray, name: str) -> np.ndarray:
-    T = np.asarray(T, dtype=float)
+    """Validate and take an independent, read-only copy of a fixed frame transform.
+
+    The adapter caches the inverse at construction; owning the array means a
+    caller mutating their original can never make the stored transform and
+    its cached inverse disagree (#66).
+    """
+    T = np.array(T, dtype=float, copy=True)
     if T.shape != (4, 4) or not np.all(np.isfinite(T)):
         raise ValueError(f"{name} must be a finite 4x4 transform, got shape {T.shape}")
+    T.setflags(write=False)
     return T
