@@ -4,7 +4,13 @@ All notable changes to pycbirrt. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.3.0] - 2026-09-19
+
+The analytical IK backend moves from EAIK to SSIK. `plan(...)` and the
+planner core are unchanged; the minor bump is for the new `pycbirrt[ssik]`
+extra, the reduced `IKSolver` protocol, and the EAIK deprecation. Users of
+the MuJoCo differential fallback should read the Fixed section: it was not
+runnable from the examples in 1.2.0 and its unseeded behavior has changed.
 
 ### Added
 
@@ -244,6 +250,7 @@ semantics; every 1.0.0 test passes unchanged.
 Initial release: CBiRRT with TSR start, goal, and path constraints; MuJoCo
 and EAIK backends; planar arm and UR5e examples.
 
+[1.3.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/personalrobotics/pycbirrt/releases/tag/v1.0.0
