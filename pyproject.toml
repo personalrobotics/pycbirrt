@@ -13,11 +13,8 @@ maintainers = [
 ]
 dependencies = [
     "numpy>=1.24",
-    "tsr @ git+https://github.com/personalrobotics/tsr.git",
+    "sstsr>=2.0.0",
 ]
-
-[tool.uv.sources]
-tsr = { workspace = true }
 
 [project.optional-dependencies]
 mujoco = ["mujoco>=3.0"]
