@@ -162,3 +162,30 @@ def test_projection_near_a_winding_does_not_take_a_full_turn(ur5e):
     q_proj = s.project(q, q_off)
     assert q_proj is not None and s.contains(q_proj)
     assert planner.space.distance(q_proj, q) < 1.0  # stayed on the nearby winding, not 2π away
+
+
+def test_door_handle_chain_goal_on_the_ur5e(ur5e):
+    """A two-TSR chain goal: a door hinge with limited swing, then the handle with a top-down grasp (#7)."""
+    from tsr import TSRChain
+
+    robot, collision, _, planner = ur5e
+    # Hinge frame near the table edge; the door may swing ±0.4 rad about z
+    T_hinge = np.eye(4)
+    T_hinge[:3, 3] = [0.35, -0.25, 0.60]
+    hinge = TSR(T0_w=T_hinge, Tw_e=np.eye(4), Bw=np.array([[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [-0.4, 0.4]]))
+    # Handle 0.25 m along the door's x, grasped from above (gripper z down), any yaw about the handle
+    T_grasp = np.eye(4)
+    T_grasp[:3, :3] = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+    handle = TSR(
+        T0_w=np.eye(4), Tw_e=T_grasp, Bw=np.array([[0.25, 0.25], [0, 0], [0.05, 0.10], [0, 0], [0, 0], [-np.pi, np.pi]])
+    )
+    chain = TSRChain(TSRs=[hinge, handle])
+
+    home = np.array([0, -np.pi / 2, np.pi / 2, -np.pi / 2, -np.pi / 2, 0])
+    result = planner.plan(start=home, goal_tsrs=[chain], seed=0, return_details=True)
+    assert result.success, result.failure_reason
+    T_end = robot.forward_kinematics(result.path[-1])
+    assert chain.contains(T_end)
+    # The handle is on the door's swing arc: 0.25 m from the hinge axis in the xy plane
+    assert np.linalg.norm(T_end[:2, 3] - T_hinge[:2, 3]) == pytest.approx(0.25, abs=2e-3)
+    assert all(collision.is_valid(q) for q in result.path)

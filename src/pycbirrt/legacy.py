@@ -17,7 +17,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import numpy as np
-from tsr import TSR
+from tsr import TSR, TSRChain
 
 from pycbirrt.config import CBiRRTConfig
 from pycbirrt.interfaces import CollisionChecker, IKSolver, RobotModel
@@ -45,13 +45,17 @@ def legacy_problem(
     config: CBiRRTConfig,
     start: Sequence[np.ndarray] | None,
     goal: Sequence[np.ndarray] | None,
-    start_tsrs: Sequence[TSR] | None,
-    goal_tsrs: Sequence[TSR] | None,
-    constraint_tsrs: Sequence[TSR] | None,
+    start_tsrs: Sequence[TSR | TSRChain] | None,
+    goal_tsrs: Sequence[TSR | TSRChain] | None,
+    constraint_tsrs: Sequence[TSR | TSRChain] | None,
 ) -> PlanningProblem:
-    """Build the problem the legacy arguments describe."""
+    """Build the problem the legacy arguments describe.
 
-    def tsr_set(tsr: TSR) -> TSRConfigurationSet:
+    Each entry of a TSR list may be a ``TSR`` or a ``TSRChain``; a chain is one
+    region (one alternative in a union, one factor in an intersection).
+    """
+
+    def tsr_set(tsr: TSR | TSRChain) -> TSRConfigurationSet:
         return TSRConfigurationSet(
             tsr,
             robot,
@@ -62,7 +66,7 @@ def legacy_problem(
             progress_tolerance=config.projection_progress_tolerance,
         )
 
-    def role(configs: Sequence[np.ndarray] | None, tsrs: Sequence[TSR] | None) -> StateSet:
+    def role(configs: Sequence[np.ndarray] | None, tsrs: Sequence[TSR | TSRChain] | None) -> StateSet:
         parts: list[StateSet] = []
         if configs:
             parts.append(FiniteSet(configs, tolerance=config.membership_tolerance, metric=space.distance))
