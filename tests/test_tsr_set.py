@@ -171,3 +171,24 @@ class TestComposition:
         assert supports(path_set, SetProjector)
         q = np.array([0.3, 0.9])
         assert path_set.contains(path_set.project(q, q))
+
+
+class TestUpstreamCalls:
+    """The adapter delegates sampling and the closest pose to sstsr rather than reimplementing them."""
+
+    def test_sample_pose_matches_tsr_sample_with_the_same_generator(self, arm):
+        tsr = TSR(T0_w=frame(1.2, 0.8), Tw_e=frame(0.1, 0.0), Bw=BOX)
+        s = make_set(arm, tsr)
+        assert np.allclose(s.sample_pose(np.random.default_rng(3)), tsr.sample(rng=np.random.default_rng(3)))
+
+    def test_projection_target_is_closest_transform(self, arm):
+        robot, ik, _ = arm
+        tsr = TSR(T0_w=frame(1.2, 0.8), Tw_e=frame(0.1, 0.0), Bw=BOX)
+        s = make_set(arm, tsr)
+        q = np.array([0.3, 0.9])
+        dist, target = tsr.closest_transform(robot.forward_kinematics(q))
+        assert dist > s.tolerance and tsr.contains(target)
+        q_proj = s.project(q, q)
+        assert q_proj is not None
+        # One IK solve onto the closest pose reaches it exactly for the analytical mock
+        assert np.allclose(robot.forward_kinematics(q_proj)[:2, 3], target[:2, 3], atol=1e-9)

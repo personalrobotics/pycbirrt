@@ -22,7 +22,7 @@ Most planners ask: "Can you reach this exact pose?" But manipulation tasks are r
 
 ```bash
 # Install TSR dependency (not on PyPI)
-uv pip install "tsr @ git+https://github.com/personalrobotics/tsr.git"
+uv pip install sstsr   # Task Space Regions; imported as `tsr`
 
 # Install pycbirrt with all backends
 uv pip install -e ".[all]"

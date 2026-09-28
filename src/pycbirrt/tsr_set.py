@@ -15,7 +15,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import numpy as np
-from tsr import TSR, wrap_to_interval
+from tsr import TSR
 from tsr.sampling import weights_from_tsrs
 
 from pycbirrt.interfaces import IKSolver, RobotModel
@@ -82,15 +82,8 @@ class TSRConfigurationSet:
     # -- sampling ------------------------------------------------------------
 
     def sample_pose(self, rng: np.random.Generator) -> np.ndarray:
-        """Draw a world-frame end-effector pose uniformly from the TSR bounds.
-
-        Uses the caller's generator rather than ``TSR.sample`` so results are
-        reproducible under a seed (see personalrobotics/tsr#52).
-        """
-        bw = self.tsr._Bw_cont  # continuous bounds: handles wrapped RPY intervals
-        xyzrpy = bw[:, 0] + (bw[:, 1] - bw[:, 0]) * rng.random(6)
-        xyzrpy[3:6] = wrap_to_interval(xyzrpy[3:6])
-        return self.tsr.T0_w @ TSR.xyzrpy_to_trans(xyzrpy) @ self.tsr.Tw_e
+        """Draw a world-frame end-effector pose uniformly from the TSR bounds with ``rng``."""
+        return self.tsr.sample(rng=rng)
 
     def sample(self, rng: np.random.Generator) -> list[Sample]:
         pose = self.sample_pose(rng)
@@ -102,14 +95,14 @@ class TSRConfigurationSet:
         q = np.array(q_proposed, dtype=float)
         prev_dist = float("inf")
         for _ in range(self.max_projection_iters):
-            dist, bwopt = self.tsr.distance(self.robot.forward_kinematics(q))
+            # Closest in-bounds pose, already composed with T0_w and Tw_e (#28)
+            dist, target = self.tsr.closest_transform(self.robot.forward_kinematics(q))
             if dist <= self.tolerance:
                 return q
             if prev_dist - dist < self.progress_tolerance:
                 return None
             prev_dist = dist
 
-            target = self.tsr.T0_w @ TSR.xyzrpy_to_trans(bwopt) @ self.tsr.Tw_e
             best, best_d = None, float("inf")
             for sol in self.ik.solve(target, q_init=q):
                 if not self.space.within_limits(sol):
