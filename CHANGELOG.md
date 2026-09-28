@@ -4,6 +4,16 @@ All notable changes to pycbirrt. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Depends on `sstsr>=3.1,<4` from PyPI (imported as `tsr`). The TSR adapter
+  now samples poses with `TSR.sample(rng=...)` and projects with
+  `TSR.closest_transform`, both added upstream in response to
+  personalrobotics/tsr#52 and #53, instead of reading the TSR's private
+  continuous bounds and composing the frames by hand.
+
 ## [1.3.0] - 2026-09-19
 
 The analytical IK backend moves from EAIK to SSIK. `plan(...)` and the
