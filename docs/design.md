@@ -250,13 +250,26 @@ solution nearest the current configuration under the space metric.
 
 ## TSR chains
 
-A TSR chain (see #7) couples several TSRs through kinematic composition: the
-pose of each link constrains the next, and the chain as a whole defines
-**one** set of end-effector poses. It is therefore one state set, induced
-through forward kinematics like a single TSR, with its own sampler and
-projector that walk the chain. It is **not** an `AllOf` of its constituent
-TSRs: those TSRs constrain different frames, and their intersection in
-configuration space is not the chain's induced set. Multi-link constraints
-where each link has an independent TSR (an end-effector region and an elbow
-clearance region) are a different object, and *those* compose as `AllOf`
-with a joint projection strategy.
+A TSR chain couples several TSRs through serial composition: each link's
+pose is sampled relative to the previous one, and the chain as a whole
+defines **one** set of end-effector poses (a door handle on a swinging
+door). `TSRConfigurationSet` accepts a `tsr.TSRChain` exactly as it accepts
+a `tsr.TSR`: both are pose regions with a distance, a closest world-frame
+transform, and a seeded sampler (`PoseRegion`), so a chain is one state
+set, one alternative in a union, one factor in an intersection, and one
+entry in the legacy `goal_tsrs` / `start_tsrs` / `constraint_tsrs` lists.
+It is **not** an `AllOf` of its constituent TSRs: those constrain different
+frames, and their world-frame intersection is not the chain's set; a test
+shows a chain member lying in neither component.
+
+Two properties follow from the chain's numerical inverse: for two or more
+links, distance is the best residual a bounded multi-start solve found (an
+upper bound), so membership can be a false negative on a hard chain, and
+each membership test or projection step costs a few milliseconds. A chain
+as a goal is cheap; a chain as a path constraint pays that on every edge
+sample.
+
+Independent TSRs on different robot links (an end-effector region and an
+elbow clearance region) are a different object: they compose as `AllOf` of
+per-link sets with a joint projection strategy and need forward kinematics
+per link. That is not implemented.

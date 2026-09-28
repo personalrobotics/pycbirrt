@@ -143,6 +143,11 @@ TSRs are sampled proportionally to their volume, so larger regions (more flexibi
 You can also provide lists of configurations:
 
 ```python
+# A TSR chain (a handle on a swinging door) is one region, usable anywhere a TSR is
+from tsr import TSRChain
+door = TSRChain(TSRs=[hinge_tsr, handle_tsr])
+path = planner.plan(start_config, goal_tsrs=[door])
+
 # Start from any of several home positions
 path = planner.plan(start=[home1, home2, home3], goal_tsrs=[grasp_tsr])
 

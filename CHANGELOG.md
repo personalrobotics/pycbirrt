@@ -6,6 +6,18 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **TSR chains.** `TSRConfigurationSet` accepts a `tsr.TSRChain` as well as a
+  `tsr.TSR`: both satisfy the new `PoseRegion` protocol (distance, closest
+  world-frame transform, seeded sampling), so a chain is one configuration
+  set, one alternative in `AnyOf`, one factor in `AllOf`, and one entry in
+  the legacy `goal_tsrs` / `start_tsrs` / `constraint_tsrs` lists.
+  `region_volume` and `tsr_weights` handle chains. For a multi-TSR chain,
+  membership and projection use sstsr's bounded numerical inverse, so they
+  cost a few milliseconds and membership can be a false negative on a hard
+  chain (#7).
+
 ### Changed
 
 - Depends on `sstsr>=3.1,<4` from PyPI (imported as `tsr`). The TSR adapter

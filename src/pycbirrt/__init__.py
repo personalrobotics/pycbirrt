@@ -34,7 +34,7 @@ from pycbirrt.sets import (
     supports,
 )
 from pycbirrt.space import JointSpace
-from pycbirrt.tsr_set import TSRConfigurationSet, tsr_weights
+from pycbirrt.tsr_set import PoseRegion, TSRConfigurationSet, region_volume, tsr_weights
 
 __all__ = [
     "CBiRRT",
@@ -71,5 +71,7 @@ __all__ = [
     "members",
     "JointSpace",
     "TSRConfigurationSet",
+    "PoseRegion",
+    "region_volume",
     "tsr_weights",
 ]
