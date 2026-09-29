@@ -1,9 +1,12 @@
 // Minimal test harness: the core has no dependencies and neither do its tests.
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <exception>
+#include <limits>
+#include <stdexcept>
 #include <functional>
 #include <string>
 #include <vector>

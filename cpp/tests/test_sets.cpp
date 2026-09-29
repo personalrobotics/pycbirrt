@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <memory>
+#include <stdexcept>
 
 #include "harness.hpp"
 #include "sscbirrt/errors.hpp"

@@ -1,4 +1,7 @@
+#include <algorithm>
+#include <limits>
 #include <numbers>
+#include <stdexcept>
 
 #include "harness.hpp"
 #include "sscbirrt/space.hpp"
