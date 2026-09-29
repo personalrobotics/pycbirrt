@@ -6,6 +6,10 @@ the reference for the `PlanningProblem` API and for anyone adding a new kind
 of set. The TSR-specific entry point, `plan(...)`, is one instantiation of
 this design and is described at the end.
 
+The native C++20 implementation of this design is specified in
+[native-design.md](native-design.md); that document is the boundary the
+native backends must honor and records every place it differs from Python.
+
 ## The problem
 
 Let $\mathcal{Q}$ be the configuration space. A planning problem names
