@@ -151,3 +151,47 @@ class TestReproducibility:
             ik, name = mod.build_ik_solver(model, data, JOINTS, collision, Path("unused"), backend="mujoco", seed=7)
             assert name == "mujoco"
             assert ik._rng.bit_generator.state == np.random.default_rng(7).bit_generator.state
+
+
+class TestRobotModelLimits:
+    """MuJoCo stores an unlimited joint's range as (0, 0); the model must report it as unbounded (#107)."""
+
+    def test_unlimited_joints_report_infinite_limits(self, model_data):
+        from pycbirrt.backends.mujoco import MuJoCoRobotModel
+
+        model, data = model_data
+        lo, hi = MuJoCoRobotModel(model, data, "attachment_site", JOINTS).joint_limits
+        assert (lo[0], hi[0]) == (-1.0, 1.0)
+        assert (lo[2], hi[2]) == (0.0, 0.3)
+        assert lo[1] == -np.inf and hi[1] == np.inf
+        assert lo[3] == -np.inf and hi[3] == np.inf
+
+    def test_planner_requires_a_declaration_for_unlimited_joints(self, model_data):
+        from pycbirrt import CBiRRT, CBiRRTConfig
+        from pycbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoRobotModel
+
+        model, data = model_data
+        robot = MuJoCoRobotModel(model, data, "attachment_site", JOINTS)
+        collision = MuJoCoCollisionChecker(model, data, JOINTS)
+        with pytest.raises(ValueError, match=r"joint 1 has non-finite limits.*angular_joints"):
+            CBiRRT(robot, solver(model_data), collision)
+
+        # The hinge is periodic: declare it angular. The slide is a rail, unbounded but not
+        # periodic, so the caller gives it finite planning limits instead of the angular flag.
+        class WithRailLimits:
+            def __init__(self, base):
+                self.base = base
+
+            dof = property(lambda self: self.base.dof)
+            forward_kinematics = property(lambda self: self.base.forward_kinematics)
+
+            @property
+            def joint_limits(self):
+                lo, hi = (a.copy() for a in self.base.joint_limits)
+                lo[3], hi[3] = -0.5, 0.5
+                return lo, hi
+
+        config = CBiRRTConfig(angular_joints=(False, True, False, False))
+        planner = CBiRRT(WithRailLimits(robot), solver(model_data), collision, config)
+        assert planner.space.angular_joints.tolist() == [False, True, False, False]
+        assert planner.space.joint_limits[0][3] == -0.5

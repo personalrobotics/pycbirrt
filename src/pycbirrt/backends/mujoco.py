@@ -55,9 +55,14 @@ class MuJoCoRobotModel:
 
         self._dof = len(self.joint_ids)
 
-        # Cache joint limits
+        # Cache joint limits. MuJoCo stores an unlimited joint's range as (0, 0);
+        # report it honestly as unbounded so the planner's JointSpace can insist
+        # the caller declare the joint angular or give finite planning limits.
         self._lower = self.model.jnt_range[self.joint_ids, 0].copy()
         self._upper = self.model.jnt_range[self.joint_ids, 1].copy()
+        unlimited = ~self.model.jnt_limited[self.joint_ids].astype(bool)
+        self._lower[unlimited] = -np.inf
+        self._upper[unlimited] = np.inf
 
     @property
     def dof(self) -> int:

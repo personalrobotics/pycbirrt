@@ -6,6 +6,17 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Joint topology is the caller's declaration.** `JointSpace` rejects a
+  non-finite limit on a joint not marked angular ("give finite planning
+  limits or mark it angular"), and an angular joint ignores its stored
+  limits and samples over one full turn. `MuJoCoRobotModel.joint_limits`
+  reports unlimited joints as ±∞ instead of MuJoCo's stored `(0, 0)`, so a
+  model with a continuous joint now fails at `CBiRRT(...)` construction
+  unless `angular_joints` declares it, where before the joint was silently
+  frozen at zero (#107).
+
 ## [1.4.0] - 2026-09-28
 
 The Python reference implementation is frozen. This release adds TSR chains,

@@ -43,6 +43,25 @@ class JointSpace:
             mask = np.asarray(angular_joints, dtype=bool)
             self.angular_joints = mask if mask.any() else None
 
+        # Topology is the caller's declaration, never inferred. A bounded joint
+        # needs finite limits (a sampler needs a bounded domain); an angular
+        # joint has none, and whatever limits were stored for it are ignored.
+        bounded = np.ones(self.dof, dtype=bool) if self.angular_joints is None else ~self.angular_joints
+        finite = np.isfinite(self.lower) & np.isfinite(self.upper)
+        bad = np.flatnonzero(bounded & ~finite)
+        if bad.size:
+            i = int(bad[0])
+            raise ValueError(
+                f"joint {i} has non-finite limits [{self.lower[i]}, {self.upper[i]}]; "
+                f"give finite planning limits or mark it angular (angular_joints)"
+            )
+        # Sampling interval: the limits for bounded joints, one full turn for angular ones.
+        self._sample_lower = self.lower.copy()
+        self._sample_upper = self.upper.copy()
+        if self.angular_joints is not None:
+            self._sample_lower[self.angular_joints] = -np.pi
+            self._sample_upper[self.angular_joints] = np.pi
+
     @property
     def dof(self) -> int:
         return len(self.lower)
@@ -108,8 +127,8 @@ class JointSpace:
         return np.asarray(q_from, dtype=float) + t * self.direction(q_from, q_to)
 
     def sample(self, rng: np.random.Generator) -> np.ndarray:
-        """Uniform sample within the joint limits."""
-        return rng.uniform(self.lower, self.upper)
+        """Uniform sample: within the limits on bounded joints, over one full turn on angular joints."""
+        return rng.uniform(self._sample_lower, self._sample_upper)
 
     def unwrap_path(self, path: list[np.ndarray]) -> list[np.ndarray]:
         """Re-express a path so consecutive raw values on angular joints take the short way.

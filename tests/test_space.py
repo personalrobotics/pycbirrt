@@ -100,3 +100,35 @@ class TestSample:
         a = linear.sample(np.random.default_rng(3))
         b = linear.sample(np.random.default_rng(3))
         assert np.array_equal(a, b)
+
+
+class TestTopologyIsDeclared:
+    """Bounded joints need finite limits; angular joints ignore theirs (#107)."""
+
+    def test_infinite_limit_on_bounded_joint_raises(self):
+        with pytest.raises(ValueError, match=r"joint 1 has non-finite limits.*mark it angular"):
+            JointSpace(np.array([-1.0, -np.inf]), np.array([1.0, np.inf]))
+
+    def test_one_infinite_side_is_enough_to_raise(self):
+        with pytest.raises(ValueError, match="joint 0"):
+            JointSpace(np.array([-1.0]), np.array([np.inf]))
+
+    def test_infinite_limits_accepted_when_angular(self):
+        s = JointSpace(np.array([-np.inf, -1.0]), np.array([np.inf, 1.0]), angular_joints=(True, False))
+        assert s.contains(np.array([100.0, 0.0]))
+        assert not s.contains(np.array([0.0, 2.0]))
+
+    @pytest.mark.parametrize("stored", [(-np.inf, np.inf), (0.0, 0.0), (-2 * np.pi, 2 * np.pi)])
+    def test_angular_joint_samples_one_full_turn_whatever_was_stored(self, stored):
+        s = JointSpace(np.array([stored[0], -1.0]), np.array([stored[1], 1.0]), angular_joints=(True, False))
+        rng = np.random.default_rng(0)
+        draws = np.array([s.sample(rng) for _ in range(500)])
+        assert np.all(np.isfinite(draws))
+        assert np.all((draws[:, 0] >= -np.pi) & (draws[:, 0] < np.pi))
+        assert np.all((draws[:, 1] >= -1.0) & (draws[:, 1] <= 1.0))
+        assert draws[:, 0].min() < -2.5 and draws[:, 0].max() > 2.5  # covers the turn, not a point
+
+    def test_bounded_joint_sampling_unchanged(self):
+        a = JointSpace(np.array([-1.0, -2.0]), np.array([1.0, 2.0])).sample(np.random.default_rng(7))
+        b = np.random.default_rng(7).uniform([-1.0, -2.0], [1.0, 2.0])
+        assert np.array_equal(a, b)
