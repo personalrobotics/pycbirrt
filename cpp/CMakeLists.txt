@@ -14,6 +14,7 @@ option(SSCBIRRT_BUILD_PYTHON "Build the pycbirrt._native pybind11 module (the wh
 option(SSCBIRRT_SANITIZE "Build core and tests with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 
 # The core depends on the C++20 standard library and nothing else (design: dependency boundary).
+include(GNUInstallDirs)
 add_library(sscbirrt_core STATIC
   src/space.cpp
   src/sets.cpp
@@ -23,15 +24,39 @@ add_library(sscbirrt_core STATIC
 add_library(sscbirrt::core ALIAS sscbirrt_core)
 target_include_directories(sscbirrt_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_compile_features(sscbirrt_core PUBLIC cxx_std_20)
 target_compile_options(sscbirrt_core PRIVATE -Wall -Wextra -Wpedantic -Werror)
-set_target_properties(sscbirrt_core PROPERTIES POSITION_INDEPENDENT_CODE ON OUTPUT_NAME sscbirrt)
+set_target_properties(sscbirrt_core PROPERTIES POSITION_INDEPENDENT_CODE ON OUTPUT_NAME sscbirrt EXPORT_NAME core)
 
 if(SSCBIRRT_SANITIZE)
   set(SSCBIRRT_SANITIZE_FLAGS -fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=undefined)
   target_compile_options(sscbirrt_core PUBLIC ${SSCBIRRT_SANITIZE_FLAGS})
   target_link_options(sscbirrt_core PUBLIC ${SSCBIRRT_SANITIZE_FLAGS})
+endif()
+
+# Install and export the package so a downstream C++ project can
+#   find_package(sscbirrt REQUIRED)
+#   target_link_libraries(app PRIVATE sscbirrt::core)
+# examples/consumer/ is that project, built against the installed package in CI. Toggle with -DSSCBIRRT_INSTALL=OFF.
+option(SSCBIRRT_INSTALL "Install headers, the library, and the sscbirrt CMake package" ON)
+if(SSCBIRRT_INSTALL)
+  include(GNUInstallDirs)
+  include(CMakePackageConfigHelpers)
+  install(DIRECTORY include/sscbirrt DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  install(TARGETS sscbirrt_core EXPORT sscbirrtTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  install(EXPORT sscbirrtTargets NAMESPACE sscbirrt:: FILE sscbirrtTargets.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/sscbirrt)
+  configure_package_config_file(cmake/sscbirrtConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/sscbirrtConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/sscbirrt)
+  write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/sscbirrtConfigVersion.cmake
+    VERSION ${PROJECT_VERSION} COMPATIBILITY SameMajorVersion)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sscbirrtConfig.cmake ${CMAKE_CURRENT_BINARY_DIR}/sscbirrtConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/sscbirrt)
 endif()
 
 if(SSCBIRRT_BUILD_TESTS)

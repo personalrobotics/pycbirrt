@@ -1,5 +1,6 @@
 {
- "artifact": "pycbirrt Python reference behavior",
+ "artifact": "pycbirrt python behavior on the reference matrix",
+ "backend": "python",
  "cases": [
   {
    "description": "one fixed start, one fixed goal, no constraint",
@@ -1170,7 +1171,7 @@
    }
   },
   {
-   "description": "a one-nanosecond timeout: the first deadline check reports a timeout before any iteration",
+   "description": "a one-nanosecond timeout with a wall between start and goal: the deadline reports a timeout",
    "failure_category": "timeout",
    "goal_source": [],
    "iterations": 0,
@@ -1178,7 +1179,8 @@
    "path": null,
    "seed": 9,
    "spec": {
-    "timeout": 1e-09
+    "timeout": 1e-09,
+    "validator": "Wall(q0 in (0.45, 0.55))"
    },
    "start_source": [],
    "status": "failure",

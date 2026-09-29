@@ -64,8 +64,46 @@ jobs:
       - name: Test
         run: ctest --test-dir build/cpp --output-on-failure
 
+  cpp-consumer:
+    name: C++ consumer (installed package)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install, then build and run the standalone consumer against the installed package
+        run: cpp/examples/consumer/smoke.sh "$RUNNER_TEMP/sscbirrt"
+
+  package:
+    name: Wheel and sdist in clean environments
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Build the wheel and the sdist
+        run: uv build
+      - name: Install the wheel into a fresh environment and plan natively
+        run: |
+          uv venv --python 3.12 "$RUNNER_TEMP/wheel-env"
+          uv pip install --python "$RUNNER_TEMP/wheel-env/bin/python" dist/*.whl
+          "$RUNNER_TEMP/wheel-env/bin/python" -c "
+          import numpy as np
+          from pycbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem
+          from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK
+          p = CBiRRT(PlanarArm(), PlanarIK(), NoCollision(), CBiRRTConfig(step_size=0.2), backend='native')
+          f = lambda qs: FiniteSet(qs, tolerance=1e-3, metric=p.space.distance)
+          r = p.solve(PlanningProblem(space=p.space, start=f([np.zeros(2)]), goal=f([np.array([1.0, 0.5])]), validator=p.collision), seed=0)
+          assert r.success and r.backend == 'native', r
+          print('wheel ok:', len(r.path), 'waypoints natively')
+          "
+      - name: Install the sdist into a fresh environment (compiles from source)
+        run: |
+          uv venv --python 3.12 "$RUNNER_TEMP/sdist-env"
+          uv pip install --python "$RUNNER_TEMP/sdist-env/bin/python" dist/*.tar.gz
+          "$RUNNER_TEMP/sdist-env/bin/python" -c "import pycbirrt._native; print('sdist ok')"
+
   notify-robot-code:
-    needs: [test, cpp]
+    needs: [test, cpp, cpp-consumer, package]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:

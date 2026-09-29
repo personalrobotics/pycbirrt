@@ -690,7 +690,7 @@ as #85 requires). Warnings are `-Wall -Wextra -Wpedantic -Werror` on the
 core and tests.
 
 The wheel is built by scikit-build-core driving this CMake project with
-`SSCBIRRT_BUILD_PYTHON=ON`, replacing the current setuptools backend. ssik
+`SSCBIRRT_BUILD_PYTHON=ON`, which replaced the setuptools backend in v1.5.0. ssik
 builds its extension from a hatchling hook instead; the difference here is
 that the C++ package must be installable and consumable on its own (#85's
 consumer criterion), so CMake is the primary build and the wheel reuses it

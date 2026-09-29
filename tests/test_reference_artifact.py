@@ -94,3 +94,14 @@ def test_regeneration_is_deterministic(tool):
 def test_check_mode_passes(tool, capsys):
     assert tool.main(["--check"]) == 0
     assert "semantics match" in capsys.readouterr().out
+
+
+def test_native_backend_matches_the_artifact(tool):
+    pytest.importorskip("pycbirrt._native")
+    native = tool.generate("native")
+    supported = [c["name"] for c in native["cases"] if c["status"] != "unsupported"]
+    assert {"fixed_to_fixed", "multiple_roots", "wrapped_seam", "timeout", "cancellation", "unreachable"} <= set(
+        supported
+    )
+    assert tool.parity_mismatches(json.loads(ARTIFACT.read_text()), native) == []
+    assert tool.main(["--check", "--backend", "native"]) == 0

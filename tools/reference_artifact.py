@@ -41,7 +41,7 @@ import numpy as np
 from tsr import TSR, TSRChain
 
 from pycbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
-from pycbirrt.sets import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PredicateSet
+from pycbirrt.sets import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PredicateSet, seeds
 from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall
 from pycbirrt.tsr_set import TSRConfigurationSet, tsr_weights
 
@@ -259,21 +259,23 @@ def cases() -> list[dict[str, Any]]:
         p,
     )
 
-    # 10. timeout
-    cfg = CBiRRTConfig(**{**base, "timeout": 1e-9})  # smallest positive: the first deadline check fires
-    p = _planner(cfg)
+    # 10. timeout: the smallest positive timeout, on a problem no single iteration can solve, so the
+    # outcome does not depend on the clock's resolution (a coarse clock may let one iteration run)
+    cfg = CBiRRTConfig(**{**base, "timeout": 1e-9})
+    timeout_wall = Wall(axis=0, lo=0.45, hi=0.55)
+    p = _planner(cfg, timeout_wall)
     add(
         "timeout",
-        "a one-nanosecond timeout: the first deadline check reports a timeout before any iteration",
+        "a one-nanosecond timeout with a wall between start and goal: the deadline reports a timeout",
         9,
         cfg,
         PlanningProblem(
             space=p.space,
             start=_finite(p, [np.zeros(2)]),
-            goal=_finite(p, [np.array([1.0, 0.5])]),
-            validator=p.collision,
+            goal=_finite(p, [np.array([1.0, 0.0])]),
+            validator=timeout_wall,
         ),
-        {"timeout": 1e-9},
+        {"timeout": 1e-9, "validator": "Wall(q0 in (0.45, 0.55))"},
         p,
     )
 
@@ -381,9 +383,32 @@ def versions() -> dict[str, str]:
     }
 
 
-def run_case(case: dict[str, Any]) -> dict[str, Any]:
+def run_case(case: dict[str, Any], backend: str = "python") -> dict[str, Any]:
+    """Run one case. With backend="native", a case the native core cannot lower is recorded as unsupported."""
     planner: CBiRRT = case["planner"]
-    result = planner.solve(case["problem"], seed=case["seed"])
+    if backend == "native":
+        from pycbirrt.backends import native
+
+        try:
+            lowered = native.lower(case["problem"], case["config"])
+        except native.NativeUnsupported as e:
+            return {
+                "name": case["name"],
+                "description": case["description"],
+                "seed": case["seed"],
+                "spec": case["spec"],
+                "status": "unsupported",
+                "failure_category": None,
+                "start_source": [],
+                "goal_source": [],
+                "iterations": 0,
+                "path": None,
+                "validation": None,
+                "unsupported_reasons": list(e.reasons),
+            }
+        result = native.solve(lowered, case["seed"], case["config"].abort_fn)
+    else:
+        result = planner.solve(case["problem"], seed=case["seed"])
     record = {
         "name": case["name"],
         "description": case["description"],
@@ -400,13 +425,42 @@ def run_case(case: dict[str, Any]) -> dict[str, Any]:
     return record
 
 
-def generate() -> dict[str, Any]:
+def generate(backend: str = "python") -> dict[str, Any]:
     return {
-        "artifact": "pycbirrt Python reference behavior",
+        "artifact": f"pycbirrt {backend} behavior on the reference matrix",
         "issue": "https://github.com/personalrobotics/pycbirrt/issues/94",
+        "backend": backend,
         "versions": versions(),
-        "cases": [run_case(c) for c in cases()],
+        "cases": [run_case(c, backend) for c in cases()],
     }
+
+
+def uniquely_rooted(case_name: str) -> bool:
+    """Whether both roles of the named case have exactly one admissible root, so provenance is comparable."""
+    for c in cases():
+        if c["name"] == case_name:
+            return len(seeds(c["problem"].start)) == 1 and len(seeds(c["problem"].goal)) == 1
+    raise KeyError(case_name)
+
+
+def parity_mismatches(python_artifact: dict[str, Any], native_artifact: dict[str, Any]) -> list[str]:
+    """Where a native run disagrees with the Python artifact on the semantic view, for the cases native supports.
+
+    Provenance is compared only where the reached root is unique (docs/native-design.md, parity note).
+    """
+    by_name = {c["name"]: c for c in semantic_view(python_artifact)}
+    out = []
+    for nat in semantic_view(native_artifact):
+        if nat["status"] == "unsupported":
+            continue
+        py = by_name[nat["name"]]
+        keys = ["status", "failure_category", "validation"]
+        if uniquely_rooted(nat["name"]):
+            keys += ["start_source", "goal_source"]
+        for k in keys:
+            if nat[k] != py[k]:
+                out.append(f"{nat['name']}.{k}: python={py[k]!r} native={nat[k]!r}")
+    return out
 
 
 def semantic_view(artifact: dict[str, Any]) -> list[dict[str, Any]]:
@@ -426,9 +480,26 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--check", action="store_true", help="compare a fresh run's semantics with the stored artifact")
     parser.add_argument("--output", type=Path, default=ARTIFACT)
+    parser.add_argument(
+        "--backend",
+        choices=["python", "native"],
+        default="python",
+        help="which implementation to run; with --check, native is compared with the stored Python artifact",
+    )
     args = parser.parse_args(argv)
 
-    fresh = generate()
+    fresh = generate(args.backend)
+    if args.check and args.backend == "native":
+        stored = json.loads(ARTIFACT.read_text())
+        mismatches = parity_mismatches(stored, fresh)
+        supported = [c["name"] for c in fresh["cases"] if c["status"] != "unsupported"]
+        if mismatches:
+            print("PARITY MISMATCH between the native core and the Python artifact:", file=sys.stderr)
+            for m in mismatches:
+                print(f"  {m}", file=sys.stderr)
+            return 1
+        print(f"native matches the Python artifact on {len(supported)} supported cases: {', '.join(supported)}")
+        return 0
     if args.check:
         stored = json.loads(args.output.read_text())
         if semantic_view(stored) != semantic_view(fresh):
