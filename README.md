@@ -243,8 +243,9 @@ problem.motion_validator = RestrictedMotionValidator(base, accepts=lambda a, b: 
 ```
 
 See [docs/design.md](docs/design.md) for the definitions, the composition
-rules, what the planner requires of each role, and how `plan(...)` lowers
-into this representation.
+rules, what the planner requires of each role, how `plan(...)` lowers into
+this representation, and the reference behavior artifact that pins the
+planner's semantics (`python tools/reference_artifact.py --check`).
 
 ## Interfaces
 

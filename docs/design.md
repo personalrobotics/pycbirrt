@@ -230,6 +230,32 @@ Membership tolerance belongs to the concrete set; the legacy lowering copies
 the config value into the sets it builds. `tsr_tolerance` is a deprecated
 alias that sets membership and connection tolerances together.
 
+## The reference artifact
+
+`tools/reference_artifact.py` runs a fixed matrix of problems on the planar
+reference arm (`pycbirrt.testing`) with fixed seeds and writes
+`tests/reference/python_reference.json`: per case, the problem as data, the
+seed, the implementation versions, the result (status, failure category,
+provenance, iterations, path), and an **independent** validation report
+computed from the problem alone: every waypoint in the space, the first in
+the declared start set, the last in the declared goal set, every waypoint
+admissible, every consecutive pair validated at `edge_resolution` along
+the space's direction, and raw steps within one step size (the angular
+output rule above). The matrix covers fixed endpoints, multiple roots, a
+nested finite goal, a wrapped joint across the seam, rejection-only and
+projected path constraints, a TSR union goal, a TSR chain goal, an `AllOf`
+constraint with the named strategy, timeout, cancellation, and an
+unreachable problem.
+
+The semantic oracle is the status, category, provenance, and validation
+report; endpoints are compared as configurations under the space metric,
+never as arrays. Paths and iteration counts are recorded for inspection and
+not compared, so the artifact is stable across platforms while behavior is
+pinned. `tests/test_reference_artifact.py` regenerates it and fails on any
+semantic change; `--check` also reports whether the regeneration is
+bit-for-bit on the same versions. This artifact is the definition of
+"compatible with the Python reference" for the native backends.
+
 ## The TSR instantiation
 
 `plan(start, goal, goal_tsrs, start_tsrs, constraint_tsrs)` lowers its
