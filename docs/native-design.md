@@ -626,6 +626,14 @@ lowered = lower(problem, config)       # PlanningProblem + CBiRRTConfig -> nativ
 planner = CBiRRT(robot, ik, collision, config, backend="native")   # "python" (default) | "native" | "auto"
 ```
 
+A note for the parity gate (#92): provenance is a property of the draws
+when a role has more than one admissible root, so the two backends compare
+it only where the reached root is unique; otherwise the check is that the
+reported provenance names one of the admissible roots and matches the
+path's endpoint. The artifact's `nested_finite_goal` case is the example:
+Python's seed reaches the near member, a native seed may reach the far one,
+and both are correct.
+
 `lower` walks the Python problem and maps each component:
 
 | Python | Native | Otherwise |

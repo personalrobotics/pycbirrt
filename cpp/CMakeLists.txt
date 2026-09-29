@@ -15,7 +15,10 @@ option(SSCBIRRT_SANITIZE "Build core and tests with AddressSanitizer and Undefin
 # The core depends on the C++20 standard library and nothing else (design: dependency boundary).
 add_library(sscbirrt_core STATIC
   src/space.cpp
-  src/sets.cpp)
+  src/sets.cpp
+  src/motion.cpp
+  src/config.cpp
+  src/planner.cpp)
 add_library(sscbirrt::core ALIAS sscbirrt_core)
 target_include_directories(sscbirrt_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -40,4 +43,6 @@ if(SSCBIRRT_BUILD_TESTS)
   endfunction()
   sscbirrt_test(test_space)
   sscbirrt_test(test_sets)
+  sscbirrt_test(test_motion)
+  sscbirrt_test(test_planner)
 endif()
