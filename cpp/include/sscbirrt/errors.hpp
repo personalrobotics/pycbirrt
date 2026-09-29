@@ -11,19 +11,19 @@ namespace sscbirrt {
 // Per-role account of root collection; carried by the result and by NoRoots.
 struct RootReport {
   int explicit_candidates = 0;  // from seeds()
-  int explicit_rejected = 0;
-  int draws = 0;
-  int draws_empty = 0;  // a draw that produced no candidate ("IK unreachable" in Python's summary)
-  int outside_space = 0;
+  int explicit_rejected = 0;    // of those, how many were inadmissible
+  int draws = 0;                // sampling draws made
+  int draws_empty = 0;          // draws that produced no candidate ("IK unreachable" in Python's summary)
+  int outside_space = 0;        // rejections by reason, explicit and sampled together
   int in_collision = 0;
   int constraint_violated = 0;
   int roots = 0;
   std::vector<std::string> details;  // one line per explicit rejection, as Python logs them
 
-  int rejections() const { return explicit_rejected + outside_space + in_collision + constraint_violated; }
-  // Every rejection was the validator's (Python's All...InCollision rather than All...Invalid).
-  bool only_collisions() const { return rejections() > 0 && in_collision == rejections(); }
-  std::string summary() const;
+  int rejections() const { return draws_empty + outside_space + in_collision + constraint_violated; }
+  // Every rejection was the validator's: Python raises All...InCollision rather than All...Invalid.
+  bool only_collisions() const { return in_collision > 0 && in_collision == rejections(); }
+  std::string summary() const;  // Python's sampling summary, e.g. "2 IK unreachable, 3 in collision"
 };
 
 // A set asked for a capability it lacks, or a start/goal set that is neither finite nor sampleable.
