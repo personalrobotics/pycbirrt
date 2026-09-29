@@ -62,7 +62,8 @@ TEST(construction_rejects_what_sstsr_rejects) {
 
 TEST(containment_distance_and_closest_transform) {
   TSR t(frame(1.0, 2.0, 0.0, 0, 0, 0.5), frame(0.1, 0, 0), kBox);
-  const Transform inside = t.sample(*new Rng(3));  // a sample is contained
+  Rng rng(3);
+  const Transform inside = t.sample(rng);  // a sample is contained
   CHECK(t.contains(inside));
   CHECK_NEAR(t.distance(inside), 0.0, 1e-12);
   // Move 0.3 m out along the region's x: distance is the translation excess beyond the box

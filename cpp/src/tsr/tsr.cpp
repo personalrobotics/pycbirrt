@@ -88,7 +88,7 @@ std::pair<std::array<bool, 3>, std::optional<Rpy>> TSR::rot_within_rpy_bounds(co
     return {check, std::nullopt};
   }
   const double lo_r = cont_.lo(3), hi_r = cont_.hi(3), lo_y = cont_.lo(5), hi_y = cont_.hi(5);
-  std::array<Rpy, 4> corners;
+  std::array<Rpy, 4> corners{};
   if (r20 < 0) {
     const double off = std::atan2(L.at(0, 1), L.at(0, 2));
     corners = {Rpy{lo_y + off, kPi / 2, lo_y}, Rpy{hi_y + off, kPi / 2, hi_y}, Rpy{lo_r, kPi / 2, lo_r - off},
