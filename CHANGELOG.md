@@ -6,6 +6,16 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-28
+
+The Python reference implementation is frozen. This release adds TSR chains,
+moves to sstsr 3.1, fixes the returned path on angular joints, adds the
+constrained-transport example, and records the deterministic reference
+artifact that the native backends in v1.5 through v2.0 must reproduce.
+`plan(...)` and the set model are unchanged; the minor bump is for the
+additive `PoseRegion` protocol, `pycbirrt.testing`, and the sstsr
+requirement.
+
 ### Added
 
 - **TSR chains.** `TSRConfigurationSet` accepts a `tsr.TSRChain` as well as a
@@ -294,6 +304,7 @@ semantics; every 1.0.0 test passes unchanged.
 Initial release: CBiRRT with TSR start, goal, and path constraints; MuJoCo
 and EAIK backends; planar arm and UR5e examples.
 
+[1.4.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.0.0...v1.1.0
