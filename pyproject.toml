@@ -13,7 +13,7 @@ maintainers = [
 ]
 dependencies = [
     "numpy>=1.24",
-    "sstsr>=3.1,<4",  # import as `tsr`; 2.0.1+ seeds sampling, 2.1+ has closest_transform
+    "sstsr>=3.1,<4",  # import as `tsr`; 3.1 has the seeded sampler, closest_transform, and TSRChain as a pose region
 ]
 
 [project.optional-dependencies]

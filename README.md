@@ -21,12 +21,15 @@ Most planners ask: "Can you reach this exact pose?" But manipulation tasks are r
 ## Installation
 
 ```bash
-# Install TSR dependency (not on PyPI)
-uv pip install sstsr   # Task Space Regions; imported as `tsr`
-
-# Install pycbirrt with all backends
+# From a checkout: every backend, the example dependencies, and the dev tools
 uv pip install -e ".[all]"
+
+# Or choose extras: mujoco, ssik (recommended IK), examples (matplotlib, mediapy)
+uv pip install -e ".[mujoco,ssik]"
 ```
+
+`numpy` and `sstsr` (Task Space Regions, imported as `tsr`) are installed as
+dependencies.
 
 ## Quick Start
 
@@ -77,6 +80,10 @@ if result.success:
     result.planning_time   # wall-clock seconds
     result.iterations      # RRT iterations used
     result.tree_sizes      # (start_tree_nodes, goal_tree_nodes)
+    result.goal_source     # provenance through the goal set expression (see docs/design.md)
+    result.start_source
+else:
+    result.failure_reason  # e.g. "timeout", "max_iterations", "aborted"
 ```
 
 Indices work for any input type — config lists, TSR lists, or single values (always 0).
@@ -138,16 +145,28 @@ path = planner.plan(start, goal_tsrs=[top_grasp_tsr, side_grasp_tsr])
 
 TSRs are sampled proportionally to their volume, so larger regions (more flexibility) get explored more.
 
+### TSR Chains
+
+A chain couples several TSRs in series (a handle on a swinging door) and
+defines one region of end-effector poses. It goes anywhere a TSR goes:
+
+```python
+from tsr import TSRChain
+
+door = TSRChain(TSRs=[hinge_tsr, handle_tsr])
+path = planner.plan(start_config, goal_tsrs=[door])
+```
+
+For chains of two or more TSRs, membership and projection use sstsr's
+numerical inverse: each check costs a few milliseconds and can be a false
+negative on a hard chain. A chain as a goal is cheap; a chain as a path
+constraint pays that on every edge sample.
+
 ### Multiple Discrete Configurations
 
 You can also provide lists of configurations:
 
 ```python
-# A TSR chain (a handle on a swinging door) is one region, usable anywhere a TSR is
-from tsr import TSRChain
-door = TSRChain(TSRs=[hinge_tsr, handle_tsr])
-path = planner.plan(start_config, goal_tsrs=[door])
-
 # Start from any of several home positions
 path = planner.plan(start=[home1, home2, home3], goal_tsrs=[grasp_tsr])
 
@@ -170,30 +189,55 @@ from pycbirrt import CBiRRTConfig
 
 config = CBiRRTConfig(
     # Termination
-    timeout=30.0,              # Wall-clock seconds
-    max_iterations=100000,     # Safety limit
-    tsr_tolerance=1e-3,        # Distance for TSR satisfaction
+    timeout=30.0,                       # Wall-clock seconds
+    max_iterations=100000,              # Safety limit
+    abort_fn=None,                      # Callable returning True to stop early
+
+    # Tolerances
+    membership_tolerance=1e-3,          # TSR distance at which a configuration is in the set
+    connection_tolerance=1e-3,          # Joint-space distance at which growth has reached its target
+    edge_resolution=None,               # Spacing of validity checks along an edge; None = step_size
+    progress_tolerance=1e-6,            # Growth stops when it gains less than this per step
+    projection_progress_tolerance=1e-6, # Projection gives up when the violation shrinks less than this
 
     # Tree growth
-    step_size=0.1,             # Max joint-space step per iteration
-    goal_bias=0.1,             # Probability of sampling from goal TSR
-    start_bias=0.1,            # Probability of sampling from start TSR
+    step_size=0.1,                      # Max joint-space step per iteration
+    goal_bias=0.1,                      # Probability of sampling from goal TSR
+    start_bias=0.1,                     # Probability of sampling from start TSR
+    max_projection_iters=50,            # Iterations to project onto the constraint manifold
 
     # TSR sampling
-    tsr_samples=100,           # Pose samples to try from each TSR
-    num_tree_roots=100,        # Target root configs to seed each tree
-    max_ik_per_pose=3,         # IK solutions per pose (for diversity)
+    tsr_samples=100,                    # Pose samples to try from each TSR
+    num_tree_roots=100,                 # Target root configs to seed each tree
+    max_ik_per_pose=3,                  # IK solutions per pose (for diversity)
 
     # Extension behavior (None = connect until blocked)
-    extend_steps=None,         # Steps toward random sample
-    connect_steps=None,        # Steps toward other tree
+    extend_steps=None,                  # Steps toward random sample
+    connect_steps=None,                 # Steps toward other tree
 
     # Smoothing
     smooth_path=True,
-    smoothing_iterations=50,   # Max attempts
-    smoothing_patience=15,     # Stop early if no improvement
+    smoothing_iterations=50,            # Max attempts
+    smoothing_patience=15,              # Stop early if no improvement
+
+    # Joints with no limits (see below); None = every joint is bounded
+    angular_joints=None,
 )
 ```
+
+`tsr_tolerance` is a deprecated alias that sets both `membership_tolerance`
+and `connection_tolerance` and warns.
+
+### Angular Joints
+
+Mark a joint angular only if it has **no limits**. Its distance then wraps at
+2π and the planner may join the trees across the seam. Joints with limits
+wider than one turn, such as the UR5e's ±2π joints, are not angular: their
+windings are distinct configurations and the planner respects the limits.
+Returned paths are unwrapped forward from the start, so on an angular joint
+consecutive waypoints never differ by more than a step and an executor can
+interpolate them directly. The goal may therefore be re-expressed by a
+multiple of 2π.
 
 ### Planning Variants
 
@@ -346,16 +390,26 @@ will be removed, with the `eaik` extra, in pycbirrt 2.0. Use SSIK.
 ## Examples
 
 ```bash
-# 2-DOF planar arm visualization
+uv pip install -e ".[examples]"         # matplotlib and mediapy for plots and video
+
+# 2-DOF planar arm (numpy and sstsr only)
 python examples/planar_arm.py           # All examples
 python examples/planar_arm.py -e 1      # Basic planning
 python examples/planar_arm.py -e 2      # Start/goal TSRs
 python examples/planar_arm.py -e 3      # Constrained planning
+python examples/multi_config_demo.py    # Several start and goal configurations
 
-# UR5e with Robotiq gripper (requires MuJoCo)
-python examples/tsr_union_demo.py       # Multiple grasp approaches
-python examples/ur5e_transport.py       # Constrained transport: gripper kept pointing down
+# UR5e with Robotiq gripper (requires MuJoCo and the MuJoCo Menagerie)
+git clone https://github.com/google-deepmind/mujoco_menagerie.git
+export MUJOCO_MENAGERIE_PATH=$PWD/mujoco_menagerie
+python examples/ur5e_mujoco.py --no-viz         # Grasp planning with a TSR goal
+python examples/tsr_union_demo.py               # Multiple grasp approaches, rendered to video
+python examples/ur5e_transport.py --no-viz      # Constrained transport: gripper kept pointing down
 ```
+
+The UR5e examples accept `--ik {auto,ssik,mujoco}` and `--seed N`; SSIK is
+used when installed, otherwise MuJoCo differential IK. Interactive viewing on
+macOS needs `mjpython`.
 
 ## References
 
