@@ -784,3 +784,340 @@ identical; otherwise the difference and its reason are stated.
 4. **`PredicateSet` in the binding.** Excluded in v1.5.0 to honor the
    no-callback rule. A later release could allow it with the GIL held and a
    documented cost.
+
+---
+
+# v1.6.0 addendum: native pose regions and IK-lifted sets
+
+This section extends the contract above to TSR planning without Python in
+the loop (#87, #90, #91). The rules of the first part hold unchanged; the
+Python `TSRConfigurationSet` (`tsr_set.py`) and sstsr 3.1 are the reference,
+and the same principle applies: one contract, two implementations, with any
+rule the reference needed sharpened changed in Python first.
+
+## Scope
+
+- A native **pose region** for a single `tsr.TSR`: frames `T0_w` and `Tw_e`,
+  six bounded local coordinates, containment, closed-form distance, closest
+  world-frame transform, and seeded sampling, each conforming to sstsr.
+- Native **kinematics interfaces**: forward kinematics and inverse
+  kinematics as abstract types in the core, so any implementation can lift
+  a pose region.
+- A native **`TSRConfigurationSet`** over those interfaces with all four
+  capabilities, copied rule for rule from the Python set.
+- An **SSIK adapter** implementing the interfaces through ssik's header-only
+  C++ family solvers, for the families pycbirrt has verified. v1.6.0 verifies
+  one: `ikgeo.three_parallel`, the UR family.
+- **Lowering** of a Python `TSRConfigurationSet` whose region is a `TSR` and
+  whose IK is an `SSIKSolver` wrapping an `ssik.Manipulator` of a verified
+  family, with every other combination reported as unsupported.
+
+Not in v1.6.0: TSR chains (they use sstsr's bounded numerical inverse and
+stay Python), other IK backends, collision checkers (MuJoCo is v1.7.0, so the
+v1.6.0 corpus uses the native validators of v1.5.0), and treating a list of
+TSRs as anything but what the Python expression says.
+
+## Targets and dependency boundary
+
+```
+pycbirrt._native ──► sscbirrt::ssik ──► sscbirrt::tsr ──► sscbirrt::core
+                          │
+                          └──► ssik::ssik_cpp (header-only) ──► Eigen3
+```
+
+| Target | Depends on | Contents |
+|---|---|---|
+| `sscbirrt::core` | standard library | as before, plus the `ForwardKinematics` and `IKSolver` interfaces and a `Transform` type |
+| `sscbirrt::tsr` | `sscbirrt::core` | `PoseRegion`, `TSR`, `TSRConfigurationSet`, volume weighting |
+| `sscbirrt::ssik` | `sscbirrt::tsr`, `ssik::ssik_cpp`, `Eigen3::Eigen` | `SSIKArm`: kinematics and IK through ssik's family solvers |
+
+`core` and `tsr` stay standard-library only. The decision recorded in the
+first part, core without Eigen, therefore extends to the pose-region
+runtime: a 4x4 transform is `std::array<double, 16>` (row-major) with the
+handful of operations the TSR math needs (multiply, inverse of a rigid
+transform, RPY conversions). Eigen enters only in `sscbirrt::ssik`, where
+ssik's headers require it, and is converted at that boundary. The reason is
+the same as before: a C++ consumer of the planner and of TSRs should not
+inherit Eigen unless it uses SSIK.
+
+`sscbirrt::ssik` is optional at build time (`SSCBIRRT_WITH_SSIK`, default
+ON when `ssik_cpp` and Eigen are found, else OFF with a status message). A
+build without it still plans natively for everything v1.5.0 supports and
+reports TSR problems as unsupported with the reason "built without SSIK
+support". The ssik wheel does not ship its headers today; the request to do
+so and to expose their location to CMake is personalrobotics/ssik#641. Until
+it lands, the wheel build finds the headers through `SSCBIRRT_SSIK_CPP_DIR`
+or `CMAKE_PREFIX_PATH`, and CI builds them from a pinned ssik checkout. This
+is a decision for review: the alternative is vendoring the headers into
+`cpp/third_party/`, which duplicates about twenty files and their
+correctness history.
+
+## Transform and kinematics interfaces (core)
+
+```cpp
+namespace sscbirrt {
+
+struct Transform {                      // 4x4 homogeneous, row-major
+  std::array<double, 16> m;
+  static Transform identity();
+  Transform operator*(const Transform&) const;
+  Transform inverse_rigid() const;      // transpose the rotation, negate-rotate the translation
+  double at(int r, int c) const;
+};
+
+class ForwardKinematics {
+ public:
+  virtual ~ForwardKinematics() = default;
+  virtual int dof() const = 0;
+  virtual Transform fk(ConfigView q) const = 0;   // end-effector pose in the planner's frames
+};
+
+class IKSolver {
+ public:
+  virtual ~IKSolver() = default;
+  virtual int dof() const = 0;
+  // Every solution, unfiltered, as the Python IKSolver protocol: no collision, no cap. seed may be empty.
+  virtual std::vector<Config> solve(const Transform& pose, ConfigView seed) const = 0;
+};
+
+}  // namespace sscbirrt
+```
+
+These mirror `RobotModel.forward_kinematics` and `IKSolver.solve`. Joint
+limits are not part of `ForwardKinematics`; the space owns them, as in
+Python. An implementation must be `const` and safe to call repeatedly from
+one thread.
+
+## Pose region (tsr)
+
+```cpp
+namespace sscbirrt::tsr {
+
+struct Bounds6 { std::array<std::array<double, 2>, 6> rows; };   // [lo, hi] for x y z roll pitch yaw
+
+class TSR {
+ public:
+  TSR(Transform T0_w, Transform Tw_e, Bounds6 Bw);     // throws std::invalid_argument
+  bool contains(const Transform& T) const;
+  double distance(const Transform& T) const;            // 0 if contained; else Berenson 2011 Sec. 4.2, rotation weight 1
+  std::pair<double, Transform> closest_transform(const Transform& T) const;
+  Transform sample(Rng& rng) const;                    // six unit draws, in order x y z roll pitch yaw
+  double volume() const;                                // sum of widths, rotational widths clamped to one turn
+  const Bounds6& continuous_bounds() const;             // sstsr's _Bw_cont
+};
+
+}  // namespace sscbirrt::tsr
+```
+
+Every rule is sstsr 3.1's, stated here so the C++ can be checked against
+the text as well as against the differential corpus:
+
+- **Construction.** `T0_w` and `Tw_e` must be finite with a valid rotation
+  block (orthonormal within 1e-6, determinant positive) and a last row
+  `0 0 0 1`; `Bw` must be finite with `lo <= hi` on the three translations.
+  Rotational rows may have `hi < lo`: that is an outer interval wrapping
+  through $\pm\pi$, and its width is $2\pi + (hi - lo)$. Widths are clamped
+  to $2\pi$. The continuous bounds wrap each rotational `lo` into
+  $[-\pi, \pi)$ and set `hi = lo + width`. sstsr accepts non-finite frames
+  and NaN bounds silently; native rejects them at construction (#87's
+  ingress rule), and the Python `TSR` gains the same checks in the same
+  release, so the reference stays ahead of the contract.
+- **Frames.** For a world-frame end-effector pose `T`, the local pose is
+  `Tw_s' = inv(T0_w) · T · inv(Tw_e)`; its translation and rotation are
+  tested against the continuous bounds.
+- **RPY convention.** `rpy_to_rot` is Z-Y-X (yaw about z, then pitch about
+  y, then roll about x), exactly the nine-entry formula in sstsr.
+  `rot_to_rpy` takes `pitch = -asin(R[2,0])` off the gimbal lock and the
+  two coupled branches at `|R[2,0]| = 1` with yaw fixed to 0, with the
+  gimbal test `| |R[2,0]| - 1 | < 1e-9` and `R[2,0]` clipped to $[-1, 1]$.
+- **Containment.** Translation within bounds with sstsr's `EPSILON`
+  slack on both sides. Rotation: off the singularity, both pitch solutions
+  `p` and `pi - p` are tried and the first whose RPY passes is accepted;
+  at the singularity the four corner combinations of the coupled roll and
+  yaw bounds are tried, and pitch outside the bounds fails immediately.
+  Each RPY is wrapped into the continuous interval starting `EPSILON` below
+  the lower bound before the test, and an outer interval (`lo > hi +
+  EPSILON`) accepts either side.
+- **Distance.** If contained, zero. Otherwise the displacement of Section
+  4.2: from the local pose's RPY, the nine candidate representations
+  `(r, p, y)` and `(r ± π, ±π - p, y ± π)`, each wrapped into the
+  continuous interval starting at the lower bounds, each producing a
+  per-coordinate displacement to the nearer violated bound (zero inside);
+  the candidate with the smallest Euclidean norm wins (strict `<`, so the
+  first minimum is kept). The distance is that norm with rotation weight 1.
+- **Closest transform.** The winning candidate clipped into the continuous
+  bounds, rotational entries wrapped back into $[-\pi, \pi)$, composed as
+  `T0_w · xyzrpy_to_trans(bwopt) · Tw_e`. When contained, the "closest"
+  pose is the input's own coordinates, as sstsr's `to_xyzrpy` computes
+  them.
+- **Sampling.** Six uniform draws in the continuous bounds, in coordinate
+  order, from the caller's RNG and nothing else; the rotational draws are
+  wrapped into $[-\pi, \pi)$; the result is `T0_w · xyzrpy_to_trans(s) ·
+  Tw_e`. The draw is `unit(rng)` from the core, so a seeded native solve
+  stays repeatable across standard libraries.
+- **Volume** is `_interval_sum`: the sum of the six widths with rotational
+  widths clamped to $2\pi$. Mixture weights for an `AnyOf` of TSR sets are
+  proportional to volume, uniform when every volume is zero
+  (`weights_from_tsrs`); the binding lowers the Python-computed weights as
+  numbers, so this only matters for a pure C++ consumer.
+
+`EPSILON` is sstsr's module constant and is copied, not redefined.
+
+## The lifted set (tsr)
+
+```cpp
+namespace sscbirrt::tsr {
+
+class TSRConfigurationSet final : public StateSet, public SetSampler, public SetDistance,
+                                  public SetViolation, public SetProjector {
+ public:
+  TSRConfigurationSet(TSR region, std::shared_ptr<const ForwardKinematics> fk, std::shared_ptr<const IKSolver> ik,
+                      std::shared_ptr<const JointSpace> space, double tolerance = 1e-3,
+                      int max_projection_iters = 50, double progress_tolerance = 1e-6);
+  // contains: distance(q) <= tolerance;  distance: region.distance(fk(q));  violation: max(0, distance - tolerance)
+  // sample: one pose from the region, every IK solution within the space's limits, provenance empty
+  // project: Python's loop, below
+};
+
+}  // namespace sscbirrt::tsr
+```
+
+`project(q_previous, q_proposed)` is Python's loop exactly: start at
+`q_proposed`; up to `max_projection_iters` times, take `(dist, target) =
+region.closest_transform(fk(q))`; if `dist <= tolerance` return `q`; if the
+distance did not shrink by `progress_tolerance` return nothing; solve IK
+for `target` seeded with `q`; among solutions within the space's limits take
+the one nearest `q` under the space metric; none means failure. `q_previous`
+is accepted and unused, as in Python. Membership tolerance and projection
+parameters are the set's own, as the tolerances section says; the binding
+copies them from the Python set instance.
+
+Sampling filters by `space.within_limits`, not by admissibility: collision
+is the planner's validator, as in Python, and every candidate reaches the
+planner.
+
+## The SSIK adapter (ssik)
+
+```cpp
+namespace sscbirrt::ssik {
+
+enum class Family { ThreeParallel };                   // the verified allowlist; grows per release
+
+struct ArmSpec {                                      // rendered from an ssik.Manipulator's KinBody
+  Family family;
+  std::array<Eigen::Vector3d, 6> axis;                // JointConsts<6>, as cpp_emit renders them
+  std::array<Eigen::Matrix4d, 6> t_left, t_right;
+  std::array<bool, 6> revolute;
+  std::array<std::optional<std::pair<double, double>>, 6> limits;   // JointLimits<6>; nullopt = unlimited
+  Transform T_base = Transform::identity();          // SSIKSolver.T_base
+  Transform T_ee = Transform::identity();            // SSIKSolver.T_ee
+};
+
+class SSIKArm final : public ForwardKinematics, public IKSolver {
+ public:
+  explicit SSIKArm(ArmSpec spec);                     // throws std::invalid_argument for an unverified family
+  int dof() const override { return 6; }
+  Transform fk(ConfigView q) const override;         // T_base · ssik::fk(consts, q) · T_ee
+  std::vector<Config> solve(const Transform& pose, ConfigView seed) const override;
+};
+
+}  // namespace sscbirrt::ssik
+```
+
+`solve` is `SSIKSolver.solve`: the target is mapped into SSIK's frames
+(`inv(T_base) · pose · inv(T_ee)`), `ArtifactParams<6>` is the Python
+adapter's call (`respect_limits = true`, `enumerate_windings = true`, no
+cap, seed present iff given, ssik's default seed metric and rescue), and
+every returned `q` is copied out. Windings and branches are preserved
+because the same ssik code produces them on both sides; the Python adapter
+calls the same family solver through ssik's own extension.
+
+Verification per family (#90): before a family enters the allowlist, the
+C++ adapter is checked against Python's `SSIKSolver` on an integration
+corpus of the family's robot (UR5e from the Menagerie MJCF): identical
+solution sets up to ordering within 1e-9, and FK closure of every solution
+against the independent MuJoCo FK. Singular and near-singular poses are in
+the corpus and compared for agreement, not completeness; SSIK's contract
+governs what is found there.
+
+## Lowering
+
+`lower` extends its table:
+
+| Python | Native | Otherwise |
+|---|---|---|
+| `TSRConfigurationSet` with `tsr: TSR`, `ik: SSIKSolver` around an `ssik.Manipulator` whose `solver_name` is verified, `dof == 6` | `TSRConfigurationSet(TSR, SSIKArm, SSIKArm, space, tolerance, max_projection_iters, progress_tolerance)` | region is a `TSRChain`: "TSR chains have no native form"; `ik` not an `SSIKSolver`: "IK <type> is a Python object"; family not verified: "SSIK family <name> is not in the native allowlist"; extension built without SSIK: "built without SSIK support" |
+
+Two consistency checks run at lowering, each a blocker with a reason if it
+fails. First, the Python set's `robot.forward_kinematics` and the SSIK
+adapter's `fk` must agree within 1e-6 on every explicit configuration in the
+problem (the seeds), because the native set uses SSIK's FK where the Python
+set used the robot model's; the two are equal by construction for a
+manipulator built from the same MJCF, and the check makes the assumption
+visible. Second, the Python `TSR` must pass the native constructor's
+validation, which the Python constructor now also performs.
+
+The `ArmSpec` is rendered in Python from the manipulator's KinBody, with the
+same fields `cpp_emit.py` renders (`_render_joint_consts6`,
+`_render_limits`), through the helper requested in personalrobotics/ssik#641,
+and until then through the same private accessors that script uses. It is
+rendered once per lowering and shared by every set in the problem that
+wraps the same `SSIKSolver`.
+
+## Conformance corpus (#87)
+
+`tools/tsr_conformance.py` generates `tests/reference/tsr_conformance.json`
+from sstsr with a fixed seed: a list of TSRs (identity and non-identity
+frames, zero-width rows, full rotations, outer rotational intervals, near
+singular pitch) and, for each, a list of probe transforms (samples from
+the region, samples perturbed off it, poses with pitch within 1e-7 of
+$\pm\pi/2$) with sstsr's `contains`, `distance`, and `closest_transform`
+results. `tests/test_tsr_conformance.py` runs the native `TSR` on every
+probe and asserts: identical containment; distances equal within 1e-9;
+closest transforms equal within 1e-9 elementwise, and contained by both
+implementations within the declared tolerance; sampling with a fixed
+seed produces poses the region contains, and consumes exactly six draws
+per sample. The corpus is the inspectable artifact the issue asks for; it
+is regenerated by one command and compared on regeneration like the
+planning artifact.
+
+## The v1.6.0 artifact (#91)
+
+A UR5e problem: finite start, an `AnyOf` of two goal TSRs weighted by
+volume, and one path-constraint TSR, with `AcceptAll` as the validator
+(collision is v1.7.0). Recorded: seed, the ssik version and `solver_name`,
+the MJCF's path and hash, selected endpoint provenance, path, the
+independent validation report (every waypoint and interpolated edge sample
+checked with the Python set's `contains` and the space), and the
+profile-hook proof of zero Python calls during the solve. The same problem
+runs on the Python backend and the two are compared as the planning
+artifact compares them: outcome, validation, provenance where unique.
+
+## Concept map, addendum
+
+| Python | Native | Relation |
+|---|---|---|
+| `tsr.TSR` | `sscbirrt::tsr::TSR` | same math; native rejects non-finite frames and NaN bounds at construction, and Python gains the same checks in v1.6.0 |
+| `PoseRegion` protocol | `TSR` only | chains are not native; lowering says so |
+| `TSRConfigurationSet` | `sscbirrt::tsr::TSRConfigurationSet` | same rules; FK comes from the IK adapter rather than a separate robot model, checked equal at lowering |
+| `RobotModel.forward_kinematics`, `IKSolver.solve` | `ForwardKinematics`, `IKSolver` | same contracts |
+| `SSIKSolver` | `sscbirrt::ssik::SSIKArm` | same call into the same ssik family solver; families outside the allowlist are unsupported rather than silently different |
+| `tsr_weights`, `region_volume` | `TSR::volume` | same |
+| numpy RNG in `TSR.sample` | `unit(rng)`, six draws | the one difference, as before: engine only |
+
+## Open questions for review
+
+1. **Header source for ssik_cpp**: wait for personalrobotics/ssik#641 and
+   pin the release, with CI building from a pinned checkout meanwhile, or
+   vendor the headers under `cpp/third_party/`.
+2. **Eigen only in `sscbirrt::ssik`**, with a sixteen-double `Transform` in
+   the core. The alternative is Eigen in the core, which simplifies the TSR
+   math at the cost of every consumer inheriting it.
+3. **FK-agreement check at lowering** (1e-6 on the seeds). It catches a
+   robot model that disagrees with the SSIK model, which is the one way the
+   native set could differ from the Python set; the alternative is to trust
+   the caller as the Python adapter's docstring already asks.
+4. **Python `TSR` validation** of frames and bounds in sstsr, so the
+   reference does the ingress check the native does. This is an upstream
+   change to sstsr; the alternative is to validate in pycbirrt's lowering
+   only and record a difference.
