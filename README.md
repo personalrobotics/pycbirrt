@@ -353,6 +353,7 @@ python examples/planar_arm.py -e 3      # Constrained planning
 
 # UR5e with Robotiq gripper (requires MuJoCo)
 python examples/tsr_union_demo.py       # Multiple grasp approaches
+python examples/ur5e_transport.py       # Constrained transport: gripper kept pointing down
 ```
 
 ## References

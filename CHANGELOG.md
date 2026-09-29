@@ -18,6 +18,11 @@ follows [Semantic Versioning](https://semver.org/).
   cost a few milliseconds and membership can be a false negative on a hard
   chain (#7).
 
+- `examples/ur5e_transport.py`: constrained transport on the UR5e, the
+  gripper kept pointing down from one side of the base to the other, planned
+  with and without the constraint and reporting each path's largest tilt.
+  Same backend selection as the other UR5e examples (#78).
+
 ### Fixed
 
 - Paths on angular (limit-free) joints are unwrapped forward from the first

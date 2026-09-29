@@ -97,3 +97,22 @@ class TestTsrUnionDemo:
         result = planner.plan(start=HOME, goal_tsrs=[top, side], seed=0, return_details=True)
         assert result.success, result.failure_reason
         assert all(collision.is_valid(q) for q in result.path)
+
+
+class TestTransportExample:
+    @pytest.mark.parametrize("ik", ["mujoco", "auto"])
+    def test_runs_headless(self, tmp_path, ik):
+        if ik == "auto":
+            pytest.importorskip("ssik")
+        env = dict(os.environ, MPLBACKEND="Agg", MUJOCO_MENAGERIE_PATH=MENAGERIE)
+        proc = subprocess.run(
+            [sys.executable, str(EXAMPLES / "ur5e_transport.py"), "--no-viz", "--ik", ik, "--seed", "0"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=900,
+        )
+        assert proc.returncode == 0, proc.stderr[-2000:]
+        assert "constrained:" in proc.stdout and "max tilt violation 0.000 rad" in proc.stdout
+        assert "every waypoint within joint limits: True" in proc.stdout
