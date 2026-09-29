@@ -205,7 +205,14 @@ sampler or projector.
   accepts a shortcut only if its joint-space path length under the problem's
   space is shorter than the segment it replaces, as in the original CBiRRT;
   fewer waypoints is not the criterion. The first and last waypoints of a
-  path are preserved exactly.
+  path are preserved exactly, except as the next rule says.
+- **Output representation on angular joints.** A returned path is unwrapped
+  forward from its first waypoint, so on an angular joint each consecutive
+  raw difference is the short way around and never exceeds one step. The
+  first waypoint is the start as given; the last waypoint is the goal as a
+  configuration but may differ from the value given by a multiple of 2π.
+  Paths without angular joints are unaffected. This is what lets an
+  executor that interpolates raw joint values follow the path (#77).
 
 ## Tolerances
 

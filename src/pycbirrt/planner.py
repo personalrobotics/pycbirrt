@@ -267,6 +267,8 @@ class CBiRRT:
                 path = self._extract_path(tree_start, tree_goal, tree_a, tree_b, grow_idx, connect_idx)
                 if self.config.smooth_path:
                     path = self._smooth_path(problem, path)
+                # Angular joints: same physical path, continuous in raw joint values for executors (#77)
+                path = problem.space.unwrap_path(path)
 
                 if tree_a is tree_start:
                     start_source = tree_start.get_root_source_index(grow_idx)

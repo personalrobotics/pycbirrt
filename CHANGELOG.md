@@ -18,6 +18,15 @@ follows [Semantic Versioning](https://semver.org/).
   cost a few milliseconds and membership can be a false negative on a hard
   chain (#7).
 
+### Fixed
+
+- Paths on angular (limit-free) joints are unwrapped forward from the first
+  waypoint before being returned, so an executor interpolating raw joint
+  values no longer sees a full-turn jump where the two trees met or a
+  shortcut ended. The start is returned as given; the goal may be
+  re-expressed by a multiple of 2π on an angular joint. Paths without
+  angular joints are unchanged (#77).
+
 ### Changed
 
 - Depends on `sstsr>=3.1,<4` from PyPI (imported as `tsr`). The TSR adapter

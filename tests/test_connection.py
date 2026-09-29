@@ -226,11 +226,13 @@ class TestSmoothing:
             assert_path_validated(planner, result.path)
 
 
-class TestAngularJointsKeepExactEndpoints:
-    def test_goal_representation_is_preserved(self):
-        """Even with angular joints, the returned goal is the configuration as given."""
+class TestAngularJointsEndpoints:
+    def test_start_exact_goal_equivalent_and_path_continuous(self):
+        """With angular joints the start is as given; the goal may be re-expressed by 2π (#77)."""
         planner = make_planner(angular_joints=(True, True), step_size=0.2)
         q0, q1 = np.array([3.0, 0.0]), np.array([-3.0, 0.2])
         result = planner.solve(problem(planner, q0, q1), seed=0)
         assert result.success
-        assert np.array_equal(result.path[0], q0) and np.array_equal(result.path[-1], q1)
+        assert np.array_equal(result.path[0], q0)
+        assert planner.space.distance(result.path[-1], q1) < 1e-9  # same configuration modulo 2π
+        assert np.abs(np.diff(np.array(result.path), axis=0)).max() <= 0.2 + 1e-9

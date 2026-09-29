@@ -110,3 +110,26 @@ class JointSpace:
     def sample(self, rng: np.random.Generator) -> np.ndarray:
         """Uniform sample within the joint limits."""
         return rng.uniform(self.lower, self.upper)
+
+    def unwrap_path(self, path: list[np.ndarray]) -> list[np.ndarray]:
+        """Re-express a path so consecutive raw values on angular joints take the short way.
+
+        Walks forward from the first waypoint, which is returned as given,
+        setting ``q[i] = q[i-1] + direction(q[i-1], q[i])``. Each waypoint
+        stays the same physical configuration (angular joints are periodic and
+        accept any finite value), but an executor interpolating raw joint
+        values no longer sees a full-turn jump where two tree nodes were
+        stored in representations one turn apart. Non-angular joints are
+        untouched, and a space with no angular joints returns the path
+        unchanged. The last waypoint may therefore differ from the goal as
+        given by a multiple of 2π on an angular joint (#77).
+        """
+        if self.angular_joints is None or len(path) < 2:
+            return list(path)
+        out = [np.array(path[0], dtype=float)]
+        for q in path[1:]:
+            q = np.asarray(q, dtype=float)
+            nxt = out[-1] + self.direction(out[-1], q)
+            nxt[~self.angular_joints] = q[~self.angular_joints]  # non-angular joints copied exactly
+            out.append(nxt)
+        return out
