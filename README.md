@@ -136,10 +136,13 @@ result = planner.plan(
 )
 ```
 
-Local-motion validation is also a replaceable component: a custom
-`motion_validator` on the problem owns the whole edge check, and
+Two search-strategy components are replaceable on the problem, each with a
+default. A custom `motion_validator` owns the whole edge check, and
 `RestrictedMotionValidator(base, accepts)` adds a restriction on top of the
-default discretized check. [docs/design.md](docs/design.md) has the
+default discretized check. A custom `sampler` proposes the free-space
+targets the trees grow toward and defaults to the space's uniform sampling;
+replacing it trades away probabilistic completeness unless it has full
+support over the space. [docs/design.md](docs/design.md) has the
 definitions, the composition rules, what the planner requires of each role,
 the tolerances, and the reference behavior artifact that pins the planner's
 semantics (`python tools/reference_artifact.py --check`).

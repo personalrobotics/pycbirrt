@@ -6,8 +6,26 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Protocol, runtime_checkable
 
 import numpy as np
+
+
+@runtime_checkable
+class SpaceSampler(Protocol):
+    """Proposes free-space targets for tree growth.
+
+    ``JointSpace`` is the default (uniform within the limits, one full turn
+    on angular joints). A replacement is a search strategy, not geometry:
+    Gaussian sampling near obstacles, a restricted region, a deterministic
+    sequence for tests. It must return configurations of shape ``(dof,)``;
+    a target outside the space is handled by not growing toward it, so a
+    sloppy sampler degrades rather than breaks. Replacing the default trades
+    away probabilistic completeness unless the replacement has full support
+    over the space; that is the caller's responsibility.
+    """
+
+    def sample(self, rng: np.random.Generator) -> np.ndarray: ...
 
 
 class JointSpace:
