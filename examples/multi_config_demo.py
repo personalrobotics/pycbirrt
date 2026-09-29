@@ -84,12 +84,13 @@ def main():
     print(f"  Start tree: {len(result.tree_start)} nodes ({result.tree_start.num_roots} roots)")
     print(f"  Goal tree: {len(result.tree_goal)} nodes ({result.tree_goal.num_roots} roots)")
 
-    # Check which start/goal were connected
+    # Which start/goal were connected: the result records the provenance of each end.
+    # (Matching path endpoints against the input lists by value would break with angular
+    # joints, where a returned endpoint may be re-expressed by a multiple of 2π.)
     actual_start = result.path[0]
     actual_goal = result.path[-1]
-
-    start_idx = next(i for i, s in enumerate(start_configs) if np.allclose(s, actual_start, atol=0.01))
-    goal_idx = next(i for i, g in enumerate(goal_configs) if np.allclose(g, actual_goal, atol=0.01))
+    start_idx = result.start_index
+    goal_idx = result.goal_index
 
     print(f"\n  Connected: Start {start_idx + 1} → Goal {goal_idx + 1}")
 
