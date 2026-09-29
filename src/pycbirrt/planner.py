@@ -43,6 +43,9 @@ class PlanResult:
         failure_reason: Human-readable reason for failure, or None if success.
         start_source: Provenance of the start root (see ``Sample.source``).
         goal_source: Provenance of the goal root.
+        backend: Which implementation produced this result, "python" or "native".
+        backend_reasons: With backend="auto", why the native backend was not
+            used (one entry per blocking component); empty otherwise.
         tree_start: The search tree rooted at the start set, for inspection
             and visualization. Shares memory with the planner's run; do not
             mutate.
@@ -61,6 +64,8 @@ class PlanResult:
     goal_source: tuple[int, ...] = field(default=())
     tree_start: RRTree | None = field(default=None, repr=False)
     tree_goal: RRTree | None = field(default=None, repr=False)
+    backend: str = "python"
+    backend_reasons: tuple[str, ...] = field(default=())
 
 
 class _AbortedDuringRoots(Exception):
@@ -87,6 +92,7 @@ class CBiRRT:
         ik_solver: IKSolver,
         collision_checker: CollisionChecker,
         config: CBiRRTConfig | None = None,
+        backend: str = "python",
     ):
         """Initialize the CBiRRT planner.
 
@@ -100,6 +106,11 @@ class CBiRRT:
         self.ik = ik_solver
         self.collision = collision_checker
         self.config = config or CBiRRTConfig()
+        if backend not in ("python", "native", "auto"):
+            raise ValueError(f'backend must be "python", "native", or "auto", got {backend!r}')
+        # "python": the reference. "native": the C++ core, or NativeUnsupported. "auto": native where
+        # every component has a native form, else Python with the reasons on the result.
+        self.backend = backend
 
         # Joint-space geometry: limits, metric, interpolation, sampling.
         # Raises ValueError if angular_joints length does not match robot DOF.
@@ -188,7 +199,26 @@ class CBiRRT:
         return result.path
 
     def solve(self, problem: PlanningProblem, seed: int | None = None) -> PlanResult:
-        """Solve a planning problem.
+        """Solve a planning problem with the configured backend (see ``backend`` on the constructor)."""
+        reasons: tuple[str, ...] = ()
+        if self.backend != "python":
+            from pycbirrt.backends import native
+
+            try:
+                lowered = native.lower(problem, self.config)
+            except native.NativeUnsupported as e:
+                if self.backend == "native":
+                    raise
+                reasons = tuple(e.reasons)
+            else:
+                return native.solve(lowered, seed, self.config.abort_fn)
+        result = self._solve_python(problem, seed)
+        result.backend = "python"
+        result.backend_reasons = reasons
+        return result
+
+    def _solve_python(self, problem: PlanningProblem, seed: int | None = None) -> PlanResult:
+        """The reference implementation of ``solve``.
 
         Args:
             problem: The problem to solve. ``start`` and ``goal`` must each be

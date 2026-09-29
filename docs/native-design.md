@@ -611,8 +611,9 @@ The extension module is `pycbirrt._native`, built with pybind11 as ssik's
 is. It exposes the types above under the same names and one function:
 
 ```python
-pycbirrt._native.solve(problem: _native.PlanningProblem, config: _native.PlannerConfig,
-                       seed: int | None, cancel: _native.CancellationToken | None) -> _native.PlanResult
+pycbirrt._native.Planner(config: _native.PlannerConfig).solve(
+    problem: _native.PlanningProblem, seed: int | None, cancel: _native.CancellationToken | None,
+    keep_trees: bool = True) -> _native.PlanResult
 ```
 
 The GIL is released for the duration of `solve`. After entry, the native
