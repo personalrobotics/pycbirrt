@@ -8,6 +8,18 @@ follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Native core (opt-in).** A C++20 implementation of the planner under
+  `cpp/` (`sscbirrt::core`, standard library only), built into the wheel as
+  `pycbirrt._native` with scikit-build-core. `CBiRRT(..., backend="python"
+  | "native" | "auto")`; default `"python"`, so nothing changes for
+  existing callers. `"native"` plans problems whose components all have a
+  native form (finite sets, `AnyOf`/`AllOf` with the named strategies,
+  `EmptySet`, the `pycbirrt.testing` validators) with the GIL released and
+  no Python callbacks, or raises `NativeUnsupported` listing every blocker;
+  `"auto"` falls back to Python and records the reasons on
+  `PlanResult.backend_reasons`. `PlanResult.backend` names the
+  implementation. Same seed, same path within a backend; the backends agree
+  on outcomes and validated paths, not on waypoints (#85, #116, #117, #118).
 - `PlanningProblem.sampler`: a replaceable free-space sampler
   (`SpaceSampler`, `sample(rng) -> q`) that proposes the targets the trees
   grow toward. None means the space itself, uniform, so defaults are

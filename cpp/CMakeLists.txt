@@ -10,6 +10,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 option(SSCBIRRT_BUILD_TESTS "Build the ctest targets" ON)
+option(SSCBIRRT_BUILD_PYTHON "Build the pycbirrt._native pybind11 module (the wheel build turns this on)" OFF)
 option(SSCBIRRT_SANITIZE "Build core and tests with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 
 # The core depends on the C++20 standard library and nothing else (design: dependency boundary).
@@ -45,4 +46,15 @@ if(SSCBIRRT_BUILD_TESTS)
   sscbirrt_test(test_sets)
   sscbirrt_test(test_motion)
   sscbirrt_test(test_planner)
+endif()
+
+# The Python binding is the only target that sees Python. scikit-build-core drives this file with
+# SSCBIRRT_BUILD_PYTHON=ON and puts pybind11's CMake package on the prefix path.
+if(SSCBIRRT_BUILD_PYTHON)
+  find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+  find_package(pybind11 CONFIG REQUIRED)
+  pybind11_add_module(_native MODULE bindings/pycbirrt_native.cpp)
+  target_link_libraries(_native PRIVATE sscbirrt::core)
+  target_compile_options(_native PRIVATE -Wall -Wextra)
+  install(TARGETS _native DESTINATION pycbirrt)
 endif()

@@ -428,6 +428,29 @@ Prebuilt artifacts use the vendor's nominal geometry and can differ from a
 simulator model by a millimeter, which matters at the default membership
 tolerance.
 
+### Native core (opt-in)
+
+The C++20 core in `cpp/` implements the same contract as the Python planner
+([docs/native-design.md](docs/native-design.md)). It is built into the wheel
+as `pycbirrt._native` and selected per planner:
+
+```python
+planner = CBiRRT(robot, ik, collision, config, backend="native")  # or "auto"; default "python"
+result = planner.solve(problem, seed=0)
+result.backend          # "native" or "python"
+result.backend_reasons  # with "auto": why Python was chosen, one entry per component
+```
+
+In v1.5.0 the native core plans problems whose components all have a native
+form: finite sets, `AnyOf`/`AllOf` with the named strategies, `EmptySet`,
+and the validators in `pycbirrt.testing`. Anything else (TSR-induced sets,
+predicates, custom validators, samplers, or motion validators) makes
+`backend="native"` raise `NativeUnsupported` listing every blocker, and
+`backend="auto"` fall back to Python. The native solve releases the GIL and
+calls no Python after entry. Same seed, same path within a backend; the two
+backends agree on outcomes and validated paths but not on waypoints, because
+they use different random-number engines.
+
 ### EAIK (deprecated)
 
 `pycbirrt.backends.eaik.EAIKSolver` still works but warns on construction and

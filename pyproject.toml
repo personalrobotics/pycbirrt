@@ -33,16 +33,24 @@ dev = [
 all = ["pycbirrt[mujoco,ssik,eaik,examples,dev]"]
 
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core>=0.10", "pybind11>=2.12"]
+build-backend = "scikit_build_core.build"
+
+# The C++ core under cpp/ is the primary build; the wheel reuses it with the Python
+# target switched on. `pycbirrt` imports without the extension; backend="native" then
+# reports it missing.
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+cmake.source-dir = "cpp"
+cmake.build-type = "Release"
+cmake.define = { SSCBIRRT_BUILD_PYTHON = "ON", SSCBIRRT_BUILD_TESTS = "OFF" }
+wheel.packages = ["src/pycbirrt"]
+sdist.include = ["cpp/", "src/", "tests/", "tools/", "docs/"]
 
 [project.urls]
 Homepage = "https://github.com/personalrobotics/pycbirrt"
 Repository = "https://github.com/personalrobotics/pycbirrt"
 Issues = "https://github.com/personalrobotics/pycbirrt/issues"
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.ruff]
 line-length = 120
