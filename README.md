@@ -1,154 +1,185 @@
 # pycbirrt
 
-A motion planner that finds paths through tight spaces, around obstacles, and into precise grasp poses—even when the goal is a *region*, not a point.
+A bidirectional RRT that plans between sets of configurations: a start set, a
+goal set, and a set the whole path must stay inside. Task Space Regions (TSRs)
+are the usual way to define those sets; CBiRRT (Berenson et al., 2009) is the
+algorithm.
 
-<p align="center">
-  <img src="docs/images/tsr_union_demo.gif" alt="UR5e planning side grasps" width="400">
-  <br>
-  <em>UR5e arm planning side grasps using Task Space Region constraints</em>
-</p>
+## Why sets
 
-## Why CBiRRT?
+A point-to-point planner takes one start configuration and one goal
+configuration. Manipulation tasks are not specified that way. A grasp is valid
+anywhere around the rim of a mug. A placement is valid anywhere on a shelf.
+The arm can begin from any IK solution of its current end-effector pose. A
+carried cup must stay upright at every point of the motion, not only at its
+ends. Each of these is a set of configurations, and using a point planner
+means choosing one member of each set before planning.
 
-Most planners ask: "Can you reach this exact pose?" But manipulation tasks are rarely that rigid. You might need to:
+That choice is made with the least information available. Whether a given
+grasp configuration is reachable from a given start, under a given path
+constraint, is what the search determines. Choosing first means the chosen
+grasp may collide with the shelf, or lie on an IK branch the arm cannot reach
+without leaving the constraint set, and the failure is found only after
+planning. The usual remedy is an outer loop over IK solutions and grasp
+candidates, replanning each time and rebuilding the same start tree.
 
-- Grasp a mug from any angle (goal is a *region* of valid grasps)
-- Keep a tray level while moving (constraint along *entire* path)
-- Start from multiple home positions and reach any of several goals
+CBiRRT takes the sets and defers the choice to the search. The start set, the
+goal set, and the path-admissible set are three roles for one kind of
+object. Membership is the only operation the planner requires of a set;
+sampling, distance, violation, and projection are optional capabilities that
+the planner uses when present. Sets compose with explicit semantics: `AnyOf`
+for alternatives, `AllOf` for simultaneous requirements, each with stated
+rules for how capabilities combine. TSR-induced configuration sets, finite
+lists of configurations, TSR chains, and arbitrary predicates are sets of the
+same kind and fit any of the three roles.
 
-**CBiRRT** handles all of this. It grows two search trees—one from start, one from goal—and connects them through configuration space while respecting task-space constraints.
+Consequences:
 
-## Installation
+- Both trees grow from many roots at once, one per sampled member of the
+  start and goal sets, so every alternative is explored in one search and the
+  reachable member is found rather than guessed.
+- Path constraints are enforced during tree growth by projecting each new
+  configuration onto the constraint set, not by filtering the path afterward.
+- The result records which start and goal member the path uses, as a
+  provenance path through the set expression, so the planner's choice is
+  available to the caller.
 
-```bash
-# From a checkout: every backend, the example dependencies, and the dev tools
-uv pip install -e ".[all]"
+## Quick start
 
-# Or choose extras: mujoco, ssik (recommended IK), examples (matplotlib, mediapy)
-uv pip install -e ".[mujoco,ssik]"
-```
-
-`numpy` and `sstsr` (Task Space Regions, imported as `tsr`) are installed as
-dependencies.
-
-## Quick Start
+All three roles in one call. The start is the current configuration, the goal
+is the region of top-down grasps above an object with free yaw, and the
+constraint keeps the gripper pointing down along the whole path. The TSRs are
+those of `examples/ur5e_transport.py`.
 
 ```python
 import numpy as np
 from tsr import TSR
 from pycbirrt import CBiRRT, CBiRRTConfig
 
-# Your robot interfaces (see Interfaces section)
-robot = MyRobot()
-ik_solver = MyIKSolver()
-collision_checker = MyCollisionChecker()
+DOWN = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])  # gripper z axis pointing down
 
-# Define a goal region: position with ±5cm tolerance, rotation free around Z
-goal_tsr = TSR(
-    T0_w=np.eye(4),  # Reference frame at origin
-    Tw_e=np.eye(4),  # No offset to end-effector
-    Bw=np.array([
-        [0.45, 0.55],    # x: 0.5m ± 5cm
-        [0.25, 0.35],    # y: 0.3m ± 5cm
-        [0.15, 0.25],    # z: 0.2m ± 5cm
-        [0, 0],          # roll: fixed
-        [0, 0],          # pitch: fixed
-        [-np.pi, np.pi], # yaw: free
-    ]),
-)
 
-# Plan
-planner = CBiRRT(robot, ik_solver, collision_checker)
-path = planner.plan(start_config, goal_tsrs=[goal_tsr])
-```
+def grasp_above(p):
+    T = np.eye(4)
+    T[:3, :3], T[:3, 3] = DOWN, p + [0, 0, 0.25]  # standoff for the gripper length
+    return TSR(T0_w=T, Tw_e=np.eye(4), Bw=np.array([
+        [-0.02, 0.02], [-0.02, 0.02], [0.0, 0.05],    # position: ±2 cm, up to 5 cm higher
+        [-0.01, 0.01], [-0.01, 0.01], [-np.pi, np.pi],  # roll, pitch fixed; yaw free
+    ]))
 
-## Plan Result
 
-Use `return_details=True` to get planning stats and which start/goal was selected:
+T = np.eye(4)
+T[:3, :3], T[:3, 3] = DOWN, [0.0, 0.0, 0.6]
+upright = TSR(T0_w=T, Tw_e=np.eye(4), Bw=np.array([
+    [-0.9, 0.9], [-0.9, 0.9], [-0.3, 0.5],          # anywhere above the table
+    [-0.05, 0.05], [-0.05, 0.05], [-np.pi, np.pi],  # tilt within 0.05 rad; yaw free
+]))
 
-```python
+planner = CBiRRT(robot, ik_solver, collision_checker, CBiRRTConfig(step_size=0.2, timeout=60.0))
 result = planner.plan(
-    start=start_config,
-    goal_tsrs=[tsr_can_0, tsr_can_1, tsr_can_2],
+    start=q_current,
+    goal_tsrs=[grasp_above(object_position)],
+    constraint_tsrs=[upright],
+    seed=0,
     return_details=True,
 )
-
 if result.success:
-    result.path            # joint waypoints from start to goal
-    result.goal_index      # which TSR was reached (index into goal_tsrs)
-    result.start_index     # which start was used (0 for single start)
-    result.planning_time   # wall-clock seconds
-    result.iterations      # RRT iterations used
-    result.tree_sizes      # (start_tree_nodes, goal_tree_nodes)
-    result.goal_source     # provenance through the goal set expression (see docs/design.md)
-    result.start_source
+    result.path          # joint waypoints; first is q_current, last is in the goal set
+    result.goal_source   # which goal member the path reached
 else:
-    result.failure_reason  # e.g. "timeout", "max_iterations", "aborted"
+    result.failure_reason  # "timeout", "max_iterations", "aborted", ...
 ```
 
-Indices work for any input type — config lists, TSR lists, or single values (always 0).
+`robot`, `ik_solver`, and `collision_checker` implement the protocols in
+[Interfaces](#interfaces); the [backends](#backends) provide them for MuJoCo
+models. Without `return_details`, `plan` returns the path or `None`.
 
-## How It Works
+## Sets
 
-<p align="center">
-  <img src="docs/images/example1_result.png" alt="Basic planning" width="600">
-</p>
+A state set is anything with `contains(q) -> bool`. The planner never
+branches on a set's concrete type. Capabilities are separate protocols:
 
-The algorithm grows two trees simultaneously—blue from start, green from goal. The right panel shows configuration space; red regions are in collision.
+| Capability | Method | The planner uses it for |
+|---|---|---|
+| `SetSampler` | `sample(rng) -> list[Sample]` | roots of the start and goal trees |
+| `SetDistance` | `distance(q) -> float` | nearest-member queries |
+| `SetViolation` | `violation(q) -> float`, zero iff `contains` | projection progress and ordering inside `AllOf` |
+| `SetProjector` | `project(q_previous, q_proposed) -> q or None` | keeping tree growth inside a path constraint |
 
-1. **Sample** a random configuration (biased toward goals)
-2. **Extend** the nearest tree toward the sample
-3. **Project** onto constraint manifolds if path constraints exist
-4. **Connect** the two trees when close enough
-5. **Smooth** the path by shortcutting
+Leaves: `FiniteSet(configs, tolerance, metric)`, `PredicateSet(fn)`,
+`EmptySet()`, and `TSRConfigurationSet(tsr, robot, ik, space)`, which is
+$\{q : \mathrm{FK}(q) \in \mathrm{TSR}\}$ with all four capabilities.
 
-### Constrained Motion
+`AnyOf(children, weights)` is the union. A single child delegates every
+capability; with several children, sampling draws a child by weight and each
+`Sample` records which one. `AllOf(children, projection=, sampling=)` is the
+intersection. A single child delegates; with several children the caller
+names how to project (`MostViolatedProjection`) and how to sample
+(`RejectionSampling(source)`), because there is no canonical way to do either
+for an intersection. `AllOf` of finite sets is finite and enumerable.
 
-When the task requires constraints along the entire path (e.g., keeping a cup upright), CBiRRT projects each new configuration onto the constraint manifold:
+```python
+from pycbirrt import AnyOf, FiniteSet, PlanningProblem, TSRConfigurationSet
 
-<p align="center">
-  <img src="docs/images/example3_result.png" alt="Constrained planning" width="600">
-  <br>
-  <em>End-effector stays within the yellow band throughout motion</em>
-</p>
+grasp_a = TSRConfigurationSet(tsr_a, robot, ik, planner.space)
+grasp_b = TSRConfigurationSet(tsr_b, robot, ik, planner.space)
+upright = TSRConfigurationSet(upright_tsr, robot, ik, planner.space)
+
+problem = PlanningProblem(
+    space=planner.space,
+    start=FiniteSet([q_start], metric=planner.space.distance),
+    goal=AnyOf([grasp_a, grasp_b], weights=[1, 1]),
+    validator=collision_checker,
+    path_constraint=upright,  # one set: no strategy needed
+)
+result = planner.solve(problem, seed=0)
+```
+
+`plan(...)` lowers into this form: configuration lists become a `FiniteSet`
+whose members are enumerated as roots, TSR lists become an `AnyOf` weighted by
+TSR volume, and several `constraint_tsrs` become an `AllOf` with
+`MostViolatedProjection`. Local-motion validation is also a replaceable
+component: a custom `motion_validator` on the problem owns the whole edge
+check, and `RestrictedMotionValidator(base, accepts)` adds a restriction on
+top of the default discretized check.
+
+[docs/design.md](docs/design.md) has the definitions, the composition rules,
+what the planner requires of each role, the tolerances, and the reference
+behavior artifact that pins the planner's semantics
+(`python tools/reference_artifact.py --check`).
 
 ## Task Space Regions
 
-TSRs define regions in SE(3) using a reference frame and bounds:
+A TSR is a pose region in SE(3): a reference frame `T0_w`, an end-effector
+offset `Tw_e`, and bounds `Bw` on x, y, z, roll, pitch, yaw in the reference
+frame.
 
 ```python
 from tsr import TSR
 
-# A cylindrical grasp region: free rotation around Z, tight position bounds
 grasp_tsr = TSR(
-    T0_w=object_pose,     # Reference frame at object
-    Tw_e=gripper_offset,  # Gripper offset from TSR frame
+    T0_w=object_pose,     # reference frame at the object
+    Tw_e=gripper_offset,  # gripper offset from that frame
     Bw=np.array([
-        [-0.01, 0.01],    # x: ±1cm
-        [-0.01, 0.01],    # y: ±1cm
-        [0, 0],           # z: exact
-        [0, 0],           # roll: fixed
-        [0, 0],           # pitch: fixed
-        [-np.pi, np.pi],  # yaw: full rotation
+        [-0.01, 0.01], [-0.01, 0.01], [0, 0],  # position: ±1 cm in x and y, exact z
+        [0, 0], [0, 0], [-np.pi, np.pi],       # roll and pitch fixed; yaw free
     ]),
 )
 ```
 
-### Multiple Goal Approaches
-
-Provide multiple TSRs when several approaches are valid—the planner finds the most reachable:
+Several TSRs in `goal_tsrs` or `start_tsrs` form a union; sampling is
+proportional to each TSR's volume. Configuration lists and TSRs can be mixed
+in the same role:
 
 ```python
-# Top grasp vs side grasp
 path = planner.plan(start, goal_tsrs=[top_grasp_tsr, side_grasp_tsr])
+path = planner.plan(start=[home1, home2, home3], goal_tsrs=[grasp_tsr])
+path = planner.plan(start=current, goal=[ik_sol1, ik_sol2, ik_sol3])
+path = planner.plan(start=[home], start_tsrs=[start_region], goal=[q_grasp], goal_tsrs=[grasp_region])
 ```
 
-TSRs are sampled proportionally to their volume, so larger regions (more flexibility) get explored more.
-
-### TSR Chains
-
-A chain couples several TSRs in series (a handle on a swinging door) and
-defines one region of end-effector poses. It goes anywhere a TSR goes:
+A `TSRChain` couples TSRs in series (a handle on a swinging door) and defines
+one region of end-effector poses. It goes anywhere a TSR goes:
 
 ```python
 from tsr import TSRChain
@@ -162,25 +193,49 @@ numerical inverse: each check costs a few milliseconds and can be a false
 negative on a hard chain. A chain as a goal is cheap; a chain as a path
 constraint pays that on every edge sample.
 
-### Multiple Discrete Configurations
+## Result
 
-You can also provide lists of configurations:
+`return_details=True` returns a `PlanResult`:
 
-```python
-# Start from any of several home positions
-path = planner.plan(start=[home1, home2, home3], goal_tsrs=[grasp_tsr])
+| Field | Meaning |
+|---|---|
+| `path` | joint waypoints from a start member to a goal member, or `None` |
+| `success`, `failure_reason` | `failure_reason` is `None` on success |
+| `start_source`, `goal_source` | provenance through the start and goal set expressions |
+| `start_index`, `goal_index` | index into the legacy `start`/`goal` list or TSR list; 0 for single inputs |
+| `iterations`, `planning_time`, `tree_sizes` | search statistics |
+| `tree_start`, `tree_goal` | the two trees, for inspection |
 
-# Plan to any of several IK solutions
-path = planner.plan(start=current, goal=[ik_sol1, ik_sol2, ik_sol3])
+## How it works
 
-# Mix continuous regions and discrete configs
-path = planner.plan(
-    start=[home_config],
-    start_tsrs=[start_region],
-    goal=[precomputed_grasp],
-    goal_tsrs=[grasp_region],
-)
-```
+<p align="center">
+  <img src="docs/images/example1_result.png" alt="Basic planning" width="600">
+</p>
+
+Two trees grow at once, blue from the start set and green from the goal set.
+The right panel is configuration space; red regions are in collision.
+
+1. **Sample** a random configuration, or a member of the other role's set
+   with probability `goal_bias` / `start_bias`.
+2. **Extend** the nearest tree toward it in steps of `step_size`.
+3. **Project** each new configuration onto the path-admissible set when a
+   path constraint is present.
+4. **Connect** the trees when one reaches the other within
+   `connection_tolerance` along a validated edge.
+5. **Smooth** by shortcutting; a shortcut is kept only if it is shorter and
+   passes the same validation as a tree edge.
+
+<p align="center">
+  <img src="docs/images/example3_result.png" alt="Constrained planning" width="600">
+  <br>
+  <em>With a path constraint, the end effector stays within the yellow band throughout the motion.</em>
+</p>
+
+<p align="center">
+  <img src="docs/images/tsr_union_demo.gif" alt="UR5e planning side grasps" width="400">
+  <br>
+  <em>UR5e planning into a union of side-grasp regions.</em>
+</p>
 
 ## Configuration
 
@@ -202,23 +257,23 @@ config = CBiRRTConfig(
 
     # Tree growth
     step_size=0.1,                      # Max joint-space step per iteration
-    goal_bias=0.1,                      # Probability of sampling from goal TSR
-    start_bias=0.1,                     # Probability of sampling from start TSR
-    max_projection_iters=50,            # Iterations to project onto the constraint manifold
+    goal_bias=0.1,                      # Probability of sampling from the goal set
+    start_bias=0.1,                     # Probability of sampling from the start set
+    max_projection_iters=50,            # Iterations to project onto the constraint set
 
-    # TSR sampling
+    # Set sampling
     tsr_samples=100,                    # Pose samples to try from each TSR
     num_tree_roots=100,                 # Target root configs to seed each tree
-    max_ik_per_pose=3,                  # IK solutions per pose (for diversity)
+    max_ik_per_pose=3,                  # IK solutions to take per pose sample
 
     # Extension behavior (None = connect until blocked)
-    extend_steps=None,                  # Steps toward random sample
-    connect_steps=None,                 # Steps toward other tree
+    extend_steps=None,                  # Steps toward a random sample
+    connect_steps=None,                 # Steps toward the other tree
 
     # Smoothing
     smooth_path=True,
-    smoothing_iterations=50,            # Max attempts
-    smoothing_patience=15,              # Stop early if no improvement
+    smoothing_iterations=50,
+    smoothing_patience=15,              # Stop early after this many attempts without improvement
 
     # Joints with no limits (see below); None = every joint is bounded
     angular_joints=None,
@@ -228,7 +283,7 @@ config = CBiRRTConfig(
 `tsr_tolerance` is a deprecated alias that sets both `membership_tolerance`
 and `connection_tolerance` and warns.
 
-### Angular Joints
+### Angular joints
 
 Mark a joint angular only if it has **no limits**. Its distance then wraps at
 2π and the planner may join the trees across the seam. Joints with limits
@@ -239,61 +294,16 @@ consecutive waypoints never differ by more than a step and an executor can
 interpolate them directly. The goal may therefore be re-expressed by a
 multiple of 2π.
 
-### Planning Variants
+### Planning variants
 
 | extend_steps | connect_steps | Behavior |
-|-------------|---------------|----------|
-| None | None | **CON-CON**: Both trees march until blocked (default, like RRT-Connect) |
-| 5 | 5 | **EXT-EXT**: Both trees take limited steps |
-| 5 | None | **EXT-CON**: Extend limited, connect unlimited |
-| None | 5 | **CON-EXT**: Extend unlimited, connect limited |
-
-## Planning between sets
-
-`plan(...)` is one instantiation of a more general interface. The planner
-solves a `PlanningProblem` made of a joint space, a start set, a goal set, a
-validator, and an optional path-admissible set. Sets need only membership;
-sampling, distance, and projection are optional capabilities. `AnyOf` and
-`AllOf` compose sets with explicit semantics, and `TSRConfigurationSet` is the
-set a TSR induces through forward kinematics.
-
-```python
-from pycbirrt import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PlanningProblem, TSRConfigurationSet
-
-grasp_a = TSRConfigurationSet(tsr_a, robot, ik, planner.space)
-grasp_b = TSRConfigurationSet(tsr_b, robot, ik, planner.space)
-upright = TSRConfigurationSet(upright_tsr, robot, ik, planner.space)
-
-problem = PlanningProblem(
-    space=planner.space,
-    start=FiniteSet([q_start]),
-    goal=AnyOf([grasp_a, grasp_b], weights=[1, 1]),   # either grasp
-    validator=collision_checker,
-    path_constraint=upright,                          # one set: no strategy needed
-)
-result = planner.solve(problem, seed=0)
-result.goal_source   # which alternative the path reached
-```
-
-Local-motion validation is replaceable too. A custom `motion_validator`
-replaces the default discretized check and owns the whole motion; to add a
-restriction on top of the default instead, compose:
-
-```python
-from pycbirrt import RestrictedMotionValidator
-
-base = planner.default_motion_validator(problem)
-problem.motion_validator = RestrictedMotionValidator(base, accepts=lambda a, b: abs(b[0] - a[0]) < 0.5)
-```
-
-See [docs/design.md](docs/design.md) for the definitions, the composition
-rules, what the planner requires of each role, how `plan(...)` lowers into
-this representation, and the reference behavior artifact that pins the
-planner's semantics (`python tools/reference_artifact.py --check`).
+|---|---|---|
+| None | None | **CON-CON**: both trees march until blocked (default) |
+| 5 | 5 | **EXT-EXT**: both trees take limited steps |
+| 5 | None | **EXT-CON**: extend limited, connect unlimited |
+| None | 5 | **CON-EXT**: extend unlimited, connect limited |
 
 ## Interfaces
-
-Implement these protocols for your robot:
 
 ```python
 class RobotModel(Protocol):
@@ -304,7 +314,7 @@ class RobotModel(Protocol):
     def joint_limits(self) -> tuple[np.ndarray, np.ndarray]: ...
 
     def forward_kinematics(self, q: np.ndarray) -> np.ndarray:
-        """Return 4x4 end-effector pose."""
+        """Return the 4x4 end-effector pose."""
 
 
 class IKSolver(Protocol):
@@ -317,16 +327,25 @@ class CollisionChecker(Protocol):
         """Return True if collision-free."""
 ```
 
+## Installation
+
+```bash
+# From a checkout: every backend, the example dependencies, and the dev tools
+uv pip install -e ".[all]"
+
+# Or choose extras: mujoco, ssik (recommended IK), examples (matplotlib, mediapy)
+uv pip install -e ".[mujoco,ssik]"
+```
+
+`numpy` and `sstsr` (Task Space Regions, imported as `tsr`) are installed as
+dependencies.
+
 ## Backends
 
 ### MuJoCo
 
 ```python
-from pycbirrt.backends.mujoco import (
-    MuJoCoRobotModel,
-    MuJoCoCollisionChecker,
-    MuJoCoIKSolver,
-)
+from pycbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoIKSolver, MuJoCoRobotModel
 
 robot = MuJoCoRobotModel(model, data, ee_site="end_effector")
 collision = MuJoCoCollisionChecker(model, data)
@@ -337,7 +356,7 @@ The differential solver is stateful and, when called without a seed
 configuration, tries a few random restarts within each joint's limits. Pass
 `seed=` for reproducible runs; `CBiRRT.plan(seed=...)` seeds the planner only.
 
-### SSIK (enumerative analytical IK, recommended)
+### SSIK (analytical IK, recommended)
 
 ```bash
 uv pip install "pycbirrt[ssik]"
@@ -350,37 +369,26 @@ no collision checking and applies no solution cap; joint limits are enforced
 by `JointSpace` and collision by the planner's validator.
 
 ```python
+import ssik
+from pycbirrt.backends.mujoco import site_offset_in_body
 from pycbirrt.backends.ssik import SSIKSolver
 
-# A prebuilt artifact (vendor nominal geometry)...
-from ssik.prebuilt import ur5e_ik
-ik = SSIKSolver(ur5e_ik)
-
-# ...or your own robot (needs SSIK's URDF support installed)
-import ssik
-arm = ssik.Manipulator.from_urdf(path, base=base_link, ee=ee_link)
-ik = SSIKSolver(arm)
-```
-
-**Frame and joint-order contract.** The SSIK model and your `RobotModel` must
-agree on joint order and sign, base frame, end-effector frame, and which
-joints are continuous. The adapter never guesses; if the frames differ by
-fixed transforms, pass `T_base` and `T_ee` so that
-`robot.forward_kinematics(q) == ik.fk(q)`, and assert that in a test before
-planning. For a MuJoCo model, build SSIK from the same MJCF with the world as
-base and the end-effector body as `ee`, and pass the site's offset as `T_ee`;
-this matches `MuJoCoRobotModel` to machine precision:
-
-```python
-from pycbirrt.backends.mujoco import site_offset_in_body
-
+# From the same MJCF as the MuJoCo model, so the frames agree to machine precision
 arm = ssik.Manipulator.from_mjcf("ur5e.xml", base="world", ee="wrist_3_link")
 ik = SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site"))
+
+# Or a prebuilt artifact (vendor nominal geometry) or a URDF
+from ssik.prebuilt import ur5e_ik
+ik = SSIKSolver(ur5e_ik)
 ```
 
+The SSIK model and the `RobotModel` must agree on joint order and sign, base
+frame, end-effector frame, and which joints are continuous. If the frames
+differ by fixed transforms, pass `T_base` and `T_ee` so that
+`robot.forward_kinematics(q) == ik.fk(q)`, and assert that before planning.
 Prebuilt artifacts use the vendor's nominal geometry and can differ from a
 simulator model by a millimeter, which matters at the default membership
-tolerance; check before relying on them against a simulated robot.
+tolerance.
 
 ### EAIK (deprecated)
 
