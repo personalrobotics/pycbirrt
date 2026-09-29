@@ -30,9 +30,17 @@ $\mathcal{Q}$: joint limits, the distance metric, the direction between two
 configurations, straight-line interpolation, and uniform sampling. The planner
 and every set that needs a metric share one instance.
 
-A joint is **angular** only if it has no limits. Its distance wraps at $2\pi$
-and its limit check always passes. A joint with limits is a bounded interval
-however wide its range. The UR5e's $\pm 2\pi$ joints are bounded: a value and
+A joint is **angular** only if the caller says so, and the space never
+infers it. A bounded joint must have finite limits, because a sampler needs
+a bounded domain; the constructor rejects a non-finite limit on a joint not
+marked angular. An angular joint has no limits: whatever was stored for it
+is ignored, its limit check always passes, it samples over one full turn,
+and its distance wraps at $2\pi$. Backends report unlimited joints as
+$\pm\infty$ (the MuJoCo model does; MuJoCo itself stores them as $(0, 0)$),
+so an undeclared continuous joint fails at construction rather than being
+silently frozen or never sampled. Unbounded is not periodic: a rail without
+stops needs finite planning limits, not the angular flag. A joint with
+limits is a bounded interval however wide its range. The UR5e's $\pm 2\pi$ joints are bounded: a value and
 that value plus one turn are different joint states, and moving between them
 is a real full rotation. Marking such a joint angular lets the planner join
 configurations a turn apart and the returned path spins the joint through

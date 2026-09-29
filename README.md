@@ -315,8 +315,13 @@ and `connection_tolerance` and warns.
 
 ### Angular joints
 
-Mark a joint angular only if it has **no limits**. Its distance then wraps at
-2π and the planner may join the trees across the seam. Joints with limits
+Mark a joint angular only if it has **no limits**. The space never infers
+this: a bounded joint must have finite limits, and a robot model that
+reports an unlimited joint (the MuJoCo model reports ±∞) fails at planner
+construction until you either mark the joint angular or give it finite
+planning limits. An angular joint ignores whatever limits were stored for
+it, samples over one full turn, and its distance wraps at 2π so the planner
+may join the trees across the seam. Joints with limits
 wider than one turn, such as the UR5e's ±2π joints, are not angular: their
 windings are distinct configurations and the planner respects the limits.
 Returned paths are unwrapped forward from the start, so on an angular joint
