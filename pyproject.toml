@@ -43,7 +43,7 @@ build-backend = "scikit_build_core.build"
 minimum-version = "build-system.requires"
 cmake.source-dir = "cpp"
 cmake.build-type = "Release"
-cmake.define = { SSCBIRRT_BUILD_PYTHON = "ON", SSCBIRRT_BUILD_TESTS = "OFF" }
+cmake.define = { SSCBIRRT_BUILD_PYTHON = "ON", SSCBIRRT_BUILD_TESTS = "OFF", SSCBIRRT_INSTALL = "OFF" }
 wheel.packages = ["src/pycbirrt"]
 sdist.include = ["cpp/", "src/", "tests/", "tools/", "docs/"]
 

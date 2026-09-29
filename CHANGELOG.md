@@ -20,6 +20,11 @@ follows [Semantic Versioning](https://semver.org/).
   `PlanResult.backend_reasons`. `PlanResult.backend` names the
   implementation. Same seed, same path within a backend; the backends agree
   on outcomes and validated paths, not on waypoints (#85, #116, #117, #118).
+  The C++ package installs and exports as `sscbirrt::core` for standalone
+  consumers (`find_package(sscbirrt)`); `cpp/examples/consumer/` is one, built
+  against the installed package in CI. `tools/reference_artifact.py --backend
+  native --check` is the parity gate: the native core must match the Python
+  artifact's semantic view on every case it supports (#119).
 - `PlanningProblem.sampler`: a replaceable free-space sampler
   (`SpaceSampler`, `sample(rng) -> q`) that proposes the targets the trees
   grow toward. None means the space itself, uniform, so defaults are

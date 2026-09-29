@@ -11,6 +11,29 @@ cmake --build build/cpp --parallel
 ctest --test-dir build/cpp --output-on-failure
 ```
 
+## Use it from C++
+
+Install the package, then `find_package` it. `examples/consumer/` is a complete downstream
+project and `examples/consumer/smoke.sh` runs the whole sequence against a scratch prefix.
+
+```bash
+cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DSSCBIRRT_BUILD_TESTS=OFF
+cmake --install build/cpp --prefix /path/to/install
+```
+
+```cmake
+find_package(sscbirrt REQUIRED)
+target_link_libraries(app PRIVATE sscbirrt::core)
+```
+
+```cpp
+#include <sscbirrt/sscbirrt.hpp>
+```
+
+The library has no dependencies beyond the C++20 standard library. The Python
+wheel builds the same CMake project with `SSCBIRRT_BUILD_PYTHON=ON` through
+scikit-build-core.
+
 Slices, tracked under the v1.5.0 milestone: joint space and sets (#116),
 validity, motion, and the search (#117), the Python binding (#118),
 install/export, consumer, and the parity gate (#119).
