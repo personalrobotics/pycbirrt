@@ -8,6 +8,11 @@ follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- `abort_fn` is also polled before each sampling draw during root
+  collection and before each smoothing attempt, not only once per search
+  iteration. Firing during roots returns an Aborted result with the roots
+  gathered so far; firing during smoothing returns the path found, as
+  smoothed so far, as a success (#109).
 - `CBiRRTConfig` validates its ranges at construction and raises
   `ValueError` naming the field and value: positive step size, timeout, and
   progress tolerances; nonnegative membership and connection tolerances;

@@ -63,6 +63,15 @@ class PlanResult:
     tree_goal: RRTree | None = field(default=None, repr=False)
 
 
+class _AbortedDuringRoots(Exception):
+    """Raised inside root collection when ``abort_fn`` fires; carries the roots gathered so far."""
+
+    def __init__(self, role: str, roots: list[Sample]):
+        super().__init__(role)
+        self.role = role
+        self.roots = roots
+
+
 class CBiRRT:
     """Constrained Bi-directional RRT planner.
 
@@ -205,9 +214,30 @@ class CBiRRT:
             if not is_finite(s) and not supports(s, SetSampler):
                 raise UnsupportedCapability(f"{name} set must be finite or sampleable: {s!r}")
 
-        # Validation errors (no valid roots) propagate; only search failures return a result
-        start_roots = self._roots(problem, problem.start, "Start")
-        goal_roots = self._roots(problem, problem.goal, "Goal")
+        # Validation errors (no valid roots) propagate; only search failures return a result.
+        # Cancellation during root collection is a search failure: Aborted, with what was gathered.
+        start_roots: list[Sample] = []
+        goal_roots: list[Sample] = []
+        try:
+            start_roots = self._roots(problem, problem.start, "Start")
+            goal_roots = self._roots(problem, problem.goal, "Goal")
+        except _AbortedDuringRoots as aborted:
+            if aborted.role == "Start":
+                start_roots = aborted.roots
+            else:
+                goal_roots = aborted.roots
+            return PlanResult(
+                path=None,
+                start_index=0,
+                goal_index=0,
+                iterations=0,
+                planning_time=0.0,
+                tree_sizes=(len(start_roots), len(goal_roots)),
+                success=False,
+                failure_reason=f"Aborted by user during {aborted.role.lower()} root collection",
+                tree_start=RRTree([r.q for r in start_roots], source_indices=[r.source for r in start_roots]),
+                tree_goal=RRTree([r.q for r in goal_roots], source_indices=[r.source for r in goal_roots]),
+            )
 
         tree_start = RRTree([r.q for r in start_roots], source_indices=[r.source for r in start_roots])
         tree_goal = RRTree([r.q for r in goal_roots], source_indices=[r.source for r in goal_roots])
@@ -232,7 +262,7 @@ class CBiRRT:
         start_biased = supports(problem.start, SetSampler)
 
         for iteration in range(self.config.max_iterations):
-            if self.config.abort_fn is not None and self.config.abort_fn():
+            if self._aborted():
                 return _failure(iteration, "Aborted by user")
 
             if time.monotonic() - start_time > self.config.timeout:
@@ -304,6 +334,10 @@ class CBiRRT:
     # Roots and admissibility
     # ------------------------------------------------------------------
 
+    def _aborted(self) -> bool:
+        """Whether ``abort_fn`` asks to stop. Polled once per iteration, per root draw, and per smoothing attempt."""
+        return self.config.abort_fn is not None and bool(self.config.abort_fn())
+
     def _admissible(self, problem: PlanningProblem, q: np.ndarray) -> tuple[bool, str | None]:
         """Whether ``q`` may appear on a path, and if not, why.
 
@@ -334,7 +368,10 @@ class CBiRRT:
 
         Every explicit configuration embedded in the set (``seeds``: the
         members of finite sets, also inside unions with sampleable regions)
-        is a candidate root, validated and filtered with a warning. If the
+        is a candidate root, validated and filtered with a warning.
+        ``abort_fn`` is polled before each sampling draw; if it fires,
+        ``_AbortedDuringRoots`` carries the roots gathered so far and
+        ``solve`` returns an Aborted result. If the
         set is not finite and supports sampling, admissible samples are
         added until ``num_tree_roots`` roots exist or the sample budget
         (``tsr_samples`` draws) is spent; a sampled candidate that repeats
@@ -371,6 +408,8 @@ class CBiRRT:
             for _ in range(self.config.tsr_samples):
                 if len(roots) >= self.config.num_tree_roots:
                     break
+                if self._aborted():
+                    raise _AbortedDuringRoots(role, roots)
                 candidates = s.sample(self._rng)
                 if not candidates:
                     stats["sample_failed"] += 1
@@ -671,8 +710,10 @@ class CBiRRT:
         """Smooth path by shortcutting with the grow function.
 
         Picks two random points on the path and attempts to grow from one to
-        the other. A shortcut replaces the segment between them only if it
-        is shorter in joint-space path length (under ``problem.space``), as
+        the other. Stops early, keeping the path as smoothed so far, if
+        ``abort_fn`` fires; a valid path exists and is returned as success.
+        A shortcut replaces the segment between them only if it is shorter
+        in joint-space path length (under ``problem.space``), as
         in the original CBiRRT; a shortcut with fewer waypoints can still be
         longer, for example after projection. Every shortcut is a validated
         edge sequence ending exactly at its target, so the path's first and
@@ -695,6 +736,8 @@ class CBiRRT:
                 break
             if attempts_without_improvement >= self.config.smoothing_patience:
                 break
+            if self._aborted():
+                break  # a valid path exists; return it as smoothed so far
 
             i = int(self._rng.integers(0, len(smoothed) - 2))
             j = int(self._rng.integers(i + 2, len(smoothed)))

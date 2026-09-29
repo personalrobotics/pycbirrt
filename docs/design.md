@@ -204,6 +204,15 @@ sampler or projector.
   bidirectional, goal-tree edges are validated with the goal side as
   `q_from`, the reverse of execution; motion validity must not depend on
   direction unless that is acceptable.
+- **Cancellation has three polling points.** `abort_fn` is checked once
+  per search iteration (before the deadline), before each sampling draw
+  during root collection, and before each smoothing attempt. Firing during
+  roots returns an Aborted result with zero iterations and trees holding
+  the roots gathered so far; during the search it returns Aborted; during
+  smoothing it stops smoothing and returns the path found, as smoothed so
+  far, as a success, because a valid path exists. Cancellation is
+  cooperative: a set, validator, or IK call that runs long is not
+  interrupted. The deadline is checked only in the search loop.
 - **Reached means connected.** Growth reports success only once the tree
   contains the exact target, added through a validated edge. Coming within
   `connection_tolerance` triggers that final exact edge; it never substitutes
