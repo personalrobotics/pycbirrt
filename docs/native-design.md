@@ -111,6 +111,8 @@ Contracts, identical to Python:
 - `sample` draws each bounded joint uniformly in its limits and each angular
   joint uniformly in $[-\pi, \pi)$, whatever limits were stored for it.
   `JointSpace` is the default `SpaceSampler` of a problem.
+- Uniform draws are `(rng() >> 11) * 2^-53`, not `std::uniform_real_distribution`,
+  so a seeded solve is repeatable across standard libraries as well as builds.
 - `unwrap_path` reproduces design.md's output rule: the first waypoint is
   returned as given, each later waypoint is the previous one plus
   `direction(prev, next)` on angular joints and the given value on bounded
@@ -206,10 +208,10 @@ state alive; the planner never takes ownership of it.
 ```cpp
 class FiniteSet final : public StateSet, public SetSampler, public SetDistance, public SetViolation {
 public:
-  FiniteSet(std::vector<Config> members, double tolerance = 1e-3, Metric metric = euclidean);
+  FiniteSet(std::vector<Config> members, double tolerance = 1e-6, Metric metric = euclidean);
   // contains: metric(q, m) <= tolerance for some member m
   // distance: min over members; violation: max(0, distance - tolerance)
-  // sample: every member, each with source {index}
+  // sample: one member drawn uniformly, source {index}  (as Python's FiniteSet.sample)
   // is_finite: true; members(), seeds(): every member with source {index}
 };
 
@@ -285,7 +287,7 @@ accessor and never `dynamic_cast`. Specifically:
   strategy is given; `projector` present iff a `projection` strategy is
   given. The strategy is responsible for its own requirements: `AllOf`
   calls `projection->requires(children)` at construction, and
-  `MostViolatedProjection::requires` throws `UnsupportedCapability` naming
+  `MostViolatedProjection::check_requirements` throws `UnsupportedCapability` naming
   the first child that lacks `violator` or `projector`. This is Python's
   `requires` hook at the same point.
 - `is_finite`: `AnyOf` iff every child is; `AllOf` iff some child is.

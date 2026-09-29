@@ -52,8 +52,20 @@ jobs:
             echo "No tests/ directory; skipping pytest."
           fi
 
+  cpp:
+    name: C++ core (sanitizers)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Debug -DSSCBIRRT_SANITIZE=ON
+      - name: Build
+        run: cmake --build build/cpp --parallel
+      - name: Test
+        run: ctest --test-dir build/cpp --output-on-failure
+
   notify-robot-code:
-    needs: test
+    needs: [test, cpp]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
