@@ -33,7 +33,7 @@ from pycbirrt.sets import (
     seeds,
     supports,
 )
-from pycbirrt.space import JointSpace
+from pycbirrt.space import JointSpace, SpaceSampler
 from pycbirrt.tsr_set import PoseRegion, TSRConfigurationSet, region_volume, tsr_weights
 
 __all__ = [
@@ -70,6 +70,7 @@ __all__ = [
     "is_finite",
     "members",
     "JointSpace",
+    "SpaceSampler",
     "TSRConfigurationSet",
     "PoseRegion",
     "region_volume",

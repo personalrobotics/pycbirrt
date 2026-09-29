@@ -6,6 +6,13 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `PlanningProblem.sampler`: a replaceable free-space sampler
+  (`SpaceSampler`, `sample(rng) -> q`) that proposes the targets the trees
+  grow toward. None means the space itself, uniform, so defaults are
+  unchanged. Start and goal bias stay in the planner (#110).
+
 ### Changed
 
 - `abort_fn` is also polled before each sampling draw during root

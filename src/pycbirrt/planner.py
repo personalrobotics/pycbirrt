@@ -286,7 +286,7 @@ class CBiRRT:
             elif tree_a is tree_goal and start_biased and self._rng.random() < self.config.start_bias:
                 q_sample = self._sample_admissible(problem, problem.start)
             if q_sample is None:
-                q_sample = problem.space.sample(self._rng)
+                q_sample = (problem.sampler or problem.space).sample(self._rng)
 
             # Extend tree_a toward the sample (EXT), then connect tree_b to where it got (CON)
             grow_idx, _ = self._grow(problem, tree_a, q_sample, self.config.extend_steps)

@@ -23,6 +23,22 @@ validator, path_constraint)` and `CBiRRT.solve(problem)`.
 These are **roles**. A set does not know which role it plays, and the same
 set can serve as a goal in one problem and a path constraint in another.
 
+Two further components of a problem are search strategy rather than
+specification, and both are replaceable with a default: the **motion
+validator** (below, under edges) and the **sampler**
+(`PlanningProblem.sampler`, a `SpaceSampler` with `sample(rng) -> q`), which
+proposes the free-space targets the trees grow toward. The default sampler
+is the space itself, uniform within the limits and over one full turn on
+angular joints. Start and goal bias remain the planner's: they mix the role
+sets' own samplers with the free-space sampler, and a custom sampler is not
+consulted for roots or bias draws. A target outside the space is handled by
+not growing toward it. Replacing the default trades away probabilistic
+completeness unless the replacement has full support over the space; that
+is the caller's responsibility and the planner does not check it. Samplers
+that need the trees (sampling around existing nodes) do not fit this
+interface and are deliberately not supported until a concrete strategy
+needs them.
+
 ## The state space
 
 `JointSpace(lower, upper, angular_joints)` owns the geometry of
