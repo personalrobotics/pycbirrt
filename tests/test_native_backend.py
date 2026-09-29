@@ -92,7 +92,8 @@ class TestLowering:
         with pytest.raises(native.NativeUnsupported) as info:
             planner.solve(problem, seed=0)
         reasons = info.value.reasons
-        assert any(r.startswith("goal: TSRConfigurationSet") for r in reasons)
+        # The TSR set's IK is the planar Python solver, so that is the blocker named for the goal.
+        assert any(r.startswith("goal: IK PlanarIK is a Python object") for r in reasons)
         assert any(r.startswith("path_constraint: PredicateSet") for r in reasons)
         assert len(reasons) == 2
 
@@ -201,3 +202,105 @@ class TestParityWithTheArtifact:
                 if len(seeds(problem.start)) == 1 and len(seeds(problem.goal)) == 1:
                     assert (nat.start_source, nat.goal_source) == (py.start_source, py.goal_source), case["name"]
         assert lowered_any
+
+
+class TestTSRLowering:
+    """TSR sets lower through the native SSIK adapter, or say exactly why not (#130)."""
+
+    @pytest.fixture(scope="class")
+    def ur5e(self):
+        ssik = pytest.importorskip("ssik")
+        if not native._native.has_ssik():
+            pytest.skip(native._native.ssik_unavailable_reason())
+        from pycbirrt.backends.ssik import SSIKRobotModel, SSIKSolver
+
+        ik = SSIKSolver(ssik.Manipulator.from_prebuilt("ur5e"))
+        robot = SSIKRobotModel(ik)
+        cfg = CBiRRTConfig(step_size=0.2, edge_resolution=0.05, timeout=30.0, num_tree_roots=20)
+        return robot, ik, cfg
+
+    def _grasp(self, robot, ik, planner, q):
+        box = np.array([[-0.05, 0.05], [-0.05, 0.05], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]])
+        return TSRConfigurationSet(
+            TSR(T0_w=robot.forward_kinematics(q), Tw_e=np.eye(4), Bw=box), robot, ik, planner.space
+        )
+
+    def test_tsr_goal_and_path_constraint_solve_natively_with_no_python_calls(self, ur5e):
+        robot, ik, cfg = ur5e
+        planner = CBiRRT(robot, ik, NoCollision(), cfg, backend="native")
+        q0 = np.array([0.0, -1.2, 1.0, -1.4, -1.57, 0.0])
+        goal = self._grasp(robot, ik, planner, np.array([0.8, -1.0, 0.8, -1.3, -1.57, 0.4]))
+        above = TSRConfigurationSet(
+            TSR(
+                np.eye(4),
+                np.eye(4),
+                np.array([[-1.2, 1.2], [-1.2, 1.2], [0.05, 1.5], [-np.pi, np.pi], [-np.pi, np.pi], [-np.pi, np.pi]]),
+            ),
+            robot,
+            ik,
+            planner.space,
+        )
+        problem = PlanningProblem(
+            space=planner.space,
+            start=_finite(planner, [q0]),
+            goal=goal,
+            validator=planner.collision,
+            path_constraint=above,
+        )
+        lowered = native.lower(problem, cfg)
+        nplanner = native._native.Planner(lowered.config)
+        calls = []
+        sys.setprofile(lambda frame, event, arg: calls.append(frame.f_code.co_name) if event == "call" else None)
+        try:
+            r = nplanner.solve(lowered.problem, 12, None, True)
+        finally:
+            sys.setprofile(None)
+        assert r.success and calls == []
+        result = native.convert(r)
+        assert result.backend == "native"
+        assert goal.contains(result.path[-1]) and all(above.contains(q) for q in result.path)
+        assert np.array_equal(result.path[0], q0)
+
+    def test_chain_planar_ik_and_fk_disagreement_are_reported(self, ur5e):
+        robot, ik, cfg = ur5e
+        planner = CBiRRT(robot, ik, NoCollision(), cfg, backend="native")
+        q0 = np.array([0.0, -1.2, 1.0, -1.4, -1.57, 0.0])
+        goal = self._grasp(robot, ik, planner, np.array([0.8, -1.0, 0.8, -1.3, -1.57, 0.4]))
+        base_problem = dict(space=planner.space, start=_finite(planner, [q0]), validator=planner.collision)
+
+        from tsr import TSRChain
+
+        chain = TSRConfigurationSet(TSRChain(TSRs=[goal.tsr, goal.tsr]), robot, ik, planner.space)
+        with pytest.raises(native.NativeUnsupported) as info:
+            planner.solve(PlanningProblem(goal=chain, **base_problem), seed=0)
+        assert info.value.reasons == ["goal: TSRChain has no native form (TSR chains stay Python)"]
+
+        planar_ik_goal = TSRConfigurationSet(goal.tsr, robot, PlanarIK(), planner.space)
+        with pytest.raises(native.NativeUnsupported) as info:
+            planner.solve(PlanningProblem(goal=planar_ik_goal, **base_problem), seed=0)
+        assert info.value.reasons[0].startswith("goal: IK PlanarIK is a Python object")
+
+        class Shifted:  # a robot model whose FK disagrees with SSIK's by 1 cm
+            dof = robot.dof
+            joint_limits = robot.joint_limits
+
+            def forward_kinematics(self, q):
+                T = robot.forward_kinematics(q).copy()
+                T[0, 3] += 0.01
+                return T
+
+        shifted_goal = TSRConfigurationSet(goal.tsr, Shifted(), ik, planner.space)
+        with pytest.raises(native.NativeUnsupported) as info:
+            planner.solve(PlanningProblem(goal=shifted_goal, **base_problem), seed=0)
+        assert "robot model FK disagrees with the SSIK model's" in info.value.reasons[0]
+
+    def test_auto_backend_runs_tsr_problems_natively(self, ur5e):
+        robot, ik, cfg = ur5e
+        planner = CBiRRT(robot, ik, NoCollision(), cfg, backend="auto")
+        result = planner.plan(
+            start=np.array([0.0, -1.2, 1.0, -1.4, -1.57, 0.0]),
+            goal_tsrs=[self._grasp(robot, ik, planner, np.array([0.8, -1.0, 0.8, -1.3, -1.57, 0.4])).tsr],
+            seed=3,
+            return_details=True,
+        )
+        assert result.success and result.backend == "native" and result.backend_reasons == ()

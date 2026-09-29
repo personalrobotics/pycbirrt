@@ -402,6 +402,9 @@ configuration, tries a few random restarts within each joint's limits. Pass
 uv pip install "pycbirrt[ssik]"   # ssik >= 7.0
 ```
 
+`SSIKRobotModel(ik)` is a `RobotModel` whose forward kinematics and limits
+come from the wrapped manipulator, for planning without a simulator.
+
 SSIK solves 6R and 7R arms in closed form, accepts a seed, and returns every
 in-limit winding of each geometric branch on joints wider than one turn, so
 the planner sees the complete TSR-induced configuration set. The adapter does
@@ -443,12 +446,19 @@ result.backend          # "native" or "python"
 result.backend_reasons  # with "auto": why Python was chosen, one entry per component
 ```
 
-In v1.5.0 the native core plans problems whose components all have a native
-form: finite sets, `AnyOf`/`AllOf` with the named strategies, `EmptySet`,
-and the validators in `pycbirrt.testing`. Anything else (TSR-induced sets,
-predicates, custom validators, samplers, or motion validators) makes
-`backend="native"` raise `NativeUnsupported` listing every blocker, and
-`backend="auto"` fall back to Python. The native solve releases the GIL and
+The native core plans problems whose components all have a native form:
+finite sets, `AnyOf`/`AllOf` with the named strategies, `EmptySet`, the
+validators in `pycbirrt.testing`, and, since 1.6.0, `TSRConfigurationSet`s
+whose region is a single `TSR` and whose IK is an `SSIKSolver` around an
+`ssik.Manipulator` of a verified family (the UR family,
+`ikgeo.three_parallel`). TSRs and SSIK then run entirely in C++: the TSR
+math is checked against sstsr on a conformance corpus and the SSIK adapter
+against the Python one on the UR5e. Anything else (TSR chains, other IK,
+predicates, custom validators, samplers, or motion validators, or an
+extension built without SSIK) makes `backend="native"` raise
+`NativeUnsupported` listing every blocker, and `backend="auto"` fall back
+to Python. Lowering also checks that the robot model's forward kinematics
+agrees with SSIK's on the problem's explicit configurations. The native solve releases the GIL and
 calls no Python after entry. Same seed, same path within a backend; the two
 backends agree on outcomes and validated paths but not on waypoints, because
 they use different random-number engines.

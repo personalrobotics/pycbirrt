@@ -42,7 +42,7 @@ from tsr import TSR, TSRChain
 
 from pycbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
 from pycbirrt.sets import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PredicateSet, seeds
-from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall
+from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall  # noqa: F401
 from pycbirrt.tsr_set import TSRConfigurationSet, tsr_weights
 
 ARTIFACT = Path(__file__).resolve().parent.parent / "tests" / "reference" / "python_reference.json"
@@ -313,6 +313,68 @@ def cases() -> list[dict[str, Any]]:
         p,
     )
 
+    out.extend(ur5e_cases(base))
+    return out
+
+
+def ur5e_cases(base: dict[str, Any]) -> list[dict[str, Any]]:
+    """The v1.6.0 end-to-end case (#91): a UR5e with a finite start, an AnyOf of two goal TSRs by volume,
+    and a path TSR, planned through SSIK. Skipped, with a notice, when ssik is not installed."""
+    try:
+        import ssik
+
+        from pycbirrt.backends.ssik import SSIKRobotModel, SSIKSolver
+    except ImportError:
+        print("note: ssik is not installed; the UR5e cases are omitted from this run", file=sys.stderr)
+        return []
+
+    manipulator = ssik.Manipulator.from_prebuilt("ur5e")
+    ik = SSIKSolver(manipulator)
+    robot = SSIKRobotModel(ik)
+    cfg = CBiRRTConfig(**{**base, "num_tree_roots": 20})
+    planner = CBiRRT(robot, ik, NoCollision(), cfg)
+    q0 = np.array([0.0, -1.2, 1.0, -1.4, -1.57, 0.0])
+    qa = np.array([0.8, -1.0, 0.8, -1.3, -1.57, 0.4])
+    qb = np.array([-0.9, -1.4, 1.2, -1.2, -1.57, -0.3])
+    box = np.array([[-0.05, 0.05], [-0.05, 0.05], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]])
+
+    def goal_set(q):
+        return _tsr_set(planner, TSR(T0_w=robot.forward_kinematics(q), Tw_e=np.eye(4), Bw=box))
+
+    a, b = goal_set(qa), goal_set(qb)
+    above = _tsr_set(
+        planner,
+        TSR(
+            T0_w=np.eye(4),
+            Tw_e=np.eye(4),
+            Bw=np.array([[-1.2, 1.2], [-1.2, 1.2], [0.05, 1.5], [-np.pi, np.pi], [-np.pi, np.pi], [-np.pi, np.pi]]),
+        ),
+    )
+    out: list[dict[str, Any]] = []
+    out.append(
+        {
+            "name": "ur5e_tsr_goal_union_with_path_tsr",
+            "description": "UR5e through SSIK: finite start, AnyOf of two grasp TSRs by volume, a workspace path TSR",
+            "seed": 12,
+            "config": cfg,
+            "problem": PlanningProblem(
+                space=planner.space,
+                start=_finite(planner, [q0]),
+                goal=AnyOf([a, b], weights=tsr_weights([a, b])),
+                validator=planner.collision,
+                path_constraint=above,
+            ),
+            "spec": {
+                "robot": "ssik prebuilt ur5e",
+                "ssik": importlib.metadata.version("ssik"),
+                "solver_name": manipulator.solver_name,
+                "start": [q0.tolist()],
+                "goal": "AnyOf([TSR@fk(qa), TSR@fk(qb)])",
+                "path_constraint": "TSR workspace box, z in [0.05, 1.5], rotation free",
+            },
+            "planner": planner,
+        }
+    )
     return out
 
 
@@ -406,9 +468,10 @@ def run_case(case: dict[str, Any], backend: str = "python") -> dict[str, Any]:
                 "validation": None,
                 "unsupported_reasons": list(e.reasons),
             }
-        result = native.solve(lowered, case["seed"], case["config"].abort_fn)
+        result, python_calls = _native_solve_counting_python_calls(lowered, case)
     else:
         result = planner.solve(case["problem"], seed=case["seed"])
+        python_calls = None
     record = {
         "name": case["name"],
         "description": case["description"],
@@ -422,7 +485,33 @@ def run_case(case: dict[str, Any], backend: str = "python") -> dict[str, Any]:
         "path": [q.tolist() for q in result.path] if result.success else None,
         "validation": validate(case["problem"], case["config"], result.path) if result.success else None,
     }
+    if python_calls is not None:
+        record["native_python_calls"] = python_calls  # the no-callback proof: Python functions entered during the solve
     return record
+
+
+def _native_solve_counting_python_calls(lowered, case):
+    """Run the bare native solve under a profile hook that counts Python function entries (#91).
+
+    abort_fn cases use the wrapper (the token is polled from Python by design) and record no count.
+    """
+    from pycbirrt.backends import native
+
+    if case["config"].abort_fn is not None:
+        return native.solve(lowered, case["seed"], case["config"].abort_fn), None
+    planner = native._native.Planner(lowered.config)
+    calls: list[str] = []
+
+    def profiler(frame, event, arg):
+        if event == "call":
+            calls.append(frame.f_code.co_name)
+
+    sys.setprofile(profiler)
+    try:
+        r = planner.solve(lowered.problem, case["seed"], None, True)
+    finally:
+        sys.setprofile(None)
+    return native.convert(r), len(calls)
 
 
 def generate(backend: str = "python") -> dict[str, Any]:

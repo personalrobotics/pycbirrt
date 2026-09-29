@@ -233,11 +233,12 @@ def create_grasp_tsrs(target_pos: np.ndarray) -> tuple[TSR, TSR]:
     # For a HORIZONTAL side grasp with fingers opening horizontally:
     #   gripper z-axis (approach) -> -X (toward cylinder)
     #   gripper y-axis (up) -> +Z (world up)
-    #   gripper x-axis -> +Y (to the side)
+    #   gripper x-axis -> -Y, the right-handed completion (y cross z); +Y would make this
+    #   a reflection, not a rotation, which sstsr 3.2 rejects. The fingers open along it either way.
     Tw_e_side = np.array(
         [
             [0, 0, -1, standoff_side],  # world X = -gripper_z, translation +X
-            [1, 0, 0, 0],  # world Y = gripper_x
+            [-1, 0, 0, 0],  # world Y = -gripper_x
             [0, 1, 0, 0],  # world Z = gripper_y
             [0, 0, 0, 1],
         ]

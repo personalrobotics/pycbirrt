@@ -35,6 +35,9 @@ from pycbirrt.sets import AllOf, AnyOf, EmptySet, FiniteSet, MostViolatedProject
 from pycbirrt.space import JointSpace
 from pycbirrt.testing import NoCollision, Wall
 from pycbirrt.tree import RRTree
+from pycbirrt.tsr_set import TSRConfigurationSet
+
+FK_AGREEMENT_ATOL = 1e-6  # the robot model's FK must match the SSIK adapter's on the problem's explicit configurations
 
 try:
     from pycbirrt import _native
@@ -71,7 +74,91 @@ def _lower_space(space: JointSpace):
     return _native.JointSpace(list(space.lower), list(space.upper), angular)
 
 
-def _lower_set(s, where: str, space: JointSpace, nspace, reasons: list[str]):
+class _Lowering:
+    """Per-lowering state: one native SSIK arm per Python SSIKSolver instance, checked once."""
+
+    def __init__(self, problem: PlanningProblem, nspace):
+        self.problem = problem
+        self.nspace = nspace
+        self.arms: dict[int, Any] = {}
+        self.arm_reasons: dict[int, str] = {}
+
+    def arm_for(self, tsr_set: TSRConfigurationSet, where: str, reasons: list[str]):
+        ik = tsr_set.ik
+        key = id(ik)
+        if key in self.arms:
+            return self.arms[key]
+        if key in self.arm_reasons:
+            return None
+        why = self._arm_reason(tsr_set, where)
+        if why is not None:
+            self.arm_reasons[key] = why
+            reasons.append(why)
+            return None
+        return self.arms[key]
+
+    def _arm_reason(self, tsr_set: TSRConfigurationSet, where: str) -> str | None:
+        from pycbirrt.backends import native_ssik
+
+        needs = "is a Python object; native needs an SSIKSolver around an ssik.Manipulator"
+        try:
+            from pycbirrt.backends.ssik import SSIKSolver
+        except ImportError:
+            return f"{where}: IK {type(tsr_set.ik).__name__} {needs}"
+        ik = tsr_set.ik
+        if not isinstance(ik, SSIKSolver):
+            return f"{where}: IK {type(ik).__name__} {needs}"
+        manipulator = ik.solver
+        if not hasattr(manipulator, "solver_name"):
+            return f"{where}: SSIKSolver wraps {type(manipulator).__name__}, not an ssik.Manipulator"
+        why = native_ssik.unsupported_reason(manipulator)
+        if why is not None:
+            return f"{where}: {why}"
+        arm = native_ssik.arm_from_manipulator(manipulator, T_base=ik.T_base, T_ee=ik.T_ee)
+        # The native set uses SSIK's FK where the Python set used the robot model's: they must agree.
+        from pycbirrt.sets import seeds
+
+        for smp in seeds(self.problem.start) + seeds(self.problem.goal):
+            q = np.asarray(smp.q, dtype=float)
+            if q.shape != (arm.dof,):
+                continue
+            expected = tsr_set.robot.forward_kinematics(q)
+            got = np.array(arm.fk(list(map(float, q))))
+            err = float(np.abs(expected - got).max())
+            if err > FK_AGREEMENT_ATOL:
+                return (
+                    f"{where}: robot model FK disagrees with the SSIK model's by {err:.3g} at an explicit "
+                    f"configuration (tolerance {FK_AGREEMENT_ATOL:g}); pass T_base/T_ee so they agree"
+                )
+        self.arms[id(ik)] = arm
+        return None
+
+
+def _lower_tsr_set(s: TSRConfigurationSet, where: str, ctx: _Lowering, reasons: list[str]):
+    from tsr import TSR
+
+    if not isinstance(s.tsr, TSR):
+        reasons.append(f"{where}: {type(s.tsr).__name__} has no native form (TSR chains stay Python)")
+        return None
+    arm = ctx.arm_for(s, where, reasons)
+    if arm is None:
+        return None
+    try:
+        region = _native.TSR(s.tsr.T0_w.tolist(), s.tsr.Tw_e.tolist(), s.tsr.Bw.tolist())
+    except ValueError as e:
+        reasons.append(f"{where}: TSR rejected by the native constructor: {e}")
+        return None
+    return _native.TSRConfigurationSet(
+        region, arm, arm, ctx.nspace, float(s.tolerance), int(s.max_projection_iters), float(s.progress_tolerance)
+    )
+
+
+def _lower_set(s, where: str, space: JointSpace, nspace, reasons: list[str], ctx: "_Lowering | None" = None):
+    if isinstance(s, TSRConfigurationSet):
+        if ctx is None:
+            reasons.append(f"{where}: TSRConfigurationSet needs a lowering context")
+            return None
+        return _lower_tsr_set(s, where, ctx, reasons)
     if isinstance(s, FiniteSet):
         configs = [list(map(float, c)) for c in s.configs]
         if s.metric is euclidean:
@@ -83,7 +170,7 @@ def _lower_set(s, where: str, space: JointSpace, nspace, reasons: list[str]):
     if isinstance(s, EmptySet):
         return _native.EmptySet()
     if isinstance(s, AnyOf):
-        children = [_lower_set(c, f"{where}[{i}]", space, nspace, reasons) for i, c in enumerate(s.children)]
+        children = [_lower_set(c, f"{where}[{i}]", space, nspace, reasons, ctx) for i, c in enumerate(s.children)]
         if any(c is None for c in children):
             return None
         weights = None if s.weights is None else [float(w) for w in s.weights]
@@ -94,7 +181,7 @@ def _lower_set(s, where: str, space: JointSpace, nspace, reasons: list[str]):
         reasons.append(f"{where}: AnyOf metric is a Python callable")
         return None
     if isinstance(s, AllOf):
-        children = [_lower_set(c, f"{where}[{i}]", space, nspace, reasons) for i, c in enumerate(s.children)]
+        children = [_lower_set(c, f"{where}[{i}]", space, nspace, reasons, ctx) for i, c in enumerate(s.children)]
         if any(c is None for c in children):
             return None
         projection = sampling = None
@@ -158,11 +245,12 @@ def lower(problem: PlanningProblem, config: CBiRRTConfig) -> Lowered:
         raise NativeUnsupported(["pycbirrt._native is not built; install pycbirrt from a wheel with the extension"])
     reasons: list[str] = []
     nspace = _lower_space(problem.space)
-    start = _lower_set(problem.start, "start", problem.space, nspace, reasons)
-    goal = _lower_set(problem.goal, "goal", problem.space, nspace, reasons)
+    ctx = _Lowering(problem, nspace)
+    start = _lower_set(problem.start, "start", problem.space, nspace, reasons, ctx)
+    goal = _lower_set(problem.goal, "goal", problem.space, nspace, reasons, ctx)
     constraint = None
     if problem.path_constraint is not None:
-        constraint = _lower_set(problem.path_constraint, "path_constraint", problem.space, nspace, reasons)
+        constraint = _lower_set(problem.path_constraint, "path_constraint", problem.space, nspace, reasons, ctx)
     validator = _lower_validator(problem.validator, problem.space.dof, reasons)
     if problem.motion_validator is not None:
         reasons.append(f"motion_validator: {type(problem.motion_validator).__name__} is a Python object")
@@ -209,8 +297,6 @@ def _raise_no_roots(e) -> None:
 
 def solve(lowered: Lowered, seed: int | None, abort_fn: Callable[[], bool] | None):
     """Run the native solve and return a Python ``PlanResult``. Exceptions map to their Python namesakes."""
-    from pycbirrt.planner import PlanResult
-
     token = _native.CancellationToken()
     stop = threading.Event()
     poller = None
@@ -242,6 +328,12 @@ def solve(lowered: Lowered, seed: int | None, abort_fn: Callable[[], bool] | Non
         stop.set()
         if poller is not None:
             poller.join()
+    return convert(r)
+
+
+def convert(r):
+    """A native PlanResult as the Python PlanResult."""
+    from pycbirrt.planner import PlanResult
 
     success = r.success
     start_source, goal_source = tuple(r.start_source), tuple(r.goal_source)

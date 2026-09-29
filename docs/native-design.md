@@ -847,12 +847,12 @@ reports TSR problems as unsupported with the reason "built without SSIK
 support". ssik 7.0 ships its headers in the wheel and exposes them
 (personalrobotics/ssik#641): `ssik.get_cmake_dir()` holds
 `ssik_cppConfig.cmake`, which exports `ssik::ssik_cpp` and finds Eigen3 as
-a dependency. The build takes that directory from the cache variable
-`SSCBIRRT_SSIK_CMAKE_DIR` (the wheel build passes it through `CMAKE_ARGS`
-after installing ssik into the environment; CI does this) or, failing that,
-asks the build interpreter, so a build without ssik or Eigen simply
-disables the adapter and `pycbirrt._native.has_ssik()` is false. pycbirrt
-pins `ssik>=7.0.0rc1,<8`
+a dependency. ssik is a build requirement of the wheel, so the isolated
+build asks its interpreter for that directory (`SSCBIRRT_WITH_SSIK=AUTO`);
+a pure CMake build passes `SSCBIRRT_SSIK_CMAKE_DIR` or puts it on
+`CMAKE_PREFIX_PATH`. A build without ssik or Eigen disables the adapter
+and `pycbirrt._native.has_ssik()` is false with a reason. pycbirrt pins
+`ssik>=7.0.0rc1,<8`
 for the native SSIK support (7.0.0rc1 is on TestPyPI; the pin moves to
 `>=7.0,<8` when 7.0.0 reaches PyPI). The C++ interface used here,
 `three_parallel_artifact_solve(consts, limits, T, params)` with
