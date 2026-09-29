@@ -79,5 +79,26 @@ class CBiRRTConfig:
             self.connection_tolerance = self.tsr_tolerance
         # Keep the old attribute readable for callers that inspect it
         self.tsr_tolerance = self.membership_tolerance
-        if self.edge_resolution is not None and self.edge_resolution <= 0:
-            raise ValueError("edge_resolution must be positive")
+        self._validate_ranges()
+
+    def _validate_ranges(self) -> None:
+        """Reject malformed values at construction; the native contract applies the same ranges (#108)."""
+
+        def check(name, ok, requirement):
+            if not ok:
+                raise ValueError(f"{name} must be {requirement}, got {getattr(self, name)!r}")
+
+        for name in ("timeout", "step_size", "progress_tolerance", "projection_progress_tolerance"):
+            check(name, getattr(self, name) > 0, "positive")
+        for name in ("membership_tolerance", "connection_tolerance"):
+            check(name, getattr(self, name) >= 0, "nonnegative")
+        for name in ("max_iterations", "tsr_samples", "num_tree_roots", "max_ik_per_pose", "max_projection_iters"):
+            check(name, getattr(self, name) >= 1, "at least 1")
+        for name in ("smoothing_iterations", "smoothing_patience"):
+            check(name, getattr(self, name) >= 0, "nonnegative")
+        for name in ("edge_resolution",):
+            check(name, getattr(self, name) is None or getattr(self, name) > 0, "None or positive")
+        for name in ("extend_steps", "connect_steps"):
+            check(name, getattr(self, name) is None or getattr(self, name) >= 1, "None or at least 1")
+        for name in ("goal_bias", "start_bias"):
+            check(name, 0.0 <= getattr(self, name) <= 1.0, "within [0, 1]")

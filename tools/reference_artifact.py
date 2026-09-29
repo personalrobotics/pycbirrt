@@ -260,11 +260,11 @@ def cases() -> list[dict[str, Any]]:
     )
 
     # 10. timeout
-    cfg = CBiRRTConfig(**{**base, "timeout": 0.0})
+    cfg = CBiRRTConfig(**{**base, "timeout": 1e-9})  # smallest positive: the first deadline check fires
     p = _planner(cfg)
     add(
         "timeout",
-        "timeout of zero seconds: the first iteration reports a timeout",
+        "a one-nanosecond timeout: the first deadline check reports a timeout before any iteration",
         9,
         cfg,
         PlanningProblem(
@@ -273,7 +273,7 @@ def cases() -> list[dict[str, Any]]:
             goal=_finite(p, [np.array([1.0, 0.5])]),
             validator=p.collision,
         ),
-        {"timeout": 0.0},
+        {"timeout": 1e-9},
         p,
     )
 
