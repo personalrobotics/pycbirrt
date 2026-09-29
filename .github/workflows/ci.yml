@@ -105,6 +105,11 @@ jobs:
           assert r.success and r.backend == 'native', r
           print('wheel ok:', len(r.path), 'waypoints natively')
           "
+      - name: The installed wheel passes the artifact gate with the native backend (needs the ssik extra)
+        run: |
+          uv pip install --python "$RUNNER_TEMP/wheel-env/bin/python" --prerelease=allow --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ --index-strategy unsafe-best-match "$(ls dist/*.whl)[ssik]"
+          "$RUNNER_TEMP/wheel-env/bin/python" tools/reference_artifact.py --backend native --check
+          "$RUNNER_TEMP/wheel-env/bin/python" tools/tsr_conformance.py --check
       - name: Install the sdist into a fresh environment (compiles from source)
         run: |
           uv venv --python 3.12 "$RUNNER_TEMP/sdist-env"

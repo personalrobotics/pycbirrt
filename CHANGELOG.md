@@ -6,6 +6,22 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-09-29
+
+TSR planning goes native. When a problem's regions are single TSRs and its
+IK is SSIK on a verified family, the whole solve, sampling, projection, and
+IK included, runs in C++ with no Python callback, and the reference
+artifact records the proof. The TSR math is checked against sstsr on a
+conformance corpus and the SSIK adapter against the Python one on the
+UR5e. Everything else falls back to Python with a stated reason, and the
+default backend is still Python, so `plan(...)` behaves as in 1.5.0.
+
+**Installing 1.6.0 needs ssik 7.0.0rc1**, which is on TestPyPI only until
+ssik 7.0.0 reaches PyPI: it is both the `ssik` extra's requirement and a
+build requirement of the extension. With uv, the explicit index in
+`pyproject.toml` resolves it for checkouts; with pip, pass
+`--extra-index-url https://test.pypi.org/simple/ --pre` for the build.
+
 ### Added
 
 - **Native TSR planning.** `backend="native"` and `"auto"` now run
@@ -400,6 +416,7 @@ semantics; every 1.0.0 test passes unchanged.
 Initial release: CBiRRT with TSR start, goal, and path constraints; MuJoCo
 and EAIK backends; planar arm and UR5e examples.
 
+[1.6.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.2.0...v1.3.0

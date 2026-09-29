@@ -1,6 +1,6 @@
 [project]
 name = "pycbirrt"
-version = "1.5.0"
+version = "1.6.0"
 description = "CBiRRT motion planner with TSR constraints"
 readme = "README.md"
 requires-python = ">=3.10"
