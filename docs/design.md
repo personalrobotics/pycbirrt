@@ -238,6 +238,17 @@ Membership tolerance belongs to the concrete set; the legacy lowering copies
 the config value into the sets it builds. `tsr_tolerance` is a deprecated
 alias that sets membership and connection tolerances together.
 
+`CBiRRTConfig` validates its ranges at construction and raises `ValueError`
+naming the field: `timeout`, `step_size`, `progress_tolerance`, and
+`projection_progress_tolerance` positive (a zero progress tolerance can loop
+forever under a projector that stalls); `membership_tolerance` and
+`connection_tolerance` nonnegative (zero means exact); `edge_resolution`
+None or positive; `max_iterations`, `tsr_samples`, `num_tree_roots`,
+`max_ik_per_pose`, and `max_projection_iters` at least 1;
+`smoothing_iterations` and `smoothing_patience` nonnegative; `extend_steps`
+and `connect_steps` None or at least 1; `goal_bias` and `start_bias` within
+$[0, 1]$. The native `PlannerConfig` applies the same ranges.
+
 ## The reference artifact
 
 `tools/reference_artifact.py` runs a fixed matrix of problems on the planar

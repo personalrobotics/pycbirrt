@@ -1170,7 +1170,7 @@
    }
   },
   {
-   "description": "timeout of zero seconds: the first iteration reports a timeout",
+   "description": "a one-nanosecond timeout: the first deadline check reports a timeout before any iteration",
    "failure_category": "timeout",
    "goal_source": [],
    "iterations": 0,
@@ -1178,7 +1178,7 @@
    "path": null,
    "seed": 9,
    "spec": {
-    "timeout": 0.0
+    "timeout": 1e-09
    },
    "start_source": [],
    "status": "failure",

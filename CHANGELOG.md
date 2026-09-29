@@ -8,6 +8,12 @@ follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- `CBiRRTConfig` validates its ranges at construction and raises
+  `ValueError` naming the field and value: positive step size, timeout, and
+  progress tolerances; nonnegative membership and connection tolerances;
+  counts at least 1; biases within [0, 1]; `edge_resolution`,
+  `extend_steps`, and `connect_steps` None or positive. Previously only
+  `edge_resolution` was checked (#108).
 - **Joint topology is the caller's declaration.** `JointSpace` rejects a
   non-finite limit on a joint not marked angular ("give finite planning
   limits or mark it angular"), and an angular joint ignores its stored
