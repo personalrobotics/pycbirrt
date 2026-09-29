@@ -1,9 +1,13 @@
 # pycbirrt
 
-A bidirectional RRT that plans between sets of configurations: a start set, a
-goal set, and a set the whole path must stay inside. Task Space Regions (TSRs)
-are the usual way to define those sets; CBiRRT (Berenson et al., 2009) is the
-algorithm.
+A planner over sets of configurations. A planning problem names a start set,
+a goal set, a set the whole path must stay inside, and a validity predicate;
+a solution is a path that begins in the start set, ends in the goal set, and
+stays inside the path set with every configuration valid. A set is anything
+that answers `contains(q)`. The algorithm is CBiRRT (Berenson et al., 2009),
+a bidirectional RRT that grows trees from many roots and projects onto
+constraints. Task Space Regions are one representation of a set; the planner
+does not depend on it, and sets you define yourself take the same roles.
 
 ## Why sets
 
@@ -23,136 +27,162 @@ without leaving the constraint set, and the failure is found only after
 planning. The usual remedy is an outer loop over IK solutions and grasp
 candidates, replanning each time and rebuilding the same start tree.
 
-CBiRRT takes the sets and defers the choice to the search. The start set, the
-goal set, and the path-admissible set are three roles for one kind of
-object. Membership is the only operation the planner requires of a set;
-sampling, distance, violation, and projection are optional capabilities that
-the planner uses when present. Sets compose with explicit semantics: `AnyOf`
-for alternatives, `AllOf` for simultaneous requirements, each with stated
-rules for how capabilities combine. TSR-induced configuration sets, finite
-lists of configurations, TSR chains, and arbitrary predicates are sets of the
-same kind and fit any of the three roles.
+Taking the sets moves the choice into the search. Both trees grow from many
+roots at once, one per member drawn from the start and goal sets, so every
+alternative is explored in one search and the reachable member is found
+rather than guessed. Path constraints are enforced during tree growth, by
+projecting each new configuration onto the constraint set or rejecting it,
+not by filtering the path afterward. The result records which start and goal
+member the path uses. And because the planner asks a set for nothing beyond
+membership, the sets are open: a pose region, a list of configurations, a
+predicate on forward kinematics, or a set of your own design are all admitted
+on equal terms.
 
-Consequences:
+## What a set is
 
-- Both trees grow from many roots at once, one per sampled member of the
-  start and goal sets, so every alternative is explored in one search and the
-  reachable member is found rather than guessed.
-- Path constraints are enforced during tree growth by projecting each new
-  configuration onto the constraint set, not by filtering the path afterward.
-- The result records which start and goal member the path uses, as a
-  provenance path through the set expression, so the planner's choice is
-  available to the caller.
+A state set is anything with `contains(q) -> bool`. The planner never
+branches on a set's concrete type. Four capabilities are separate protocols;
+a set provides them by defining the method, and `supports(s, Capability)`
+asks.
+
+| Capability | Method | Contract |
+|---|---|---|
+| `SetSampler` | `sample(rng) -> list[Sample]` | candidate members from one draw, unfiltered; the planner validates them |
+| `SetDistance` | `distance(q) -> float` | nonnegative geometric distance to the set, before tolerance |
+| `SetViolation` | `violation(q) -> float` | nonnegative and exactly zero iff `contains(q)` |
+| `SetProjector` | `project(q_previous, q_proposed) -> q or None` | move a configuration onto the set, or give up |
+
+What each role requires:
+
+| Role | Requires | Uses if present |
+|---|---|---|
+| start, goal | explicit members (a finite set anywhere in the expression) or `SetSampler`, so the tree has roots | `SetDistance` for nearest-member queries |
+| path constraint | membership only; an extension that leaves the set is rejected | `SetProjector`, so extensions are projected instead of rejected |
+| validator | `is_valid(q)`; applied to every root and every configuration along every edge | |
+
+Composition is explicit. `AnyOf(children, weights)` is the union: a single
+child delegates every capability; with several, sampling draws a child by
+weight and each `Sample` records which one. `AllOf(children, projection=,
+sampling=)` is the intersection: a single child delegates; with several, the
+caller names how to project (`MostViolatedProjection`) and how to sample
+(`RejectionSampling(source)`), because there is no canonical way to do either
+for an intersection. An intersection of finite sets is finite and
+enumerable. A `Sample` carries the configuration and a provenance tuple,
+the sequence of choices that produced it, which is what
+`PlanResult.start_source` and `goal_source` report; a leaf contributes no
+choices, so provenance is empty when the set expression has none.
+
+Leaves provided: `FiniteSet(configs, tolerance, metric)`, `PredicateSet(fn)`,
+`EmptySet()`, and `TSRConfigurationSet(tsr, robot, ik, space)`, which is
+$\{q : \mathrm{FK}(q) \in \mathrm{TSR}\}$ with all four capabilities.
 
 ## Quick start
 
-All three roles in one call. The start is the current configuration, the goal
-is the region of top-down grasps above an object with free yaw, and the
-constraint keeps the gripper pointing down along the whole path. The TSRs are
-those of `examples/ur5e_transport.py`.
+Three roles, three kinds of set: a finite start, a goal induced by a pose
+region, and a path constraint written for this problem that only implements
+membership. Run against the two-link reference arm in `pycbirrt.testing`.
 
 ```python
 import numpy as np
 from tsr import TSR
-from pycbirrt import CBiRRT, CBiRRTConfig
+from pycbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem, TSRConfigurationSet
+from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK
 
-DOWN = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])  # gripper z axis pointing down
+robot, ik, collision = PlanarArm(), PlanarIK(), NoCollision()
+planner = CBiRRT(robot, ik, collision, CBiRRTConfig(step_size=0.1, timeout=10.0))
 
-
-def grasp_above(p):
-    T = np.eye(4)
-    T[:3, :3], T[:3, 3] = DOWN, p + [0, 0, 0.25]  # standoff for the gripper length
-    return TSR(T0_w=T, Tw_e=np.eye(4), Bw=np.array([
-        [-0.02, 0.02], [-0.02, 0.02], [0.0, 0.05],    # position: ±2 cm, up to 5 cm higher
-        [-0.01, 0.01], [-0.01, 0.01], [-np.pi, np.pi],  # roll, pitch fixed; yaw free
-    ]))
-
-
+# Goal: end effector within 10 cm of (0, 1.5), orientation free
 T = np.eye(4)
-T[:3, :3], T[:3, 3] = DOWN, [0.0, 0.0, 0.6]
-upright = TSR(T0_w=T, Tw_e=np.eye(4), Bw=np.array([
-    [-0.9, 0.9], [-0.9, 0.9], [-0.3, 0.5],          # anywhere above the table
-    [-0.05, 0.05], [-0.05, 0.05], [-np.pi, np.pi],  # tilt within 0.05 rad; yaw free
-]))
+T[:3, 3] = [0.0, 1.5, 0.0]
+near = TSR(T0_w=T, Tw_e=np.eye(4), Bw=np.array([[-0.1, 0.1], [-0.1, 0.1], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]]))
 
-planner = CBiRRT(robot, ik_solver, collision_checker, CBiRRTConfig(step_size=0.2, timeout=60.0))
-result = planner.plan(
-    start=q_current,
-    goal_tsrs=[grasp_above(object_position)],
-    constraint_tsrs=[upright],
-    seed=0,
-    return_details=True,
-)
-if result.success:
-    result.path          # joint waypoints; first is q_current, last is in the goal set
-    result.goal_source   # which goal member the path reached
-else:
-    result.failure_reason  # "timeout", "max_iterations", "aborted", ...
-```
 
-`robot`, `ik_solver`, and `collision_checker` implement the protocols in
-[Interfaces](#interfaces); the [backends](#backends) provide them for MuJoCo
-models. Without `return_details`, `plan` returns the path or `None`.
+class RightOfWall:
+    """The end effector stays at x >= -0.2 along the whole path. Membership only."""
 
-## Sets
+    def contains(self, q):
+        return robot.forward_kinematics(q)[0, 3] >= -0.2
 
-A state set is anything with `contains(q) -> bool`. The planner never
-branches on a set's concrete type. Capabilities are separate protocols:
-
-| Capability | Method | The planner uses it for |
-|---|---|---|
-| `SetSampler` | `sample(rng) -> list[Sample]` | roots of the start and goal trees |
-| `SetDistance` | `distance(q) -> float` | nearest-member queries |
-| `SetViolation` | `violation(q) -> float`, zero iff `contains` | projection progress and ordering inside `AllOf` |
-| `SetProjector` | `project(q_previous, q_proposed) -> q or None` | keeping tree growth inside a path constraint |
-
-Leaves: `FiniteSet(configs, tolerance, metric)`, `PredicateSet(fn)`,
-`EmptySet()`, and `TSRConfigurationSet(tsr, robot, ik, space)`, which is
-$\{q : \mathrm{FK}(q) \in \mathrm{TSR}\}$ with all four capabilities.
-
-`AnyOf(children, weights)` is the union. A single child delegates every
-capability; with several children, sampling draws a child by weight and each
-`Sample` records which one. `AllOf(children, projection=, sampling=)` is the
-intersection. A single child delegates; with several children the caller
-names how to project (`MostViolatedProjection`) and how to sample
-(`RejectionSampling(source)`), because there is no canonical way to do either
-for an intersection. `AllOf` of finite sets is finite and enumerable.
-
-```python
-from pycbirrt import AnyOf, FiniteSet, PlanningProblem, TSRConfigurationSet
-
-grasp_a = TSRConfigurationSet(tsr_a, robot, ik, planner.space)
-grasp_b = TSRConfigurationSet(tsr_b, robot, ik, planner.space)
-upright = TSRConfigurationSet(upright_tsr, robot, ik, planner.space)
 
 problem = PlanningProblem(
     space=planner.space,
-    start=FiniteSet([q_start], metric=planner.space.distance),
-    goal=AnyOf([grasp_a, grasp_b], weights=[1, 1]),
-    validator=collision_checker,
-    path_constraint=upright,  # one set: no strategy needed
+    start=FiniteSet([np.array([-0.5, 0.5])], metric=planner.space.distance),
+    goal=TSRConfigurationSet(near, robot, ik, planner.space),
+    validator=collision,
+    path_constraint=RightOfWall(),
 )
 result = planner.solve(problem, seed=0)
+result.success        # True
+result.path           # 47 waypoints; every one has end-effector x >= -0.2
+result.goal_source    # () : the goal is a single leaf, no choice to record
 ```
 
-`plan(...)` lowers into this form: configuration lists become a `FiniteSet`
-whose members are enumerated as roots, TSR lists become an `AnyOf` weighted by
-TSR volume, and several `constraint_tsrs` become an `AllOf` with
-`MostViolatedProjection`. Local-motion validation is also a replaceable
-component: a custom `motion_validator` on the problem owns the whole edge
-check, and `RestrictedMotionValidator(base, accepts)` adds a restriction on
-top of the default discretized check.
+The path constraint has no projector, so the planner rejects any extension
+that would leave it. Give the class a `project` method and extensions are
+pulled onto the set instead, which is what `TSRConfigurationSet` does.
 
-[docs/design.md](docs/design.md) has the definitions, the composition rules,
-what the planner requires of each role, the tolerances, and the reference
-behavior artifact that pins the planner's semantics
-(`python tools/reference_artifact.py --check`).
+For problems whose sets are all TSRs or configuration lists, `plan(...)` is
+the shorthand. It lowers configuration lists to a `FiniteSet` whose members
+are roots, TSR lists to an `AnyOf` weighted by TSR volume, and several
+`constraint_tsrs` to an `AllOf` with `MostViolatedProjection`:
+
+```python
+result = planner.plan(
+    start=q_current,                       # or a list of configurations
+    goal_tsrs=[grasp_above(object_pose)],  # any of these regions
+    constraint_tsrs=[upright],             # all of these, along the whole path
+    seed=0,
+    return_details=True,
+)
+```
+
+Local-motion validation is also a replaceable component: a custom
+`motion_validator` on the problem owns the whole edge check, and
+`RestrictedMotionValidator(base, accepts)` adds a restriction on top of the
+default discretized check. [docs/design.md](docs/design.md) has the
+definitions, the composition rules, what the planner requires of each role,
+the tolerances, and the reference behavior artifact that pins the planner's
+semantics (`python tools/reference_artifact.py --check`).
+
+## Defining your own set
+
+A set is a class. Implement `contains`; add capabilities as the role needs
+them.
+
+```python
+class MySet:
+    def contains(self, q: np.ndarray) -> bool:
+        ...                                   # required; the only thing every role needs
+
+    def sample(self, rng: np.random.Generator) -> list[Sample]:
+        ...                                   # start/goal roots: every candidate from one draw, unfiltered
+
+    def violation(self, q: np.ndarray) -> float:
+        ...                                   # zero iff contains(q); lets strategies rank children
+
+    def project(self, q_previous: np.ndarray, q_proposed: np.ndarray) -> np.ndarray | None:
+        ...                                   # path constraints: move q_proposed onto the set, or None
+```
+
+Rules the planner relies on: `sample` returns every candidate a draw
+produces (for example every IK branch of one pose) and applies no collision
+or other external filter, since which branch is valid is the validator's
+call; `violation` is on the set's own scale and agrees with `contains` at
+zero; `project` may use `q_previous` to seed an iterative solve or to reject
+a result that moved too far. Every configuration a set returns is checked
+against the joint space and the validator before it is stored, so a set
+cannot put an invalid configuration into a tree.
 
 ## Task Space Regions
 
 A TSR is a pose region in SE(3): a reference frame `T0_w`, an end-effector
 offset `Tw_e`, and bounds `Bw` on x, y, z, roll, pitch, yaw in the reference
-frame.
+frame. `TSRConfigurationSet` lifts it through the robot into the set of
+configurations whose end effector lies in the region, and the TSR's geometry
+supplies every capability: sampling (draw a pose, solve IK for every
+branch), distance and violation (TSR distance of the forward kinematics),
+and projection (the closest pose in the region, then IK seeded from the
+previous configuration).
 
 ```python
 from tsr import TSR
