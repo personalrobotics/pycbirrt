@@ -1118,6 +1118,8 @@ artifact compares them: outcome, validation, provenance where unique.
    native set could differ from the Python set; the alternative is to trust
    the caller as the Python adapter's docstring already asks.
 4. **Python `TSR` validation** of frames and bounds in sstsr, so the
-   reference does the ingress check the native does. This is an upstream
-   change to sstsr; the alternative is to validate in pycbirrt's lowering
-   only and record a difference.
+   reference does the ingress check the native does. Requested upstream as
+   personalrobotics/tsr#162 (frames finite with a valid rotation block and
+   last row, bounds finite, tolerance 1e-6); pycbirrt pins the release that
+   carries it. The alternative is to validate in pycbirrt's lowering only
+   and record a difference.
