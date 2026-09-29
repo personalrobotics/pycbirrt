@@ -399,7 +399,7 @@ configuration, tries a few random restarts within each joint's limits. Pass
 ### SSIK (analytical IK, recommended)
 
 ```bash
-uv pip install "pycbirrt[ssik]"
+uv pip install "pycbirrt[ssik]"   # ssik >= 7.0
 ```
 
 SSIK solves 6R and 7R arms in closed form, accepts a seed, and returns every

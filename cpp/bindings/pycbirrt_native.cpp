@@ -12,6 +12,9 @@
 #include <vector>
 
 #include "sscbirrt/sscbirrt.hpp"
+#if SSCBIRRT_HAS_SSIK
+#include "sscbirrt/ssik/ssik_arm.hpp"
+#endif
 
 namespace py = pybind11;
 using namespace sscbirrt;
@@ -255,6 +258,75 @@ PYBIND11_MODULE(_native, m) {
       .def("sample_xyzrpy", [](const tsr::TSR& t, std::uint64_t seed) { Rng rng(seed); return t.sample_xyzrpy(rng); })
       .def("volume", &tsr::TSR::volume)
       .def("continuous_bounds", [](const tsr::TSR& t) { return t.continuous_bounds().rows; });
+  py::class_<ForwardKinematics, std::shared_ptr<ForwardKinematics>>(m, "ForwardKinematics")
+      .def_property_readonly("dof", &ForwardKinematics::dof)
+      .def("fk", [](const ForwardKinematics& f, const Config& q) { return to_rows(f.fk(q)); });
+  py::class_<IKSolver, std::shared_ptr<IKSolver>>(m, "IKSolver")
+      .def_property_readonly("dof", &IKSolver::dof)
+      .def("solve", [](const IKSolver& s, const Rows4& T, std::optional<Config> seed) {
+             return s.solve(from_rows(T), seed ? ConfigView(*seed) : ConfigView{});
+           },
+           py::arg("pose"), py::arg("seed") = std::nullopt);
+
+  py::class_<tsr::TSRConfigurationSet, StateSet, std::shared_ptr<tsr::TSRConfigurationSet>>(m, "TSRConfigurationSet",
+                                                                                            py::multiple_inheritance())
+      .def(py::init([](const tsr::TSR& region, std::shared_ptr<const ForwardKinematics> fk, std::shared_ptr<const IKSolver> ik,
+                       std::shared_ptr<const JointSpace> space, double tolerance, int max_projection_iters,
+                       double progress_tolerance) {
+             return std::make_shared<tsr::TSRConfigurationSet>(region, std::move(fk), std::move(ik), std::move(space), tolerance,
+                                                                max_projection_iters, progress_tolerance);
+           }),
+           py::arg("region"), py::arg("fk"), py::arg("ik"), py::arg("space"), py::arg("tolerance") = 1e-3,
+           py::arg("max_projection_iters") = 50, py::arg("progress_tolerance") = 1e-6)
+      .def("distance", [](const tsr::TSRConfigurationSet& s, const Config& q) { return s.distance(q); })
+      .def("project", [](const tsr::TSRConfigurationSet& s, const Config& q) { return s.project(q, q); })
+      .def("sample", [](const tsr::TSRConfigurationSet& s, std::uint64_t seed) {
+        Rng rng(seed);
+        std::vector<Config> out;
+        for (Sample& smp : s.sample(rng)) out.push_back(std::move(smp.q));
+        return out;
+      });
+  m.def("tsr_weights", [](const std::vector<std::shared_ptr<const tsr::TSRConfigurationSet>>& sets) { return tsr::tsr_weights(sets); });
+
+#if SSCBIRRT_HAS_SSIK
+  m.def("has_ssik", [] { return true; });
+  m.def("ssik_unavailable_reason", [] { return std::string(); });
+  py::class_<ssik::SSIKArm, ForwardKinematics, IKSolver, std::shared_ptr<ssik::SSIKArm>>(m, "SSIKArm", py::multiple_inheritance())
+      .def(py::init([](const std::string& solver, const std::vector<std::array<double, 3>>& axis,
+                       const std::vector<std::array<double, 16>>& t_left, const std::vector<std::array<double, 16>>& t_right,
+                       const std::vector<int>& joint_type, const std::vector<double>& lo, const std::vector<double>& hi,
+                       const std::vector<bool>& present, const Rows4& T_base, const Rows4& T_ee) {
+             if (axis.size() != 6 || t_left.size() != 6 || t_right.size() != 6 || joint_type.size() != 6 || lo.size() != 6 ||
+                 hi.size() != 6 || present.size() != 6) {
+               throw std::invalid_argument("SSIKArm expects six joints");
+             }
+             ssik::ArmSpec spec;
+             spec.solver_name = solver;
+             for (std::size_t i = 0; i < 6; ++i) {
+               spec.axis[i] = axis[i];
+               spec.t_left[i] = t_left[i];
+               spec.t_right[i] = t_right[i];
+               spec.revolute[i] = joint_type[i] == 0;
+               spec.lo[i] = lo[i];
+               spec.hi[i] = hi[i];
+               spec.present[i] = present[i];
+             }
+             spec.T_base = from_rows(T_base);
+             spec.T_ee = from_rows(T_ee);
+             return std::make_shared<ssik::SSIKArm>(std::move(spec));
+           }),
+           py::arg("solver"), py::arg("axis"), py::arg("t_left"), py::arg("t_right"), py::arg("joint_type"), py::arg("lo"),
+           py::arg("hi"), py::arg("present"), py::arg("T_base"), py::arg("T_ee"),
+           "Constants as ssik.cpp.joint_data renders them (t_left/t_right as flat row-major 16-vectors), plus the "
+           "SSIKSolver frame offsets.")
+      .def_property_readonly("family", [](const ssik::SSIKArm& a) { return std::string(ssik::family_name(a.family())); });
+#else
+  m.def("has_ssik", [] { return false; });
+  m.def("ssik_unavailable_reason", [] {
+    return std::string("pycbirrt._native was built without SSIK support (ssik_cpp or Eigen3 not found at build time)");
+  });
+#endif
+
   m.def("rot_to_rpy", [](const Rows4& T) { return rot_to_rpy(from_rows(T)); });
   m.def("xyzrpy_to_trans", [](const XyzRpy& v) { return to_rows(xyzrpy_to_trans(v)); });
   m.def("unit_draws", [](std::uint64_t seed, int n) { Rng rng(seed); std::vector<double> out; for (int i = 0; i < n; ++i) out.push_back(unit(rng)); return out; });
