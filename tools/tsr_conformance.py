@@ -137,14 +137,33 @@ def generate() -> dict[str, Any]:
     }
 
 
-def semantic_view(artifact: dict[str, Any]) -> list[dict[str, Any]]:
-    return [
-        {
-            "name": r["name"],
-            "probes": [{k: p[k] for k in ("contains", "distance", "closest_contained")} for p in r["probes"]],
-        }
-        for r in artifact["regions"]
-    ]
+ATOL = 1e-9  # distances and transforms compare within this; sstsr on another platform differs in the last bits
+
+
+def mismatches(stored: dict[str, Any], fresh: dict[str, Any], atol: float = ATOL) -> list[str]:
+    """Where a fresh sstsr run disagrees with the stored corpus: booleans exactly, floats within atol."""
+    out = []
+    by_name = {r["name"]: r for r in stored["regions"]}
+    for r in fresh["regions"]:
+        old = by_name.get(r["name"])
+        if old is None:
+            out.append(f"{r['name']}: not in the stored corpus")
+            continue
+        if len(old["probes"]) != len(r["probes"]):
+            out.append(f"{r['name']}: {len(old['probes'])} stored probes vs {len(r['probes'])} fresh")
+            continue
+        for i, (x, y) in enumerate(zip(old["probes"], r["probes"])):
+            where = f"{r['name']}[{i}]"
+            if x["contains"] != y["contains"]:
+                out.append(f"{where}.contains: stored={x['contains']} fresh={y['contains']}")
+            if abs(x["distance"] - y["distance"]) > atol:
+                out.append(f"{where}.distance: stored={x['distance']!r} fresh={y['distance']!r}")
+            if not np.allclose(x["closest"], y["closest"], atol=atol, rtol=0.0):
+                diff = np.abs(np.array(x["closest"]) - np.array(y["closest"])).max()
+                out.append(f"{where}.closest: max |diff| = {diff:.3g}")
+            if x["closest_contained"] != y["closest_contained"]:
+                out.append(f"{where}.closest_contained: stored={x['closest_contained']} fresh={y['closest_contained']}")
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -155,10 +174,17 @@ def main(argv: list[str] | None = None) -> int:
     fresh = generate()
     if args.check:
         stored = json.loads(args.output.read_text())
-        if semantic_view(stored) != semantic_view(fresh):
-            print("MISMATCH: sstsr's results on the conformance corpus changed", file=sys.stderr)
+        bad = mismatches(stored, fresh)
+        if bad:
+            print("MISMATCH: sstsr's results on the conformance corpus changed:", file=sys.stderr)
+            for line in bad:
+                print(f"  {line}", file=sys.stderr)
             return 1
-        print(f"conformance corpus unchanged ({len(fresh['regions'])} regions, versions {fresh['versions']})")
+        n = sum(len(r["probes"]) for r in fresh["regions"])
+        print(
+            f"conformance corpus unchanged ({len(fresh['regions'])} regions, {n} probes, within {ATOL}; "
+            f"versions {fresh['versions']})"
+        )
         return 0
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(fresh, indent=1, sort_keys=True) + "\n")
