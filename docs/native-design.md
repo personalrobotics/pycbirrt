@@ -844,13 +844,16 @@ inherit Eigen unless it uses SSIK.
 ON when `ssik_cpp` and Eigen are found, else OFF with a status message). A
 build without it still plans natively for everything v1.5.0 supports and
 reports TSR problems as unsupported with the reason "built without SSIK
-support". The ssik wheel does not ship its headers today; the request to do
-so and to expose their location to CMake is personalrobotics/ssik#641. Until
-it lands, the wheel build finds the headers through `SSCBIRRT_SSIK_CPP_DIR`
-or `CMAKE_PREFIX_PATH`, and CI builds them from a pinned ssik checkout. This
-is a decision for review: the alternative is vendoring the headers into
-`cpp/third_party/`, which duplicates about twenty files and their
-correctness history.
+support". ssik 7.0 ships its headers in the wheel and exposes them
+(personalrobotics/ssik#641): `ssik.get_cmake_dir()` holds
+`ssik_cppConfig.cmake`, which exports `ssik::ssik_cpp` and finds Eigen3 as
+a dependency. The wheel build lists ssik as a build requirement and asks
+the build interpreter for that directory; pycbirrt pins `ssik>=7.0.0rc1,<8`
+for the native SSIK support (7.0.0rc1 is on TestPyPI; the pin moves to
+`>=7.0,<8` when 7.0.0 reaches PyPI). The C++ interface used here,
+`three_parallel_artifact_solve(consts, limits, T, params)` with
+`JointConsts<6>`, `JointLimits<6>`, and `ArtifactParams<6>`, is fixed for
+7.0.
 
 ## Transform and kinematics interfaces (core)
 
@@ -912,16 +915,16 @@ class TSR {
 Every rule is sstsr 3.1's, stated here so the C++ can be checked against
 the text as well as against the differential corpus:
 
-- **Construction.** `T0_w` and `Tw_e` must be finite with a valid rotation
-  block (orthonormal within 1e-6, determinant positive) and a last row
-  `0 0 0 1`; `Bw` must be finite with `lo <= hi` on the three translations.
-  Rotational rows may have `hi < lo`: that is an outer interval wrapping
-  through $\pm\pi$, and its width is $2\pi + (hi - lo)$. Widths are clamped
-  to $2\pi$. The continuous bounds wrap each rotational `lo` into
-  $[-\pi, \pi)$ and set `hi = lo + width`. sstsr accepts non-finite frames
-  and NaN bounds silently; native rejects them at construction (#87's
-  ingress rule), and the Python `TSR` gains the same checks in the same
-  release, so the reference stays ahead of the contract.
+- **Construction.** `T0_w` and `Tw_e` must be finite 4x4 with last row
+  `0 0 0 1` and a rotation block with $R R^T = I$ and $\det R = +1$ within
+  `tsr.FRAME_ATOL` (1e-6, absolute); `Bw` must be a finite 6x2 with
+  `lo <= hi` on the three translations. These are sstsr 3.2.0's rules
+  (personalrobotics/tsr#162), stated in its `docs/ARCHITECTURE.md` as
+  conditions on the inputs so that a second implementation reproduces them;
+  pycbirrt pins `sstsr>=3.2,<4`. Rotational rows may have `hi < lo`: that
+  is an outer interval wrapping through $\pm\pi$, and its width is
+  $2\pi + (hi - lo)$. Widths are clamped to $2\pi$. The continuous bounds
+  wrap each rotational `lo` into $[-\pi, \pi)$ and set `hi = lo + width`.
 - **Frames.** For a world-frame end-effector pose `T`, the local pose is
   `Tw_s' = inv(T0_w) · T · inv(Tw_e)`; its translation and rotation are
   tested against the continuous bounds.
@@ -961,7 +964,8 @@ the text as well as against the differential corpus:
   (`weights_from_tsrs`); the binding lowers the Python-computed weights as
   numbers, so this only matters for a pure C++ consumer.
 
-`EPSILON` is sstsr's module constant and is copied, not redefined.
+`EPSILON` (0.001, the containment slack), `FRAME_ATOL` (1e-6), and the
+gimbal test's 1e-9 are sstsr's constants and are copied, not redefined.
 
 ## The lifted set (tsr)
 
@@ -1057,12 +1061,11 @@ manipulator built from the same MJCF, and the check makes the assumption
 visible. Second, the Python `TSR` must pass the native constructor's
 validation, which the Python constructor now also performs.
 
-The `ArmSpec` is rendered in Python from the manipulator's KinBody, with the
-same fields `cpp_emit.py` renders (`_render_joint_consts6`,
-`_render_limits`), through the helper requested in personalrobotics/ssik#641,
-and until then through the same private accessors that script uses. It is
-rendered once per lowering and shared by every set in the problem that
-wraps the same `SSIKSolver`.
+The `ArmSpec` is rendered in Python from the manipulator through
+`ssik.cpp.joint_data` (7.0), the public form of what `cpp_emit.py` renders:
+per joint the axis, the fixed transforms on either side of the joint, the
+joint type, and the limits. It is rendered once per lowering and shared by
+every set in the problem that wraps the same `SSIKSolver`.
 
 ## Conformance corpus (#87)
 
@@ -1097,7 +1100,7 @@ artifact compares them: outcome, validation, provenance where unique.
 
 | Python | Native | Relation |
 |---|---|---|
-| `tsr.TSR` | `sscbirrt::tsr::TSR` | same math; native rejects non-finite frames and NaN bounds at construction, and Python gains the same checks in v1.6.0 |
+| `tsr.TSR` | `sscbirrt::tsr::TSR` | same math and the same construction rules and tolerance (sstsr 3.2.0) |
 | `PoseRegion` protocol | `TSR` only | chains are not native; lowering says so |
 | `TSRConfigurationSet` | `sscbirrt::tsr::TSRConfigurationSet` | same rules; FK comes from the IK adapter rather than a separate robot model, checked equal at lowering |
 | `RobotModel.forward_kinematics`, `IKSolver.solve` | `ForwardKinematics`, `IKSolver` | same contracts |
@@ -1105,21 +1108,18 @@ artifact compares them: outcome, validation, provenance where unique.
 | `tsr_weights`, `region_volume` | `TSR::volume` | same |
 | numpy RNG in `TSR.sample` | `unit(rng)`, six draws | the one difference, as before: engine only |
 
-## Open questions for review
+## Decisions
 
-1. **Header source for ssik_cpp**: wait for personalrobotics/ssik#641 and
-   pin the release, with CI building from a pinned checkout meanwhile, or
-   vendor the headers under `cpp/third_party/`.
+1. **Header source for ssik_cpp**: resolved. ssik 7.0 ships the headers and
+   `ssik.get_cmake_dir()` (personalrobotics/ssik#641); pycbirrt consumes
+   them through `find_package(ssik_cpp)` and does not vendor.
 2. **Eigen only in `sscbirrt::ssik`**, with a sixteen-double `Transform` in
-   the core. The alternative is Eigen in the core, which simplifies the TSR
-   math at the cost of every consumer inheriting it.
-3. **FK-agreement check at lowering** (1e-6 on the seeds). It catches a
-   robot model that disagrees with the SSIK model, which is the one way the
-   native set could differ from the Python set; the alternative is to trust
-   the caller as the Python adapter's docstring already asks.
-4. **Python `TSR` validation** of frames and bounds in sstsr, so the
-   reference does the ingress check the native does. Requested upstream as
-   personalrobotics/tsr#162 (frames finite with a valid rotation block and
-   last row, bounds finite, tolerance 1e-6); pycbirrt pins the release that
-   carries it. The alternative is to validate in pycbirrt's lowering only
-   and record a difference.
+   the core: adopted. The alternative, Eigen in the core, would make every
+   consumer inherit it.
+3. **FK-agreement check at lowering** (1e-6 on the seeds): adopted. It
+   catches a robot model that disagrees with the SSIK model, the one way the
+   native set could differ from the Python set, and costs a few FK
+   evaluations.
+4. **Python `TSR` validation**: resolved upstream in sstsr 3.2.0
+   (personalrobotics/tsr#162) with the tolerance exported as
+   `tsr.FRAME_ATOL`; pycbirrt pins `sstsr>=3.2,<4`.
