@@ -18,6 +18,14 @@ follows [Semantic Versioning](https://semver.org/).
   cost a few milliseconds and membership can be a false negative on a hard
   chain (#7).
 
+- `pycbirrt.testing`: the two-link planar reference arm (`PlanarArm`,
+  `PlanarIK`, `NoCollision`, `Wall`) as an importable module.
+- `tools/reference_artifact.py` and `tests/reference/python_reference.json`:
+  the deterministic Python reference artifact, a fixed twelve-case matrix
+  with fixed seeds, implementation versions, results, and an independent
+  validation report. `tests/test_reference_artifact.py` regenerates it and
+  fails on any semantic change. It is the definition of "compatible with
+  the Python reference" for the native backends (#94).
 - `examples/ur5e_transport.py`: constrained transport on the UR5e, the
   gripper kept pointing down from one side of the base to the other, planned
   with and without the constraint and reporting each path's largest tilt.
