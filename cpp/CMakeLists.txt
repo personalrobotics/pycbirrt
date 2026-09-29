@@ -31,7 +31,7 @@ target_compile_options(sscbirrt_core PRIVATE -Wall -Wextra -Wpedantic -Werror)
 set_target_properties(sscbirrt_core PROPERTIES POSITION_INDEPENDENT_CODE ON OUTPUT_NAME sscbirrt EXPORT_NAME core)
 
 # The pose-region runtime: sstsr's TSR in C++, standard library only (v1.6.0 addendum).
-add_library(sscbirrt_tsr STATIC src/tsr/tsr.cpp)
+add_library(sscbirrt_tsr STATIC src/tsr/tsr.cpp src/tsr/tsr_set.cpp)
 add_library(sscbirrt::tsr ALIAS sscbirrt_tsr)
 target_link_libraries(sscbirrt_tsr PUBLIC sscbirrt_core)
 target_compile_options(sscbirrt_tsr PRIVATE -Wall -Wextra -Wpedantic -Werror)
@@ -81,6 +81,8 @@ if(SSCBIRRT_BUILD_TESTS)
   sscbirrt_test(test_planner)
   sscbirrt_test(test_tsr)
   target_link_libraries(test_tsr PRIVATE sscbirrt::tsr)
+  sscbirrt_test(test_tsr_set)
+  target_link_libraries(test_tsr_set PRIVATE sscbirrt::tsr)
 endif()
 
 # The Python binding is the only target that sees Python. scikit-build-core drives this file with
