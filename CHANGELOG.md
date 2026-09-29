@@ -6,6 +6,19 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-09-29
+
+The native core arrives as an explicit opt-in. A C++20 implementation of the
+planner, specified by `docs/native-design.md` as one contract with the Python
+reference, plans finite and composed problems with no Python in the loop and
+is gated against the reference artifact. The default backend is still Python,
+so `plan(...)` and `solve(...)` behave exactly as in 1.4.0. The Python
+reference also adopted four rules the contract needed stated sharply: finite
+limits on bounded joints, config range validation, three cancellation
+points, and a replaceable free-space sampler. Installing from source now
+compiles the extension and needs CMake and a C++20 compiler; wheels include
+it.
+
 ### Added
 
 - **Native core (opt-in).** A C++20 implementation of the planner under
@@ -350,6 +363,7 @@ semantics; every 1.0.0 test passes unchanged.
 Initial release: CBiRRT with TSR start, goal, and path constraints; MuJoCo
 and EAIK backends; planar arm and UR5e examples.
 
+[1.5.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.1.0...v1.2.0
