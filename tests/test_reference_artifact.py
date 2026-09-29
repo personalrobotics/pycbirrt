@@ -103,5 +103,16 @@ def test_native_backend_matches_the_artifact(tool):
     assert {"fixed_to_fixed", "multiple_roots", "wrapped_seam", "timeout", "cancellation", "unreachable"} <= set(
         supported
     )
+    by_name = {c["name"]: c for c in native["cases"]}
+    # The planar TSR cases use a Python IK, so they fall back with that reason; the chain case with its own.
+    assert by_name["tsr_chain_goal"]["unsupported_reasons"] == [
+        "goal: TSRChain has no native form (TSR chains stay Python)"
+    ]
+    assert by_name["projected_constraint"]["unsupported_reasons"][0].startswith(
+        "path_constraint: IK PlanarIK is a Python object"
+    )
+    if "ur5e_tsr_goal_union_with_path_tsr" in by_name and pytest.importorskip("pycbirrt._native").has_ssik():
+        ur5e = by_name["ur5e_tsr_goal_union_with_path_tsr"]
+        assert ur5e["status"] == "success" and ur5e["native_python_calls"] == 0  # the no-callback proof (#91)
     assert tool.parity_mismatches(json.loads(ARTIFACT.read_text()), native) == []
     assert tool.main(["--check", "--backend", "native"]) == 0

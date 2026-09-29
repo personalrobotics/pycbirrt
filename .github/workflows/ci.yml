@@ -11,11 +11,6 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # ssik 7.0.0rc1 comes from TestPyPI through [tool.uv.sources]; the wheel build reads this
-  # to enable the native SSIK adapter (see the "Install dependencies" step).
-  UV_PYTHON_PREFERENCE: managed
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -35,13 +30,9 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libeigen3-dev
 
-      - name: Install dependencies (ssik first, so the extension build can find its CMake package)
+      - name: Install dependencies (builds the extension; ssik is a build requirement, so the SSIK adapter is detected)
         run: |
-          uv sync --all-extras --dev --no-install-project
-          echo "CMAKE_ARGS=-DSSCBIRRT_SSIK_CMAKE_DIR=$(.venv/bin/python -c 'import ssik; print(ssik.get_cmake_dir())')" >> "$GITHUB_ENV"
-      - name: Build and install pycbirrt with the native SSIK adapter
-        run: |
-          uv sync --all-extras --dev --reinstall-package pycbirrt
+          uv sync --all-extras --dev
           uv run python -c "import pycbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason(); print('native SSIK adapter built')"
 
       - name: Ruff lint
@@ -95,12 +86,8 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
-      - name: Install Eigen and ssik so the wheel carries the native SSIK adapter
-        run: |
-          sudo apt-get update && sudo apt-get install -y libeigen3-dev
-          uv venv "$RUNNER_TEMP/ssik-env"
-          uv pip install --python "$RUNNER_TEMP/ssik-env/bin/python" --prerelease=allow --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ --index-strategy unsafe-best-match "ssik>=7.0.0rc1,<8"
-          echo "CMAKE_ARGS=-DSSCBIRRT_SSIK_CMAKE_DIR=$("$RUNNER_TEMP/ssik-env/bin/python" -c 'import ssik; print(ssik.get_cmake_dir())')" >> "$GITHUB_ENV"
+      - name: Install Eigen (ssik, a build requirement, supplies the ssik_cpp headers to the isolated build)
+        run: sudo apt-get update && sudo apt-get install -y libeigen3-dev
       - name: Build the wheel and the sdist
         run: uv build
       - name: Install the wheel into a fresh environment and plan natively

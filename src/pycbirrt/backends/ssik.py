@@ -114,6 +114,36 @@ class SSIKSolver:
         return T
 
 
+class SSIKRobotModel:
+    """A ``RobotModel`` whose forward kinematics and joint limits come from an ``SSIKSolver``.
+
+    For planning without a simulator: the limits are the wrapped manipulator's
+    (an unlimited joint is reported as ±∞, so the space demands a declaration), and
+    ``forward_kinematics`` is ``SSIKSolver.fk``, so the robot model and the IK agree
+    by construction. This is the model the reference artifact's UR5e cases use.
+    """
+
+    def __init__(self, solver: SSIKSolver):
+        manipulator = solver.solver
+        limits = getattr(manipulator, "joint_limits", None)
+        if limits is None:
+            raise TypeError("SSIKRobotModel needs an SSIKSolver around an ssik.Manipulator (it has joint_limits)")
+        self.solver = solver
+        self._lower = np.array([lim[0] if lim is not None else -np.inf for lim in limits], dtype=float)
+        self._upper = np.array([lim[1] if lim is not None else np.inf for lim in limits], dtype=float)
+
+    @property
+    def dof(self) -> int:
+        return int(self._lower.size)
+
+    @property
+    def joint_limits(self) -> tuple[np.ndarray, np.ndarray]:
+        return self._lower.copy(), self._upper.copy()
+
+    def forward_kinematics(self, q: np.ndarray) -> np.ndarray:
+        return self.solver.fk(q)
+
+
 def _check_transform(T: np.ndarray, name: str) -> np.ndarray:
     """Validate and take an independent, read-only copy of a fixed frame transform.
 

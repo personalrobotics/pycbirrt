@@ -6,6 +6,31 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Native TSR planning.** `backend="native"` and `"auto"` now run
+  problems with `TSRConfigurationSet`s entirely in C++ when the region is a
+  single `TSR` and the IK is an `SSIKSolver` around an `ssik.Manipulator`
+  of a verified family (`ikgeo.three_parallel`, the UR family). The TSR
+  math is sstsr 3.2.0's, checked on a checked-in conformance corpus
+  (`tools/tsr_conformance.py`, 162 probes); the SSIK adapter calls ssik
+  7.0's header-only solver and is verified identical to the Python adapter
+  on the UR5e. Lowering checks that the robot model's FK agrees with
+  SSIK's on the problem's explicit configurations. TSR chains, other IK
+  backends, and other families fall back explicitly with a reason
+  (#87, #90, #127, #128, #129, #130).
+- `SSIKRobotModel`: a `RobotModel` from an `SSIKSolver`, for planning
+  without a simulator. The reference artifact gains a UR5e case (finite
+  start, `AnyOf` of two grasp TSRs by volume, a workspace path TSR) whose
+  native run records zero Python calls during the solve.
+
+### Fixed
+
+- `examples/tsr_union_demo.py` built its side-grasp frame from a
+  left-handed triad (a reflection, determinant −1), which sstsr 3.2's
+  constructor now rejects; the gripper x axis is the right-handed
+  completion of the approach and up directions.
+
 ### Changed
 
 - The `ssik` extra requires `ssik>=7.0.0rc1,<8`: 7.0 ships the `ssik_cpp`
