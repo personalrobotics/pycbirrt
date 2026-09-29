@@ -18,7 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 mujoco = ["mujoco>=3.0"]
-ssik = ["ssik>=6.0.1,<7"]  # 6.0.1 has seed-nearest rewrapping and in-limit winding enumeration (ssik#562)
+ssik = ["ssik>=7.0.0rc1,<8"]  # 7.0 ships the ssik_cpp headers and ssik.cpp.joint_data for the native SSIK adapter (ssik#641)
 eaik = ["eaik"]  # deprecated; removed in pycbirrt 2.0
 examples = [
     "matplotlib",
@@ -51,6 +51,15 @@ sdist.include = ["cpp/", "src/", "tests/", "tools/", "docs/"]
 Homepage = "https://github.com/personalrobotics/pycbirrt"
 Repository = "https://github.com/personalrobotics/pycbirrt"
 Issues = "https://github.com/personalrobotics/pycbirrt/issues"
+
+# ssik 7.0.0rc1 is on TestPyPI only; this explicit index and source go away when 7.0.0 reaches PyPI.
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+explicit = true
+
+[tool.uv.sources]
+ssik = { index = "testpypi" }
 
 [tool.ruff]
 line-length = 120
