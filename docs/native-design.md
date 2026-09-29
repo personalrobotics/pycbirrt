@@ -2,9 +2,13 @@
 
 This document is the normative boundary for the native implementation of
 pycbirrt (#82). It translates the Python design in [design.md](design.md)
-into C++20 types without changing its semantics. Where the native contract
-differs from Python, the difference is recorded with its reason in
-[Concept map](#concept-map). Implementation begins only after this document
+into C++20 types without changing its semantics. The two backends are one
+contract with two implementations; the only recorded difference is the
+random-number engine, see [Concept map](#concept-map). Where the Python
+reference needed a rule stated more sharply to make that true (finite
+limits, config ranges, cancellation points, the free-space sampler), the
+reference was changed first (#107, #108, #109, #110) and this document
+describes it as it now behaves. Implementation begins only after this document
 is reviewed and merged; #85 implements it, #92 gates it against the
 reference artifact.
 
@@ -17,8 +21,8 @@ carried into C++ and what the C++ types promise.
 
 The native core plans non-TSR problems: joint spaces with bounded and
 angular joints, finite sets, `AnyOf` and `AllOf` of finite and native sets,
-native state validators, native path constraints, deadlines, cancellation,
-provenance, and the full search (roots, bidirectional growth, exact
+native state validators, native path constraints, a replaceable free-space
+sampler, deadlines, cancellation, provenance, and the full search (roots, bidirectional growth, exact
 connection, complete-edge validation, extraction, shortcutting, unwrapping).
 The Python planner is unchanged and remains the reference and the fallback.
 
@@ -61,7 +65,13 @@ Arrows point from dependent to dependency. Nothing points out of `core`.
 ```cpp
 namespace sscbirrt {
 
-class JointSpace {
+class SpaceSampler {
+public:
+  virtual ~SpaceSampler() = default;
+  virtual Config sample(Rng& rng) const = 0;            // a free-space target of length dof
+};
+
+class JointSpace final : public SpaceSampler {
 public:
   JointSpace(std::vector<double> lower, std::vector<double> upper,
              std::vector<bool> angular = {});           // throws std::invalid_argument
@@ -76,7 +86,7 @@ public:
   Config direction(ConfigView from, ConfigView to) const;   // short way around angular joints
   double distance(ConfigView a, ConfigView b) const;        // Euclidean norm of direction
   Config interpolate(ConfigView from, ConfigView to, double t) const;
-  Config sample(Rng& rng) const;                            // uniform in [lower, upper]
+  Config sample(Rng& rng) const override;                   // uniform; one full turn on angular joints
   std::vector<Config> unwrap_path(const std::vector<Config>& path) const;
 };
 
@@ -86,20 +96,21 @@ public:
 Contracts, identical to Python:
 
 - Construction throws `std::invalid_argument` if `lower` and `upper` differ
-  in length, any `lower[i] > upper[i]`, any entry is non-finite, or
-  `angular` is nonempty with a length other than `dof`.
-- A joint is angular only if the caller says so; an angular joint passes the
-  limit check for any finite value and its `direction` component is wrapped
-  into $(-\pi, \pi]$ by `atan2(sin, cos)`. A bounded joint's component is the
-  plain difference. Bounded joints wider than one turn stay bounded.
+  in length, any `lower[i] > upper[i]`, `angular` is nonempty with a length
+  other than `dof`, or a joint **not** marked angular has a non-finite
+  limit. The message for the last case is Python's: "joint i has non-finite
+  limits [lo, hi]; give finite planning limits or mark it angular". Topology
+  is the caller's declaration and is never inferred from the limits (#107).
+- A joint is angular only if the caller says so. Its stored limits are
+  ignored: it passes the limit check for any finite value, and its
+  `direction` component is wrapped into $(-\pi, \pi]$ by `atan2(sin, cos)`.
+  A bounded joint's component is the plain difference. Bounded joints wider
+  than one turn stay bounded.
 - `contains` is `why_invalid(q) == nullopt`. `why_invalid` reports, in
   order: wrong length, non-finite entry, out-of-limit joints (bounded only).
-- `sample` draws each bounded joint uniformly in its limits. An angular
-  joint with limits `lower[i] == upper[i]` (the Python convention for "no
-  limits") samples uniformly in $[-\pi, \pi)$. Python's `rng.uniform(lower,
-  upper)` on an angular joint samples whatever interval the caller stored;
-  the native rule is stated so that both backends draw from a meaningful
-  interval. This is a recorded difference, see the concept map.
+- `sample` draws each bounded joint uniformly in its limits and each angular
+  joint uniformly in $[-\pi, \pi)$, whatever limits were stored for it.
+  `JointSpace` is the default `SpaceSampler` of a problem.
 - `unwrap_path` reproduces design.md's output rule: the first waypoint is
   returned as given, each later waypoint is the previous one plus
   `direction(prev, next)` on angular joints and the given value on bounded
@@ -211,10 +222,10 @@ public:
 };
 ```
 
-`FiniteSet` throws `std::invalid_argument` on a negative tolerance, an empty
-member list, or members of unequal length. Members are validated against
-the problem's space at `solve`, not at construction, because a set does not
-know its space.
+`FiniteSet` throws `std::invalid_argument` on an empty member list, as
+Python's does ("FiniteSet requires at least one configuration"), or members
+of unequal length. Members are validated against the problem's space at
+`solve`, not at construction, because a set does not know its space.
 
 ### Composites
 
@@ -272,10 +283,11 @@ accessor and never `dynamic_cast`. Specifically:
 - `AllOf`, several children: `distancer` and `violator` present iff every
   child has them (max over children); `sampler` present iff a `sampling`
   strategy is given; `projector` present iff a `projection` strategy is
-  given. The strategy is responsible for its own requirements
-  (`MostViolatedProjection` needs every child to have `violator` and
-  `projector`, and reports the first child that lacks one through
-  `std::invalid_argument` at `AllOf` construction).
+  given. The strategy is responsible for its own requirements: `AllOf`
+  calls `projection->requires(children)` at construction, and
+  `MostViolatedProjection::requires` throws `UnsupportedCapability` naming
+  the first child that lacks `violator` or `projector`. This is Python's
+  `requires` hook at the same point.
 - `is_finite`: `AnyOf` iff every child is; `AllOf` iff some child is.
   `members`: union of children's members with the child index prepended;
   intersection enumerates one finite child and keeps what the others
@@ -363,10 +375,18 @@ struct PlanningProblem {
   std::shared_ptr<const StateValidator>  validator;
   std::shared_ptr<const StateSet>        path_constraint;   // may be null
   std::shared_ptr<const MotionValidator> motion_validator;  // null means the default
+  std::shared_ptr<const SpaceSampler>    sampler;           // null means *space
 };
 ```
 
-Roles are Python's. The problem is a value type; copying it shares the
+Roles are Python's, and so are the two replaceable strategy components:
+the motion validator and the free-space sampler (#110). The sampler
+proposes the targets the trees grow toward; start and goal bias remain the
+planner's and mix the role sets' own samplers with it, and the sampler is
+not consulted for roots or bias draws. A target outside the space is
+handled by not growing toward it. Replacing the default trades away
+probabilistic completeness unless the replacement has full support over
+the space; that is the caller's responsibility. The problem is a value type; copying it shares the
 components.
 
 ## Planner configuration
@@ -410,13 +430,18 @@ and the binding does the same. `angular_joints` lives on `JointSpace` only.
 deprecated alias with no native form.
 
 Ingress validation of the config, at `solve`, throws `std::invalid_argument`
-for: non-positive `timeout_seconds`, `max_iterations`, `step_size`,
-`connection_tolerance`, `progress_tolerance`, `sample_draws`,
-`num_tree_roots`, `max_per_draw`, `smoothing_iterations`; a given
-`edge_resolution`, `extend_steps`, or `connect_steps` that is not positive;
-`goal_bias` or `start_bias` outside $[0, 1]$; negative `smoothing_patience`.
-Python accepts some of these silently; native rejects them because the
-contract says ingress validation is where malformed input is caught.
+with Python's message shape ("<field> must be <requirement>, got <value>")
+and Python's ranges (#108): positive `timeout_seconds`, `step_size`,
+`progress_tolerance`; nonnegative `connection_tolerance`,
+`smoothing_iterations`, `smoothing_patience`; at least 1 for
+`max_iterations`, `sample_draws`, `num_tree_roots`, `max_per_draw`;
+`edge_resolution` empty or positive; `extend_steps` and `connect_steps`
+empty or at least 1; `goal_bias` and `start_bias` within $[0, 1]$. The
+ranges Python checks on its set-owned fields (`membership_tolerance`
+nonnegative, `max_projection_iters` at least 1,
+`projection_progress_tolerance` positive) are enforced natively by the
+constructors that own those values, `FiniteSet`, the TSR set in v1.6.0, and
+`MostViolatedProjection`.
 
 ## Deadlines, cancellation, randomness
 
@@ -442,10 +467,16 @@ struct SolveOptions {
 - The deadline is `std::chrono::steady_clock::now() + timeout_seconds`,
   taken when the search loop starts (after roots, as Python does). It is
   checked once per iteration.
-- The token is checked once per iteration, once per root draw, and once per
-  smoothing attempt. Python checks `abort_fn` once per iteration only; the
-  native superset is recorded in the concept map. Cancellation is
-  cooperative: a set or validator that runs long is not interrupted.
+- The token is checked at Python's three points (#109): once per search
+  iteration before the deadline, before each sampling draw during root
+  collection, and before each smoothing attempt. The outcomes are Python's:
+  during roots, `Status::Aborted` with zero iterations, `reason` "Aborted by
+  user during <role> root collection", and trees holding the roots gathered
+  so far; during the search, `Status::Aborted`; during smoothing, smoothing
+  stops and the result is `Status::Success` with the path as smoothed so
+  far, because a valid path exists. Finite sets involve no draws and are
+  not polled during roots. Cancellation is cooperative: a set or validator
+  that runs long is not interrupted.
 - The solver does not spawn threads and calls no set from more than one
   thread.
 
@@ -457,11 +488,9 @@ enum class Status {
   Timeout,
   Aborted,
   MaxIterations,
-  NoStartRoots,      // Python raises AllStart...Invalid / ...InCollision
-  NoGoalRoots,       // Python raises AllGoal...Invalid / ...InCollision
 };
 
-struct RootReport {                 // per role
+struct RootReport {                 // per role; carried by the result and by NoRoots
   int explicit_candidates = 0;      // from seeds()
   int explicit_rejected   = 0;
   int draws               = 0;
@@ -492,17 +521,21 @@ Ordinary search outcomes are statuses. Exceptions are reserved for:
 | Exception | When |
 |---|---|
 | `std::invalid_argument` | malformed input at ingress: dimensions, non-finite values, bounds, tolerances, option combinations, a set whose members do not match the space's `dof` |
-| `sscbirrt::UnsupportedCapability` | a start or goal set that is neither finite nor sampleable; a composite asked for a capability it lacks |
+| `sscbirrt::UnsupportedCapability` | a start or goal set that is neither finite nor sampleable; a composite asked for a capability it lacks; a strategy whose children lack what it needs |
+| `sscbirrt::NoRoots` | no admissible root for a role; carries the role and its `RootReport` |
 | `sscbirrt::ContractError` | a `MotionValidator` violated the `LocalMotion` contract; a set or projector returned a configuration of the wrong length |
 
-`NoStartRoots` and `NoGoalRoots` are statuses in native and exceptions in
-Python. The reason for the difference is the issue's rule that search
-failures are statuses; whether any root exists is a property of the problem
-that the search discovers, not malformed input. The binding restores the
-Python behavior: for `plan(...)` and `solve(...)` it raises
-`AllStartConfigurationsInCollision` when `start_roots.only_collisions()`,
-otherwise `AllStartConfigurationsInvalid`, and likewise for the goal, with
-the report's details as the message. v1.4.0 callers see no change.
+No admissible root is an exception in both backends, as Python has it:
+whether a role has any root is a property of the problem the planner
+discovers before the search starts, and callers distinguish it from a
+search that ran and failed. The binding maps `NoRoots` to Python's four
+exceptions: `AllStartConfigurationsInCollision` when
+`report.only_collisions()`, otherwise `AllStartConfigurationsInvalid`, and
+likewise for the goal, with the report's details as the message. A role
+with no explicit members and nothing to draw from (an `EmptySet`) is
+`std::invalid_argument`, Python's `ValueError` "No valid <role>
+configurations available". Whether these become statuses is a 2.0 decision
+to be made for both backends at once.
 
 `reason` strings begin with the same prefixes the artifact's
 `failure_category` recognizes: `Timeout`, `Aborted`, `Max iterations`.
@@ -523,13 +556,15 @@ contract; `planner.py` is the reference for anything it leaves open.
    draw up to `sample_draws` times or until `num_tree_roots` roots exist,
    keeping at most `max_per_draw` admissible candidates per draw, skipping
    a candidate whose provenance equals an explicit seed's. Rejections are
-   counted in the `RootReport`. No roots for a role is `NoStartRoots` or
-   `NoGoalRoots`.
+   counted in the `RootReport`. No roots for a role throws `NoRoots`.
+   Before each draw the cancellation token is checked; if set, the solve
+   returns `Status::Aborted` with the roots gathered so far.
 4. **Iteration** `i` extends the start tree if `i` is even, else the goal
    tree. Cancellation is checked, then the deadline. The target is a sample
    from the opposite role's set with probability `goal_bias` or
    `start_bias` (only if that set samples; up to `sample_draws` attempts to
-   find an admissible one), otherwise `space.sample`.
+   find an admissible one), otherwise one draw from `problem.sampler`, or
+   from `space` when the sampler is null.
 5. **Growth** toward a target from the nearest node under `space.distance`
    (ties to the lowest index): if the target is outside the space, no
    growth. Otherwise repeat: if the remaining distance is exactly zero,
@@ -557,8 +592,9 @@ contract; `planner.py` is the reference for anything it leaves open.
    growing a fresh single-root tree from `path[i]` toward `path[j]` with no
    step budget; replace the segment only if the shortcut's path length under
    `space.distance` is smaller by more than `1e-9`. Stop after
-   `smoothing_patience` attempts without improvement or when the path has
-   two waypoints.
+   `smoothing_patience` attempts without improvement, when the path has two
+   waypoints, or when the cancellation token is set before an attempt; in
+   the last case the result is still `Success` with the path so far.
 10. **Output.** `space.unwrap_path` on the final path. `start_source` and
     `goal_source` are the provenance of the roots the meeting node descends
     from in each tree.
@@ -598,6 +634,7 @@ planner = CBiRRT(robot, ik, collision, config, backend="native")   # "python" (d
 | `PredicateSet`, `TSRConfigurationSet`, any other set | | `NativeUnsupported("goal: TSRConfigurationSet has no native form in v1.5.0")` |
 | validator: `pycbirrt.testing.NoCollision`, `Wall` | `AcceptAll`, `JointBoxObstacles` | any other validator: `NativeUnsupported("validator: <type> is a Python object; native needs a sscbirrt.StateValidator")` |
 | `motion_validator` None | default | any custom validator: `NativeUnsupported` |
+| `sampler` None | default (`space`) | any custom sampler: `NativeUnsupported("sampler: <type> is a Python object")` |
 | `CBiRRTConfig` | `PlannerConfig` (field map above), `abort_fn` wrapped in a token polled from a Python thread | |
 
 `NativeUnsupported` carries the list of every component that blocked
@@ -609,9 +646,10 @@ attempted. Default `plan(...)` behavior is therefore unchanged in 1.x. v2.0.0
 flips the default to `"auto"` under #86.
 
 Native results are converted to Python `PlanResult`s: `Status::Success` and
-the three search failures map to `success` and `failure_reason`;
-`NoStartRoots` and `NoGoalRoots` raise the Python exceptions as described
-above; trees are wrapped read-only. `pycbirrt` imports and works without
+the three search failures map to `success` and `failure_reason` with the
+same reason prefixes; `NoRoots` becomes the Python exception described
+above; `std::invalid_argument` becomes `ValueError`, `UnsupportedCapability`
+and `ContractError` their Python namesakes; trees are wrapped read-only. `pycbirrt` imports and works without
 the extension present; `backend="native"` then raises `NativeUnsupported`
 naming the missing module.
 
@@ -697,26 +735,27 @@ identical; otherwise the difference and its reason are stated.
 
 | Python | Native | Relation |
 |---|---|---|
-| `JointSpace(lower, upper, angular_joints)` | `JointSpace` | same, except `sample` on an angular joint draws from $[-\pi, \pi)$ when the stored limits are degenerate; Python draws from whatever limits were stored. Reason: a stated interval. |
-| `CBiRRTConfig.angular_joints` | on `JointSpace` only | difference: one owner of the topology. The binding copies the config field into the space it builds, as the Python planner does today. |
+| `JointSpace(lower, upper, angular_joints)` | `JointSpace` | same: finite limits required on bounded joints, angular joints ignore theirs and sample one full turn (#107) |
+| `CBiRRTConfig.angular_joints` | on `JointSpace` only | same: in Python too the space owns the topology and the config field only feeds the legacy constructor; the binding does what `CBiRRT.__init__` does |
+| `PlanningProblem.sampler`, `SpaceSampler` | same | same (#110) |
 | `StateSet.contains` | `StateSet::contains` | same |
 | `supports(s, Cap)` | `s.sampler() != nullptr` etc. | same meaning; accessor instead of protocol check |
 | `Sample(q, source)` | `Sample{q, source}` | same |
 | `SetSampler/Distance/Violation/Projector` | same names | same contracts |
-| `FiniteSet(configs, tolerance, metric)` | `FiniteSet` | same; empty member list rejected at construction (Python allows it and yields an empty set). Reason: ingress validation. |
+| `FiniteSet(configs, tolerance, metric)` | `FiniteSet` | same, including rejecting an empty member list at construction |
 | `PredicateSet(fn)` | `PredicateSet(std::function)` | same in C++; not lowerable from Python in v1.5.0 (would need a callback) |
 | `EmptySet` | `EmptySet` | same |
-| `AnyOf`, `AllOf`, strategies | same | same rules; missing strategy requirements reported at construction rather than at first use |
+| `AnyOf`, `AllOf`, strategies | same | same rules; strategy requirements checked at `AllOf` construction through `requires`, as in Python |
 | `is_finite`, `members`, `seeds` | virtual methods | same |
 | `CollisionChecker.is_valid` | `StateValidator::is_valid` | same; renamed because validity is not only collision |
 | `pycbirrt.testing.NoCollision`, `Wall` | `AcceptAll`, `JointBoxObstacles` | same predicates; `Wall`'s `extent` becomes a second box dimension |
 | `LocalMotion`, `MotionValidator`, `DiscreteMotionValidator`, `RestrictedMotionValidator` | same | same contracts |
 | `PlanningProblem` | `PlanningProblem` | same roles; `shared_ptr<const>` ownership |
-| `CBiRRTConfig` | `PlannerConfig` | fields renamed where the Python name was TSR-specific (`tsr_samples` → `sample_draws`, `max_ik_per_pose` → `max_per_draw`); set-owned tolerances not on the config; ranges validated at ingress |
-| `abort_fn` | `CancellationToken` | difference: polled per iteration, per root draw, and per smoothing attempt (Python: per iteration). Reason: native solves can be long in roots and smoothing too. |
-| `seed` | `SolveOptions::seed`, `std::mt19937_64` | different engine; only semantics are comparable |
+| `CBiRRTConfig` | `PlannerConfig` | same ranges and messages (#108); two fields renamed where the Python name was TSR-specific (`tsr_samples` → `sample_draws`, `max_ik_per_pose` → `max_per_draw`); set-owned tolerances live on the sets, which is where Python's lowering puts them |
+| `abort_fn` | `CancellationToken` | same three polling points and outcomes (#109) |
+| `seed` | `SolveOptions::seed`, `std::mt19937_64` | **the one difference**: Python uses numpy's PCG64. Same seed gives a repeatable solve within each backend, never the same path across them; the artifact compares semantics. A PCG64 port would remove this at the cost of coupling every set's draw order to numpy internals, and #85 lists waypoint equality as a non-goal. |
 | `PlanResult.success/failure_reason` | `Status` + `reason` | same information; `reason` prefixes preserved |
-| `AllStart/Goal...Invalid/InCollision` | `Status::NoStartRoots/NoGoalRoots` + `RootReport` | difference: status, not exception. The binding raises the Python exceptions so `plan(...)` is unchanged. |
+| `AllStart/Goal...Invalid/InCollision`, `ValueError` for an empty role | `NoRoots` + `RootReport`, `std::invalid_argument` | same: exceptions in both; the binding maps them by name and by `only_collisions()` |
 | `UnsupportedCapability`, `MotionContractError` | `UnsupportedCapability`, `ContractError` | same triggers |
 | `RRTree`, `Node` | `Tree`, `Node` | same; nearest with lowest-index tie-break |
 | `unwrap_path` output rule | same | same |
@@ -728,11 +767,9 @@ identical; otherwise the difference and its reason are stated.
    rather than in `sscbirrt::tsr`, that is a later, separate decision.
 2. **scikit-build-core versus a hatchling hook** for the wheel. Argued above;
    the alternative keeps pycbirrt on one build tool with ssik.
-3. **No-root outcomes as statuses.** Argued above; the alternative is to
-   throw in native too and keep the two backends identical at the boundary.
-4. **Exposing trees.** Kept because Python exposes them and the artifact
+3. **Exposing trees.** Kept because Python exposes them and the artifact
    tooling inspects them. They cost a copy per solve; a flag on
    `SolveOptions` can suppress it.
-5. **`PredicateSet` in the binding.** Excluded in v1.5.0 to honor the
+4. **`PredicateSet` in the binding.** Excluded in v1.5.0 to honor the
    no-callback rule. A later release could allow it with the GIL held and a
    documented cost.
