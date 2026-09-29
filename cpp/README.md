@@ -34,6 +34,8 @@ The library has no dependencies beyond the C++20 standard library. The Python
 wheel builds the same CMake project with `SSCBIRRT_BUILD_PYTHON=ON` through
 scikit-build-core.
 
-Slices, tracked under the v1.5.0 milestone: joint space and sets (#116),
-validity, motion, and the search (#117), the Python binding (#118),
-install/export, consumer, and the parity gate (#119).
+v1.5.0 slices: joint space and sets (#116), validity, motion, and the
+search (#117), the Python binding (#118), install/export, consumer, and the
+parity gate (#119). v1.6.0 slices: the pose region `sscbirrt::tsr` with the
+sstsr conformance corpus (#127), kinematics interfaces and the lifted set
+(#128), the SSIK adapter (#129), lowering and the UR5e artifact (#130).

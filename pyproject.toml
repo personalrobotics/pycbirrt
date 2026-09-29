@@ -13,7 +13,7 @@ maintainers = [
 ]
 dependencies = [
     "numpy>=1.24",
-    "sstsr>=3.1,<4",  # import as `tsr`; 3.1 has the seeded sampler, closest_transform, and TSRChain as a pose region
+    "sstsr>=3.2,<4",  # import as `tsr`; 3.2 validates frames and bounds at construction (tsr.FRAME_ATOL), the shared contract with the native TSR
 ]
 
 [project.optional-dependencies]

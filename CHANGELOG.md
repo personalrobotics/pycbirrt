@@ -6,6 +6,13 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Depends on `sstsr>=3.2,<4`: a `TSR` now rejects a malformed region at
+  construction (non-finite or non-rigid frames, non-finite bounds) with the
+  tolerance exported as `tsr.FRAME_ATOL`. This is the shared construction
+  contract with the native TSR runtime (#127; personalrobotics/tsr#162).
+
 ## [1.5.0] - 2026-09-29
 
 The native core arrives as an explicit opt-in. A C++20 implementation of the

@@ -11,5 +11,7 @@
 #include "sscbirrt/result.hpp"
 #include "sscbirrt/sets.hpp"
 #include "sscbirrt/space.hpp"
+#include "sscbirrt/transform.hpp"
+#include "sscbirrt/tsr/tsr.hpp"
 #include "sscbirrt/types.hpp"
 #include "sscbirrt/validity.hpp"

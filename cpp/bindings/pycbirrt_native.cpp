@@ -18,6 +18,18 @@ using namespace sscbirrt;
 
 namespace {
 
+using Rows4 = std::array<std::array<double, 4>, 4>;
+using Rows6x2 = std::array<std::array<double, 2>, 6>;
+
+Transform from_rows(const Rows4& rows) { return Transform::from_rows(rows); }
+Rows4 to_rows(const Transform& T) {
+  Rows4 out{};
+  for (int r = 0; r < 4; ++r) {
+    for (int c = 0; c < 4; ++c) out[static_cast<std::size_t>(r)][static_cast<std::size_t>(c)] = T.at(r, c);
+  }
+  return out;
+}
+
 Metric space_metric(std::shared_ptr<const JointSpace> space) {
   return [space](ConfigView a, ConfigView b) { return space->distance(a, b); };
 }
@@ -215,4 +227,35 @@ PYBIND11_MODULE(_native, m) {
           "Solve with the GIL released. No Python object is touched after entry.");
 
   m.def("why_inadmissible", [](const PlanningProblem& p, const Config& q) { return Planner::why_inadmissible(p, q); });
+
+  // ----- pose regions (v1.6.0) ------------------------------------------------------------------
+  py::class_<tsr::TSR>(m, "TSR", "sstsr's TSR in C++; frames as 4x4 nested lists, Bw as 6x2.")
+      .def(py::init([](const Rows4& T0_w, const Rows4& Tw_e, const Rows6x2& Bw) {
+             return tsr::TSR(from_rows(T0_w), from_rows(Tw_e), tsr::Bounds6{Bw});
+           }),
+           py::arg("T0_w"), py::arg("Tw_e"), py::arg("Bw"))
+      .def("contains", [](const tsr::TSR& t, const Rows4& T) { return t.contains(from_rows(T)); })
+      .def("distance", [](const tsr::TSR& t, const Rows4& T) { return t.distance(from_rows(T)); })
+      .def("distance_bwopt", [](const tsr::TSR& t, const Rows4& T) { return t.distance_bwopt(from_rows(T)); })
+      .def("closest_transform",
+           [](const tsr::TSR& t, const Rows4& T) {
+             const auto [d, C] = t.closest_transform(from_rows(T));
+             return std::make_pair(d, to_rows(C));
+           })
+      .def("to_xyzrpy", [](const tsr::TSR& t, const Rows4& T) { return t.to_xyzrpy(from_rows(T)); })
+      .def(
+          "sample",
+          [](const tsr::TSR& t, std::uint64_t seed, int count) {
+            Rng rng(seed);
+            std::vector<Rows4> out;
+            for (int i = 0; i < count; ++i) out.push_back(to_rows(t.sample(rng)));
+            return out;
+          },
+          py::arg("seed"), py::arg("count") = 1, "Draw `count` poses from one RNG seeded with `seed`.")
+      .def("sample_xyzrpy", [](const tsr::TSR& t, std::uint64_t seed) { Rng rng(seed); return t.sample_xyzrpy(rng); })
+      .def("volume", &tsr::TSR::volume)
+      .def("continuous_bounds", [](const tsr::TSR& t) { return t.continuous_bounds().rows; });
+  m.def("rot_to_rpy", [](const Rows4& T) { return rot_to_rpy(from_rows(T)); });
+  m.def("xyzrpy_to_trans", [](const XyzRpy& v) { return to_rows(xyzrpy_to_trans(v)); });
+  m.def("unit_draws", [](std::uint64_t seed, int n) { Rng rng(seed); std::vector<double> out; for (int i = 0; i < n; ++i) out.push_back(unit(rng)); return out; });
 }
