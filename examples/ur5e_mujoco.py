@@ -381,7 +381,7 @@ def main():
         max_iterations=5000,
         step_size=0.2,
         goal_bias=0.1,
-        tsr_samples=100,
+        sample_draws=100,
         # The UR5e's joints are bounded (±2π, elbow ±π in this model), not continuous:
         # leave angular_joints unset so the planner respects the limits (#35).
     )

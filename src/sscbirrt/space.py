@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 from typing import Protocol, runtime_checkable
 
@@ -45,8 +46,10 @@ class JointSpace:
         self,
         lower: np.ndarray,
         upper: np.ndarray,
-        angular_joints: Sequence[bool] | None = None,
+        continuous_joints: Sequence[bool] | None = None,
         joint_names: Sequence[str] | None = None,
+        *,
+        angular_joints: Sequence[bool] | None = None,
     ):
         self.lower = np.asarray(lower, dtype=float)
         self.upper = np.asarray(upper, dtype=float)
@@ -55,17 +58,26 @@ class JointSpace:
         if np.any(self.lower > self.upper):
             raise ValueError("lower limits must not exceed upper limits")
 
-        self.angular_joints: np.ndarray | None = None
         if angular_joints is not None:
-            if len(angular_joints) != self.dof:
-                raise ValueError(f"angular_joints length ({len(angular_joints)}) must match robot DOF ({self.dof})")
-            mask = np.asarray(angular_joints, dtype=bool)
-            self.angular_joints = mask if mask.any() else None
+            if continuous_joints is not None:
+                raise TypeError("JointSpace got both continuous_joints and angular_joints (deprecated)")
+            warnings.warn(
+                "JointSpace(angular_joints=...) is deprecated; use continuous_joints=", DeprecationWarning, stacklevel=2
+            )
+            continuous_joints = angular_joints
+        self.continuous_joints: np.ndarray | None = None
+        if continuous_joints is not None:
+            if len(continuous_joints) != self.dof:
+                raise ValueError(
+                    f"continuous_joints length ({len(continuous_joints)}) must match robot DOF ({self.dof})"
+                )
+            mask = np.asarray(continuous_joints, dtype=bool)
+            self.continuous_joints = mask if mask.any() else None
 
         # Topology is the caller's declaration, never inferred. A bounded joint
         # needs finite limits (a sampler needs a bounded domain); an angular
         # joint has none, and whatever limits were stored for it are ignored.
-        bounded = np.ones(self.dof, dtype=bool) if self.angular_joints is None else ~self.angular_joints
+        bounded = np.ones(self.dof, dtype=bool) if self.continuous_joints is None else ~self.continuous_joints
         finite = np.isfinite(self.lower) & np.isfinite(self.upper)
         bad = np.flatnonzero(bounded & ~finite)
         if bad.size:
@@ -73,15 +85,23 @@ class JointSpace:
             name = f"joint '{joint_names[i]}' (index {i})" if joint_names is not None else f"joint {i}"
             raise ValueError(
                 f"{name} has no finite limits [{self.lower[i]}, {self.upper[i]}]. If it turns continuously, declare "
-                f"it with CBiRRTConfig(angular_joints=...); otherwise give the robot model finite planning limits "
+                f"it with CBiRRTConfig(continuous_joints=...); otherwise give the robot model finite planning limits "
                 f"(for example MuJoCoRobotModel(..., joint_limits=(lower, upper)))"
             )
         # Sampling interval: the limits for bounded joints, one full turn for angular ones.
         self._sample_lower = self.lower.copy()
         self._sample_upper = self.upper.copy()
-        if self.angular_joints is not None:
-            self._sample_lower[self.angular_joints] = -np.pi
-            self._sample_upper[self.angular_joints] = np.pi
+        if self.continuous_joints is not None:
+            self._sample_lower[self.continuous_joints] = -np.pi
+            self._sample_upper[self.continuous_joints] = np.pi
+
+    @property
+    def angular_joints(self) -> np.ndarray | None:
+        """Deprecated alias of ``continuous_joints``."""
+        warnings.warn(
+            "JointSpace.angular_joints is deprecated; use continuous_joints", DeprecationWarning, stacklevel=2
+        )
+        return self.continuous_joints
 
     @property
     def dof(self) -> int:
@@ -99,8 +119,8 @@ class JointSpace:
         """
         q = np.asarray(q)
         inside = (q >= self.lower) & (q <= self.upper)
-        if self.angular_joints is not None:
-            inside = inside | self.angular_joints
+        if self.continuous_joints is not None:
+            inside = inside | self.continuous_joints
         return bool(np.all(inside))
 
     def why_invalid(self, q) -> str | None:
@@ -120,8 +140,8 @@ class JointSpace:
             return f"non-finite entries: {arr}"
         if not self.within_limits(arr):
             bad = [i for i in range(self.dof) if not (self.lower[i] <= arr[i] <= self.upper[i])]
-            if self.angular_joints is not None:
-                bad = [i for i in bad if not self.angular_joints[i]]
+            if self.continuous_joints is not None:
+                bad = [i for i in bad if not self.continuous_joints[i]]
             return "outside joint limits at " + ", ".join(
                 f"joint {i}: {arr[i]:.4g} not in [{self.lower[i]:.4g}, {self.upper[i]:.4g}]" for i in bad
             )
@@ -134,8 +154,8 @@ class JointSpace:
     def direction(self, q_from: np.ndarray, q_to: np.ndarray) -> np.ndarray:
         """Vector from ``q_from`` to ``q_to``, taking the short way around angular joints."""
         diff = np.asarray(q_to, dtype=float) - np.asarray(q_from, dtype=float)
-        if self.angular_joints is not None:
-            a = self.angular_joints
+        if self.continuous_joints is not None:
+            a = self.continuous_joints
             diff[a] = np.arctan2(np.sin(diff[a]), np.cos(diff[a]))
         return diff
 
@@ -164,12 +184,12 @@ class JointSpace:
         unchanged. The last waypoint may therefore differ from the goal as
         given by a multiple of 2π on an angular joint (#77).
         """
-        if self.angular_joints is None or len(path) < 2:
+        if self.continuous_joints is None or len(path) < 2:
             return list(path)
         out = [np.array(path[0], dtype=float)]
         for q in path[1:]:
             q = np.asarray(q, dtype=float)
             nxt = out[-1] + self.direction(out[-1], q)
-            nxt[~self.angular_joints] = q[~self.angular_joints]  # non-angular joints copied exactly
+            nxt[~self.continuous_joints] = q[~self.continuous_joints]  # non-angular joints copied exactly
             out.append(nxt)
         return out

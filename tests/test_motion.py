@@ -90,7 +90,7 @@ class TestDiscreteMotionValidator:
         assert not m.reached and m.configs == []
 
     def test_wraps_for_angular_joints(self):
-        s = JointSpace(np.array([-np.pi, -np.pi]), np.array([np.pi, np.pi]), angular_joints=(True, False))
+        s = JointSpace(np.array([-np.pi, -np.pi]), np.array([np.pi, np.pi]), continuous_joints=(True, False))
         v = DiscreteMotionValidator(s, lambda q: True, 0.1)
         m = v.validate(np.array([3.0, 0.0]), np.array([-3.0, 0.0]))
         assert m.reached and len(m.configs) == 3  # short way: 0.28 rad at 0.1 -> 3 samples

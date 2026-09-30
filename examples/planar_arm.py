@@ -430,11 +430,11 @@ def example_basic():
         goal_bias=0.15,
         smooth_path=True,
         smoothing_iterations=50,
-        angular_joints=(True, True),  # Both joints are rotational
+        continuous_joints=(True, True),  # both joints turn freely; ±π is only how their angles are written
     )
     planner = CBiRRT(
         robot=robot,
-        ik_solver=ik,
+        ik=ik,
         collision_checker=collision_checker,
         config=config,
     )
@@ -496,14 +496,15 @@ def example_start_goal_tsrs():
     config = CBiRRTConfig(
         step_size=0.3,
         goal_bias=0.15,
-        tsr_tolerance=0.05,  # Larger tolerance for tree connection
+        membership_tolerance=0.05,  # larger tolerances for TSR membership and tree connection
+        connection_tolerance=0.05,
         smooth_path=True,
         smoothing_iterations=50,
-        angular_joints=(True, True),  # Both joints are rotational
+        continuous_joints=(True, True),  # both joints turn freely; ±π is only how their angles are written
     )
     planner = CBiRRT(
         robot=robot,
-        ik_solver=ik,
+        ik=ik,
         collision_checker=collision_checker,
         config=config,
     )
@@ -579,12 +580,13 @@ def example_constrained():
         goal_bias=0.1,
         smooth_path=True,
         smoothing_iterations=50,
-        tsr_tolerance=0.05,
-        angular_joints=(True, True),  # Both joints are rotational
+        membership_tolerance=0.05,
+        connection_tolerance=0.05,
+        continuous_joints=(True, True),  # both joints turn freely; ±π is only how their angles are written
     )
     planner = CBiRRT(
         robot=robot,
-        ik_solver=ik,
+        ik=ik,
         collision_checker=collision_checker,
         config=config,
     )

@@ -92,7 +92,7 @@ class TestTsrUnionDemo:
         collision = MuJoCoCollisionChecker(model, data, JOINTS)
         ik, name = tsr_union_demo.build_ik_solver(model, data, JOINTS, collision, Path(MENAGERIE), backend="mujoco")
         assert name == "mujoco" and isinstance(ik, MuJoCoIKSolver)
-        planner = CBiRRT(robot, ik, collision, CBiRRTConfig(timeout=60.0, goal_bias=0.15, tsr_samples=100))
+        planner = CBiRRT(robot, ik, collision, CBiRRTConfig(timeout=60.0, goal_bias=0.15, sample_draws=100))
         top, side = tsr_union_demo.create_grasp_tsrs(target)
         result = planner.plan(start=HOME, goal_tsrs=[top, side], seed=0, return_details=True)
         assert result.success, result.failure_reason

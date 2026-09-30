@@ -35,11 +35,11 @@ def main():
     config = CBiRRTConfig(
         step_size=0.3,
         smooth_path=True,
-        angular_joints=(True, True),
+        continuous_joints=(True, True),  # both joints turn freely
     )
     planner = CBiRRT(
         robot=robot,
-        ik_solver=ik,
+        ik=ik,
         collision_checker=collision_checker,
         config=config,
     )

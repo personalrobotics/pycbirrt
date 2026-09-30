@@ -183,11 +183,23 @@ class TestDeprecatedAlias:
             cfg = CBiRRTConfig(tsr_tolerance=0.02)
         assert cfg.membership_tolerance == 0.02
         assert cfg.connection_tolerance == 0.02
-        assert cfg.tsr_tolerance == 0.02
+        with pytest.warns(DeprecationWarning, match="tsr_tolerance"):
+            assert cfg.tsr_tolerance == 0.02
 
     def test_reading_alias_without_setting_it(self):
         cfg = CBiRRTConfig(membership_tolerance=0.007)
-        assert cfg.tsr_tolerance == 0.007
+        with pytest.warns(DeprecationWarning, match="tsr_tolerance"):
+            assert cfg.tsr_tolerance == 0.007
+
+    def test_replace_keeps_the_replaced_value(self):
+        """#176: the alias used to be a stored field mirroring membership_tolerance, so replace() copied the stale
+        mirror back over the new value."""
+        import dataclasses
+
+        with pytest.warns(DeprecationWarning):
+            cfg = CBiRRTConfig(tsr_tolerance=0.02)
+        assert dataclasses.replace(cfg, membership_tolerance=0.005).membership_tolerance == 0.005
+        assert dataclasses.replace(CBiRRTConfig(), membership_tolerance=0.005).membership_tolerance == 0.005
 
     def test_defaults_unchanged(self):
         cfg = CBiRRTConfig()

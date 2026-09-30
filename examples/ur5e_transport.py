@@ -105,7 +105,7 @@ def main():
     print(f"Using {'SSIK (analytical)' if ik_name == 'ssik' else 'MuJoCo (differential)'} IK solver")
 
     # The UR5e's joints are bounded (±2π, elbow ±π), not continuous: leave angular_joints unset.
-    config = CBiRRTConfig(max_iterations=5000, step_size=0.2, tsr_samples=100, timeout=60.0)
+    config = CBiRRTConfig(max_iterations=5000, step_size=0.2, sample_draws=100, timeout=60.0)
     planner = CBiRRT(robot, ik_solver, collision, config)
     upright = gripper_down_everywhere()
 

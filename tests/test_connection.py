@@ -229,7 +229,7 @@ class TestSmoothing:
 class TestAngularJointsEndpoints:
     def test_start_exact_goal_equivalent_and_path_continuous(self):
         """With angular joints the start is as given; the goal may be re-expressed by 2π (#77)."""
-        planner = make_planner(angular_joints=(True, True), step_size=0.2)
+        planner = make_planner(continuous_joints=(True, True), step_size=0.2)
         q0, q1 = np.array([3.0, 0.0]), np.array([-3.0, 0.2])
         result = planner.solve(problem(planner, q0, q1), seed=0)
         assert result.success

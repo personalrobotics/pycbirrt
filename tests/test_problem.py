@@ -159,7 +159,7 @@ class TestRootSampling:
         assert goal.contains(result.path[-1])
 
     def test_max_ik_per_pose_caps_roots_per_draw(self, planner):
-        """At most max_ik_per_pose admissible candidates of one draw become roots."""
+        """At most max_per_draw admissible candidates of one draw become roots."""
 
         class ManyCandidates:
             def contains(self, q):
@@ -169,7 +169,7 @@ class TestRootSampling:
                 base = rng.uniform(-1, 1, 2)
                 return [FiniteSet([base + 0.01 * k]).sample(rng)[0] for k in range(5)]
 
-        cfg = CBiRRTConfig(max_ik_per_pose=2, num_tree_roots=4, tsr_samples=10)
+        cfg = CBiRRTConfig(max_per_draw=2, num_tree_roots=4, sample_draws=10)
         p = CBiRRT(planner.robot, planner.ik, planner.collision, cfg)
         roots = p._roots(problem(p, ManyCandidates(), ManyCandidates()), ManyCandidates(), "Start")
         assert len(roots) == 4

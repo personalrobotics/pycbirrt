@@ -16,7 +16,7 @@ def linear():
 
 @pytest.fixture
 def angular():
-    return JointSpace(np.array([-np.pi, -1.0]), np.array([np.pi, 1.0]), angular_joints=(True, False))
+    return JointSpace(np.array([-np.pi, -1.0]), np.array([np.pi, 1.0]), continuous_joints=(True, False))
 
 
 class TestConstruction:
@@ -27,8 +27,8 @@ class TestConstruction:
         assert np.array_equal(hi, [1.0, 2.0])
 
     def test_angular_length_mismatch_raises(self):
-        with pytest.raises(ValueError, match="angular_joints length"):
-            JointSpace(np.zeros(2), np.ones(2), angular_joints=(True, True, True))
+        with pytest.raises(ValueError, match="continuous_joints length"):
+            JointSpace(np.zeros(2), np.ones(2), continuous_joints=(True, True, True))
 
     def test_bad_limits_raise(self):
         with pytest.raises(ValueError):
@@ -37,8 +37,8 @@ class TestConstruction:
             JointSpace(np.ones(2), np.zeros(2))
 
     def test_all_false_angular_is_linear(self):
-        s = JointSpace(np.zeros(2), np.ones(2), angular_joints=(False, False))
-        assert s.angular_joints is None
+        s = JointSpace(np.zeros(2), np.ones(2), continuous_joints=(False, False))
+        assert s.continuous_joints is None
 
 
 class TestLimits:
@@ -106,7 +106,7 @@ class TestTopologyIsDeclared:
     """Bounded joints need finite limits; angular joints ignore theirs (#107)."""
 
     def test_infinite_limit_on_bounded_joint_raises(self):
-        with pytest.raises(ValueError, match=r"joint 1 has no finite limits.*angular_joints.*joint_limits"):
+        with pytest.raises(ValueError, match=r"joint 1 has no finite limits.*continuous_joints.*joint_limits"):
             JointSpace(np.array([-1.0, -np.inf]), np.array([1.0, np.inf]))
 
     def test_one_infinite_side_is_enough_to_raise(self):
@@ -114,13 +114,13 @@ class TestTopologyIsDeclared:
             JointSpace(np.array([-1.0]), np.array([np.inf]))
 
     def test_infinite_limits_accepted_when_angular(self):
-        s = JointSpace(np.array([-np.inf, -1.0]), np.array([np.inf, 1.0]), angular_joints=(True, False))
+        s = JointSpace(np.array([-np.inf, -1.0]), np.array([np.inf, 1.0]), continuous_joints=(True, False))
         assert s.contains(np.array([100.0, 0.0]))
         assert not s.contains(np.array([0.0, 2.0]))
 
     @pytest.mark.parametrize("stored", [(-np.inf, np.inf), (0.0, 0.0), (-2 * np.pi, 2 * np.pi)])
     def test_angular_joint_samples_one_full_turn_whatever_was_stored(self, stored):
-        s = JointSpace(np.array([stored[0], -1.0]), np.array([stored[1], 1.0]), angular_joints=(True, False))
+        s = JointSpace(np.array([stored[0], -1.0]), np.array([stored[1], 1.0]), continuous_joints=(True, False))
         rng = np.random.default_rng(0)
         draws = np.array([s.sample(rng) for _ in range(500)])
         assert np.all(np.isfinite(draws))

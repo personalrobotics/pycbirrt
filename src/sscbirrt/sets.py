@@ -459,7 +459,7 @@ def members(s: StateSet) -> list[Sample]:
     union enumerates every child (all finite). An intersection enumerates a
     child that is itself finite, whichever comes first, and keeps the
     members every other child contains; the resulting configurations do not
-    depend on child order, only their provenance does. See ``seeds`` for the
+    depend on child order, only their provenance does. See ``explicit_samples`` for the
     explicit candidates embedded in a set that is not finite.
     """
     if isinstance(s, FiniteSet):
@@ -480,7 +480,7 @@ def members(s: StateSet) -> list[Sample]:
     return []
 
 
-def seeds(s: StateSet) -> list[Sample]:
+def explicit_samples(s: StateSet) -> list[Sample]:
     """The explicit configurations embedded in a set expression, with provenance.
 
     Unlike ``members``, this does not require the set to be finite. A union
@@ -502,14 +502,14 @@ def seeds(s: StateSet) -> list[Sample]:
     if isinstance(s, AnyOf):
         out = []
         for i, c in enumerate(s.children):
-            out.extend(Sample(m.q, (i, *m.source)) for m in seeds(c))
+            out.extend(Sample(m.q, (i, *m.source)) for m in explicit_samples(c))
         return out
     if isinstance(s, AllOf):
         if is_finite(s):
             return members(s)
         out: list[Sample] = []
         for c in s.children:
-            for m in seeds(c):
+            for m in explicit_samples(c):
                 if s.contains(m.q) and not any(np.array_equal(m.q, kept.q) for kept in out):
                     out.append(m)
         return out
@@ -626,3 +626,11 @@ class MostViolatedProjection:
             if cur - prev >= self.progress_tolerance:
                 return False
         return False
+
+
+def seeds(s: StateSet) -> list[Sample]:
+    """Deprecated name of :func:`explicit_samples` (``seed`` elsewhere means an RNG seed)."""
+    import warnings
+
+    warnings.warn("sscbirrt.seeds is deprecated; use explicit_samples", DeprecationWarning, stacklevel=2)
+    return explicit_samples(s)

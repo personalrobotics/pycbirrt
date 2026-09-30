@@ -20,7 +20,7 @@ LIMITS = (np.array([-np.pi, -np.pi]), np.array([np.pi, np.pi]))
 def make_planner(angular, smooth=False):
     robot = MockRobotModel()
     collision = MockCollisionChecker()
-    cfg = CBiRRTConfig(angular_joints=angular, smooth_path=smooth)
+    cfg = CBiRRTConfig(continuous_joints=angular, smooth_path=smooth)
     return CBiRRT(robot, MockIKSolver(robot, collision), collision, cfg)
 
 
@@ -45,7 +45,7 @@ class TestNearestUsesQuerySpace:
 
     def test_problem_space_wraps_but_planner_default_does_not(self):
         planner = make_planner(None)
-        wrapping = JointSpace(*LIMITS, angular_joints=(True, False))
+        wrapping = JointSpace(*LIMITS, continuous_joints=(True, False))
         assert planner._nearest_node(wrapping, self.tree(), self.target) == 0
 
     def test_planner_default_wraps_but_problem_space_does_not(self):
@@ -56,7 +56,7 @@ class TestNearestUsesQuerySpace:
     def test_grow_extends_from_the_query_space_nearest(self):
         """With a wrapping query space, growth toward (-3, 0) starts from (3, 0) and crosses the seam."""
         planner = make_planner(None)  # planner default is bounded
-        wrapping = JointSpace(*LIMITS, angular_joints=(True, False))
+        wrapping = JointSpace(*LIMITS, continuous_joints=(True, False))
         prob = problem_with(planner, wrapping, self.tree_nodes[0], self.target)
         tree = self.tree()
         idx, reached = planner._grow(prob, tree, self.target)
@@ -73,7 +73,7 @@ class TestNearestUsesQuerySpace:
         # iteration, so the raw path is long under any metric; shortcutting under
         # the query metric is what exposes the short way across the seam.
         planner = make_planner(None, smooth=True)
-        wrapping = JointSpace(*LIMITS, angular_joints=(True, False))
+        wrapping = JointSpace(*LIMITS, continuous_joints=(True, False))
         start, goal = np.array([3.0, 0.0]), np.array([-3.0, 0.0])
         result = planner.solve(problem_with(planner, wrapping, start, goal), seed=0)
         assert result.success

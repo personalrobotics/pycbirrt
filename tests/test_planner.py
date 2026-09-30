@@ -172,7 +172,7 @@ class TestCBiRRT:
 
         planner = CBiRRT(
             robot=robot,
-            ik_solver=ik,
+            ik=ik,
             collision_checker=collision,
         )
 
@@ -219,7 +219,7 @@ class TestCBiRRT:
 
         planner = CBiRRT(
             robot=MockRobotModel(),
-            ik_solver=MockIKSolver(),
+            ik=MockIKSolver(),
             collision_checker=BlockingCollisionChecker(),
         )
 
@@ -248,7 +248,7 @@ class TestCBiRRT:
         )
         planner = CBiRRT(
             robot=robot,
-            ik_solver=ik,
+            ik=ik,
             collision_checker=collision,
             config=config,
         )
@@ -294,7 +294,7 @@ class TestCBiRRT:
 
         planner = CBiRRT(
             robot=robot,
-            ik_solver=ik,
+            ik=ik,
             collision_checker=collision,
         )
 
@@ -364,7 +364,7 @@ class TestCBiRRT:
         """Test that providing neither start nor start_tsrs raises error."""
         planner = CBiRRT(
             robot=MockRobotModel(),
-            ik_solver=MockIKSolver(),
+            ik=MockIKSolver(),
             collision_checker=MockCollisionChecker(),
         )
 
@@ -385,7 +385,7 @@ class TestCBiRRT:
 
         planner = CBiRRT(
             robot=robot,
-            ik_solver=ik,
+            ik=ik,
             collision_checker=collision,
         )
 
@@ -424,7 +424,7 @@ class TestCBiRRT:
 
         planner = CBiRRT(
             robot=robot,
-            ik_solver=ik,
+            ik=ik,
             collision_checker=collision,
         )
 
@@ -446,7 +446,7 @@ class TestCBiRRT:
 
         planner = CBiRRT(
             robot=robot,
-            ik_solver=ik,
+            ik=ik,
             collision_checker=collision,
         )
 
@@ -501,7 +501,7 @@ class TestCBiRRT:
 
         planner = CBiRRT(
             robot=robot,
-            ik_solver=ik,
+            ik=ik,
             collision_checker=collision,
         )
 
@@ -537,7 +537,7 @@ class TestCBiRRT:
 
         planner = CBiRRT(
             robot=robot,
-            ik_solver=ik,
+            ik=ik,
             collision_checker=collision,
         )
 
@@ -679,8 +679,8 @@ class TestAngularJoints:
         robot = MockRobotModel()  # 2 DOF
         ik = MockIKSolver(robot, MockCollisionChecker())
 
-        config = CBiRRTConfig(angular_joints=(True, True, True))  # 3 != 2
-        with pytest.raises(ValueError, match="angular_joints length"):
+        config = CBiRRTConfig(continuous_joints=(True, True, True))  # 3 != 2
+        with pytest.raises(ValueError, match="continuous_joints length"):
             CBiRRT(robot, ik, MockCollisionChecker(), config)
 
     def test_angular_joints_validation_correct(self):
@@ -688,15 +688,15 @@ class TestAngularJoints:
         robot = MockRobotModel()  # 2 DOF
         ik = MockIKSolver(robot, MockCollisionChecker())
 
-        config = CBiRRTConfig(angular_joints=(True, True))
+        config = CBiRRTConfig(continuous_joints=(True, True))
         planner = CBiRRT(robot, ik, MockCollisionChecker(), config)
-        assert planner.config.angular_joints == (True, True)
+        assert planner.config.continuous_joints == (True, True)
 
     def test_angular_distance_wraparound(self):
         """Distance between angles near ±pi should be small, not ~2*pi."""
         robot = MockRobotModel()
         ik = MockIKSolver(robot, MockCollisionChecker())
-        config = CBiRRTConfig(angular_joints=(True, True))
+        config = CBiRRTConfig(continuous_joints=(True, True))
         planner = CBiRRT(robot, ik, MockCollisionChecker(), config)
 
         q1 = np.array([-np.pi + 0.1, 0.0])
@@ -709,7 +709,7 @@ class TestAngularJoints:
         """Direction should go the short way around the circle."""
         robot = MockRobotModel()
         ik = MockIKSolver(robot, MockCollisionChecker())
-        config = CBiRRTConfig(angular_joints=(True, False))
+        config = CBiRRTConfig(continuous_joints=(True, False))
         planner = CBiRRT(robot, ik, MockCollisionChecker(), config)
 
         q_from = np.array([np.pi - 0.1, 0.0])
@@ -725,7 +725,7 @@ class TestAngularJoints:
         collision = MockCollisionChecker()
         ik = MockIKSolver(robot, collision)
 
-        config = CBiRRTConfig(angular_joints=(True, True))
+        config = CBiRRTConfig(continuous_joints=(True, True))
         planner = CBiRRT(robot, ik, collision, config)
 
         start = np.array([0.0, 0.0])
@@ -982,7 +982,7 @@ class TestPlanResultIndices:
         robot = MockRobotModel()
         collision = MockCollisionChecker()
         ik = MockIKSolver(robot, collision)
-        return CBiRRT(robot=robot, ik_solver=ik, collision_checker=collision), robot
+        return CBiRRT(robot=robot, ik=ik, collision_checker=collision), robot
 
     def _make_point_tsr(self, x, y, tol=0.1):
         """Create a small TSR at (x, y)."""
