@@ -8,12 +8,11 @@ from __future__ import annotations
 import mujoco
 
 from sscbirrt import CBiRRTConfig
-from sscbirrt.backends.native_mujoco import plan_native
 from sscbirrt.demo.grasps import side_grasps
-from sscbirrt.demo.ik import build_ik
 from sscbirrt.demo.render import Camera, Clip
-from sscbirrt.demo.scene import EE_SITE, HOME, UR5E_JOINTS, build_scene, can_position
 from sscbirrt.demo.scenarios import Outcome, Scenario
+from sscbirrt.demo.scene import EE_SITE, HOME, UR5E_JOINTS, build_scene, can_position, set_arm, ur5e_xml
+from sscbirrt.mujoco import Arm, plan
 
 CANS = {
     "red can": can_position((0.45, 0.22)),
@@ -25,7 +24,8 @@ CANS = {
 def run(seed: int) -> Outcome:
     model = build_scene({name.replace(" ", "_"): pos for name, pos in CANS.items()})
     data = mujoco.MjData(model)
-    mujoco.mj_forward(model, data)
+    set_arm(model, data, HOME)
+    arm = Arm(model, UR5E_JOINTS, EE_SITE, mjcf=ur5e_xml())
 
     goals, owner = [], []
     for name, center in CANS.items():
@@ -34,11 +34,7 @@ def run(seed: int) -> Outcome:
         owner += [name] * len(regions)
 
     config = CBiRRTConfig(step_size=0.2, edge_resolution=0.05, num_tree_roots=20, timeout=30.0)
-    # fallback=True: a build without the SSIK adapter plans in Python and says why, instead of failing.
-    result = plan_native(
-        model, data, UR5E_JOINTS, ik=build_ik(model), start=HOME, goal_tsrs=goals, ee_site=EE_SITE, config=config,
-        seed=seed, fallback=True,
-    )  # fmt: skip
+    result = plan(model, data, arm, goal=goals, config=config, seed=seed)
 
     report = [f"goal set: {len(goals)} side-grasp regions of 3 cans (tsr.Robotiq2F85 cylinder primitive)"]
     if not result.success:
@@ -51,7 +47,9 @@ def run(seed: int) -> Outcome:
     report += [f"  not native because: {r}" for r in result.backend_reasons]
     if result.backend == "native":
         prov = result.provenance
-        report.append(f"provenance: SSIK {prov.get('ssik_solver_name')}, snapshot {prov.get('snapshot_sha256', '')[:12]}")
+        report.append(
+            f"provenance: SSIK {prov.get('ssik_solver_name')}, snapshot {prov.get('snapshot_sha256', '')[:12]}"
+        )
 
     clip = Clip(
         path=result.path,
