@@ -37,7 +37,8 @@ def pin(text: str, ref: str) -> str:
         return f"https://github.com/{REPO}/blob/{ref}/{clean}"
 
     text = re.sub(r'src="([^"]+)"', lambda m: f'src="{url(m.group(1))}"', text)
-    return re.sub(r"(!?\[[^\]]*\])\(([^)\s]+)\)", lambda m: f"{m.group(1)}({url(m.group(2))})", text)
+    # Every Markdown link or image target, including the outer link of a badge, [![alt](image)](target).
+    return re.sub(r"\]\(([^)\s]+)\)", lambda m: f"]({url(m.group(1))})", text)
 
 
 def main() -> int:

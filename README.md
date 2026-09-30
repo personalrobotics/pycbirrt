@@ -1,5 +1,9 @@
 # sscbirrt
 
+[![PyPI](https://img.shields.io/pypi/v/sscbirrt.svg?v=1)](https://pypi.org/project/sscbirrt/)
+[![Python](https://img.shields.io/pypi/pyversions/sscbirrt.svg?v=1)](https://pypi.org/project/sscbirrt/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A planner over sets of configurations. A planning problem names a start set,
 a goal set, a set the whole path must stay inside, and a validity predicate;
 a solution is a path that begins in the start set, ends in the goal set, and
