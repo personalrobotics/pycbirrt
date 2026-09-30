@@ -6,6 +6,31 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-30
+
+The native core becomes the default. A `CBiRRT` built without a `backend`
+argument now plans in C++ whenever every component of the problem has a
+native form and in Python otherwise, saying why on the result and in the log;
+`backend="native"` refuses rather than falls back and `backend="python"` is
+the reference, both as in 1.x. The deprecation announced in 1.3.0 is carried
+out: EAIK is gone and SSIK is the analytical IK backend. The lowering now
+admits any collision or IK backend through two protocols, so MuJoCo and SSIK
+are the shipped integrations of the core's interfaces rather than the only
+possible ones.
+
+**Migrating from 1.x.** Code that relied on the Python planner by default
+should pass `backend="python"` explicitly; results under the default carry
+`backend` and `backend_reasons`, and seeds reproduce paths within a backend
+but not across the two, because their random-number engines differ. Replace
+`EAIKSolver.for_ur5e(...)` with `SSIKSolver(ssik.Manipulator.from_prebuilt("ur5e"))`
+(or a manipulator from the same MJCF as the simulator model) and drop the
+`eaik` extra. Nothing else in the public API changed: `PlanningProblem`,
+`solve`, the legacy `plan(...)`, the set types, and `plan_native` are as in
+1.7.0. The mj_manipulator adoption artifact (personalrobotics/mj_manipulator#173)
+named in the 2.0 gate had not been produced at release; the release stands on
+pycbirrt's own gates, the behavior artifact under all three backend
+selections and the MuJoCo and TSR parity corpora.
+
 ### Removed
 - `EAIKSolver`, `pycbirrt.backends.eaik`, the `eaik` extra (and its place in
   `all`), and the EAIK-specific URDFs under `urdf/`. Deprecated in 1.3.0 with a
