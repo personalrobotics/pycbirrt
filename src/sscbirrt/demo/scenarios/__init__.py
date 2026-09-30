@@ -33,6 +33,6 @@ class Scenario:
 
 
 def all_scenarios() -> dict[str, Scenario]:
-    from sscbirrt.demo.scenarios import pick
+    from sscbirrt.demo.scenarios import pick, transport
 
-    return {s.name: s for s in (pick.SCENARIO,)}
+    return {s.name: s for s in (pick.SCENARIO, transport.SCENARIO)}

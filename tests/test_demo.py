@@ -26,13 +26,23 @@ REQUIRE_RENDER = os.environ.get("SSCBIRRT_REQUIRE_RENDER") == "1"
 
 def test_list_names_every_scenario(capsys):
     assert main(["--list"]) == 0
-    assert capsys.readouterr().out.startswith("pick ")
+    listed = [line.split()[0] for line in capsys.readouterr().out.splitlines()]
+    assert listed == ["pick", "transport"]
 
 
 def test_pick_plans_and_reports_without_rendering(capsys):
     assert main(["pick", "--no-video", "--seed", "0"]) == 0
     out = capsys.readouterr().out
     assert "== pick:" in out and "reached: the " in out and "backend: native" in out
+
+
+def test_transport_constraint_holds_on_every_run(capsys):
+    """The path constraint is the claim: every upright carry stays within it, and some free carries do not."""
+    assert main(["transport", "--no-video", "--seed", "0"]) == 0
+    out = capsys.readouterr().out
+    assert "upright carries: 10 of 10 within the constraint" in out
+    spilled = int(out.split("free carries:")[1].split(" of ")[0])
+    assert spilled >= 1
 
 
 def test_render_writes_a_playable_mp4(tmp_path, capsys):
