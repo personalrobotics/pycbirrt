@@ -1127,3 +1127,350 @@ artifact compares them: outcome, validation, provenance where unique.
 4. **Python `TSR` validation**: resolved upstream in sstsr 3.2.0
    (personalrobotics/tsr#162) with the tolerance exported as
    `tsr.FRAME_ATOL`; pycbirrt pins `sstsr>=3.2,<4`.
+
+---
+
+# v1.7.0 addendum: the owned MuJoCo scene
+
+This section extends the contract to collision checking in C++ against a
+MuJoCo world the planner owns (#93, #84, #89, #88). The reference for the
+semantics is `mj_manipulator`'s `CollisionChecker` in snapshot mode
+(`mj_manipulator/collision.py`) and its `GraspManager`'s attachment update,
+read at mj_manipulator commit `f3c1` of 2026-09; pycbirrt's own
+`MuJoCoCollisionChecker` is the degenerate case with no attachments. The
+principle is unchanged: one contract, two implementations, and the
+comparison corpus is the oracle.
+
+## Scope
+
+- A native **scene**: an `mjModel` the planner owns, loaded from the MJB
+  bytes of a compiled Python model, with the controlled joints, bodies,
+  sites, and geoms resolved and validated at construction.
+- An immutable **snapshot**: everything a geometric query needs from the
+  live world at one instant: the full `qpos`, mocap poses, attachments,
+  and allowed-contact sets. Nothing else.
+- A native **state validator** over a scene and a snapshot implementing
+  `StateValidator`, with mj_manipulator's attachment-aware contact policy.
+- **Packaging** that keeps `import pycbirrt` free of MuJoCo: the scene
+  lives in its own extension module, built when a `mujoco` wheel is
+  present at build time and imported only on demand.
+- **Lowering** of the Python `NativeCollisionChecker` (the Python face of
+  the scene) into the native validator, and a one-call path from a Python
+  `MjModel` and `MjData` to a native solve.
+- Two release artifacts: a UR5e TSR-goal query among obstacles and a
+  held-object query, both from snapshots, native SSIK plus native
+  collision, zero Python callbacks; and a decision-parity corpus between
+  the native validator and mj_manipulator's checker.
+
+Not in v1.7.0: MuJoCo thread pools, parallel edge validation, continuous
+collision checking (edges remain discrete at `edge_resolution`), dynamics
+of any kind, and moving execution or simulator ownership into pycbirrt
+(mj_manipulator#175 keeps those).
+
+## Targets and dependency boundary
+
+```
+pycbirrt._native          ──► sscbirrt::ssik ──► sscbirrt::tsr ──► sscbirrt::core
+pycbirrt._native_mujoco   ──► sscbirrt::mujoco ──────────────────► sscbirrt::core
+                                     └──► libmujoco (the mujoco wheel's shared library and headers)
+```
+
+| Target | Depends on | Contents |
+|---|---|---|
+| `sscbirrt::mujoco` | `sscbirrt::core`, MuJoCo headers and library | `Scene`, `Snapshot`, `SceneValidator` |
+| `pycbirrt._native_mujoco` | `sscbirrt::mujoco`, `pycbirrt._native` (for the `StateValidator` base type) | the binding |
+
+The MuJoCo scene is a **separate extension module**. `pycbirrt._native`
+never references MuJoCo, so `import pycbirrt` and every v1.5 and v1.6
+feature work with no `mujoco` installed (#89's import criterion), and a
+missing or mismatched MuJoCo library fails at `import
+pycbirrt._native_mujoco`, which `pycbirrt.backends.native_mujoco` performs
+lazily and turns into a reason. The alternative, one module that loads
+`libmujoco` at runtime through `dlopen` and a hand-written function table,
+avoids a second module but reimplements the dynamic linker for a dozen
+symbols; a second module is the ordinary tool. `SceneValidator` derives
+from the `StateValidator` registered by `_native`; pybind11 shares
+registered base types across modules built with the same pybind11.
+
+Build and link: the wheel lists `mujoco` as a build requirement (as it
+lists ssik), takes the headers from `<mujoco package>/include` and the
+library `libmujoco.<version>.dylib` or `libmujoco.so.<version>` from the
+package directory, and sets the module's rpath to `@loader_path/../mujoco`
+and `$ORIGIN/../mujoco`, which is where the wheel that supplied the
+headers puts the library at runtime. Without a `mujoco` wheel at build
+time, `SSCBIRRT_WITH_MUJOCO=AUTO` disables the target with a status
+message and the reason "built without MuJoCo support".
+
+**Version binding.** MJB is a version-specific format and `mjModel` is a
+version-specific struct, so the module is bound to the MuJoCo it was built
+against: the build records `mjVERSION_HEADER`, and at import the module
+compares it with `mj_version()` of the library it loaded and
+`pycbirrt.backends.native_mujoco` compares both with `mujoco.__version__`.
+Any difference refuses the scene with a reason naming the three versions.
+The `mujoco` extra pins the exact version the wheel was built against:
+**`mujoco==3.14.0`**, the latest release, which #93 names for the first
+verified artifact; the workspace moves to it with this milestone. The
+3.14.0 headers carry every entry point and field this contract uses
+(`mj_loadModelBuffer`, `mj_saveModel`, `mj_sizeModel`, `mj_kinematics`,
+`mj_collision`, `mj_makeData`, `mj_deleteData`, `mj_deleteModel`,
+`mj_name2id`, `mj_version`, `mju_mat2Quat`, `mjContact::geom`,
+`mjModel::signature`, `geom_bodyid`, `jnt_qposadr`, `body_parentid`,
+`mocap_pos`).
+
+## Scene
+
+```cpp
+namespace sscbirrt::mujoco {
+
+struct SceneProvenance {
+  std::string mujoco_version;       // mj_versionString() of the loaded library
+  std::uint64_t model_signature;    // mjModel::signature, also held by the mjSpec that compiled it
+  std::string mjb_sha256;           // of the bytes the scene was loaded from
+};
+
+class Scene {
+ public:
+  // Loads an independently owned mjModel with mj_loadModelBuffer. Throws std::invalid_argument for
+  // an unloadable buffer, a version mismatch, an unknown or duplicate joint, a controlled joint that
+  // is not a hinge or slide, an unknown body, site, or geom, or an attachment body without a free joint.
+  Scene(std::span<const std::byte> mjb, std::vector<std::string> controlled_joints,
+        std::vector<std::string> extra_arm_bodies = {});
+  ~Scene();  // mj_deleteModel
+
+  int dof() const;
+  const std::vector<int>& qpos_addresses() const;          // one per controlled joint
+  const std::vector<double>& lower() const;                 // jnt_range, or ±infinity where jnt_limited is 0
+  const std::vector<double>& upper() const;
+  const std::vector<int>& arm_bodies() const;               // controlled joints' bodies, their descendants, extra bodies
+  int body_id(const std::string& name) const;               // -1 if absent
+  std::vector<int> subtree(int body) const;                 // body and all descendants
+  int nq() const; int nmocap() const; int ngeom() const;
+  const SceneProvenance& provenance() const;
+  const ::mjModel* model() const;                           // read-only; shared by every validator and solve
+};
+
+}  // namespace sscbirrt::mujoco
+```
+
+The `mjModel` is shared read-only by every validator built on the scene and
+never written after construction. The Python model that produced the MJB
+may be destroyed or changed afterward; the scene does not observe it
+(#93's first criterion). A structural change to the world (a body added,
+a geom's type changed) is a new MJB and a new scene; the Python side
+compares `mjModel.signature` and reconstructs. Limits follow the rule of
+#107: an unlimited joint is `±infinity` and the planner's `JointSpace`
+demands a declaration.
+
+## Snapshot
+
+```cpp
+struct Attachment {
+  int object_body;                 // must have a free joint (mjJNT_FREE) as its first joint
+  int gripper_body;                // the body the object is attached to
+  Transform T_gripper_object;      // recorded at grasp time
+  std::vector<int> allowed_bodies; // bodies whose contacts with the object's subtree are allowed
+};
+
+struct Snapshot {
+  std::vector<double> qpos;                 // nq
+  std::vector<double> mocap_pos, mocap_quat; // 3*nmocap, 4*nmocap
+  std::vector<Attachment> attachments;
+  std::string sha256;                       // of every field above, for provenance
+};
+```
+
+A snapshot is a value. It holds exactly what a geometric query reads and
+nothing else: no `qvel`, `ctrl`, `act`, sensors, warmstarts, forces, or
+time (#93's non-goals). Ingress validation (`std::invalid_argument`):
+`qpos` has `nq` finite entries, mocap arrays have `3*nmocap` and
+`4*nmocap` finite entries with unit quaternions within 1e-6, each
+attachment names a valid object body with a free joint and a valid gripper
+body, `T_gripper_object` passes the frame check of the TSR addendum, and
+every allowed body id is valid. A snapshot captured from a live `MjData`
+is copied; later changes to that `MjData` do not reach it (#93's third
+criterion).
+
+`allowed_bodies` makes mj_manipulator's gripper rule explicit data.
+mj_manipulator allows contact between a grasped object and any body in the
+subtree of the gripper **base**, found by name: for an attachment body
+`prefix/part` it is `prefix/base` when that body exists, else the
+attachment body itself. That name rule stays in Python, in
+`Snapshot.capture`, which resolves it to body ids; the native side applies
+sets, not names. The rule is therefore in one place and can change without
+touching C++.
+
+## Validation semantics
+
+```cpp
+class SceneValidator final : public StateValidator {
+ public:
+  SceneValidator(std::shared_ptr<const Scene> scene, Snapshot snapshot);  // owns a private mjData
+  bool is_valid(ConfigView q) const override;
+  std::vector<InvalidContact> invalid_contacts(ConfigView q) const;        // for diagnostics and the corpus
+};
+
+struct InvalidContact { int body1, body2; int geom1, geom2; double dist; Kind kind; };  // Kind: SelfCollision, RobotEnvironment
+```
+
+`is_valid(q)` is mj_manipulator's `is_valid` in snapshot mode, step for
+step (#84's pipeline):
+
+1. Restore the snapshot: copy `qpos`, `mocap_pos`, `mocap_quat` into the
+   private `mjData`.
+2. Write `q` into the controlled joints' `qpos` addresses.
+3. `mj_kinematics`: body and geom poses from `qpos` and mocap. This is the
+   position stage of `mj_forward`; contacts depend on geom poses only, so
+   the two agree, and no dynamics, sensors, or forces run (#84's fifth
+   criterion).
+4. For each attachment, read the gripper body's `xpos` and `xmat`, form
+   `T_world_object = T_world_gripper * T_gripper_object`, and write the
+   object's free-joint `qpos` (position, then quaternion by `mju_mat2Quat`).
+5. `mj_kinematics` again if there was any attachment.
+6. `mj_collision`.
+7. Classify every contact by the bodies of its two geoms
+   (`geom_bodyid`). Let *arm* be the scene's arm bodies and *grasped* the
+   union of the attachments' object subtrees; *robot* is either.
+   - Neither body robot: ignored.
+   - Both robot: allowed if one is grasped and the other is in that
+     attachment's `allowed_bodies`; otherwise a **self-collision**.
+   - Exactly one robot: a **robot-environment** collision.
+   The configuration is valid iff no contact is invalid.
+
+Every contact MuJoCo generates counts, including margin-inflated ones with
+positive `dist`, because mj_manipulator counts `data.ncon` entries without
+a distance test. `is_valid` has no threshold parameter; mj_manipulator's
+`is_arm_in_collision(min_penetration)` is a control-time query outside
+this contract. Contact count and order are never part of a decision or a
+test (#84's third criterion).
+
+Edges are the core's business: `SceneValidator` is a `StateValidator`, so
+the default `DiscreteMotionValidator` samples every edge at
+`edge_resolution` and calls it, and growth, the final connection, and
+shortcuts all pass through the same boundary as before.
+
+## Isolation and cancellation (#89)
+
+One `SceneValidator` owns one `mjData`, created by `mj_makeData` at
+construction and deleted with it. A solve uses the validator it was given
+and nothing else touches that `mjData`; two simultaneous solves need two
+validators, which the Python one-call path creates per solve. The
+`mjModel` is shared read-only. The GIL is released once for the whole
+solve as in v1.5; the deadline and the cancellation token are the core's,
+polled at the three points already defined, so cancellation completes
+within one state validation plus one edge's remaining samples, which is
+bounded by `step_size / edge_resolution` collision queries.
+
+## Python surface
+
+```python
+from pycbirrt.backends.native_mujoco import NativeScene, Snapshot, NativeCollisionChecker, plan_native
+
+scene = NativeScene.from_model(model, joint_names, extra_arm_bodies=[...])     # exports MJB once; caches by signature
+snap = Snapshot.capture(scene, data, attachments={obj: (gripper_body, T)})    # on the MuJoCo owner thread
+checker = NativeCollisionChecker(scene, snap)                                 # a pycbirrt CollisionChecker
+```
+
+`NativeCollisionChecker.is_valid(q)` calls the native validator, so the
+same object serves the Python backend and lowers to itself for the native
+one; there is one implementation of the policy and the Python backend
+exercises it too. `lower` gains the row: validator is a
+`NativeCollisionChecker` → its native handle; the row for other validators
+is unchanged (they remain Python objects). `NativeScene.from_model`
+refuses a model whose `mujoco.__version__` differs from the module's
+build version.
+
+`plan_native(model, data, joint_names, *, ik, start, goal_tsrs, ...)` is
+the one-call path #88 asks for: build or reuse the scene, capture the
+snapshot, build the `SSIKRobotModel` and lowering, solve with
+`backend="native"`, and return a `PlanResult` whose new `provenance` field
+records `{"scene": signature, "mjb_sha256", "snapshot": sha256,
+"mujoco", "ssik", "sstsr", "pycbirrt", "solver_name"}`. The Python backend
+fills `provenance` with the versions only.
+
+## Artifacts
+
+**Decision parity** (#84): `tools/mujoco_collision_corpus.py` builds MuJoCo
+scenes from MJCF strings checked into the tool, covering self-collision,
+robot-environment, held-object-environment, allowed gripper-object, mocap
+bodies, contact margins, cylinders, box-box, and plane-mesh, and for each
+records configurations near and across contact with mj_manipulator's
+`CollisionChecker` decision and the native `SceneValidator` decision, into
+`tests/reference/mujoco_collision_corpus.json`. The test asserts the
+decisions agree on every configuration; where they cannot (a policy
+mj_manipulator has and the snapshot does not express) the corpus records
+the difference by name, and the addendum is amended before the release.
+
+**Release artifact** (#88): two cases added to `tools/reference_artifact.py`
+under the Menagerie UR5e with the Robotiq gripper: a TSR-goal query among
+table obstacles, and a held-object query with a grasped cylinder and an
+allowed gripper contact, both from snapshots, native SSIK, native
+collision, `native_python_calls == 0`, independent post-validation with the
+Python checker on the same snapshot, and the provenance block. Both run on
+the Python backend as well and are compared as the other cases are.
+
+## Concept map, addendum
+
+| Python | Native | Relation |
+|---|---|---|
+| `mj_manipulator.CollisionChecker` (snapshot mode) | `SceneValidator` | same decisions on the corpus; the gripper-base name rule is resolved in Python to `allowed_bodies` |
+| `MuJoCoCollisionChecker` | `SceneValidator` with no attachments | same |
+| `GraspManager.update_attached_poses` | steps 4 and 5 | same transform and free-joint write |
+| `mj_forward` in the checker | `mj_kinematics` then `mj_collision` | same contacts; no dynamics run |
+| live `MjModel`, `MjData` | `Scene` from MJB, `Snapshot` by value | difference by design (#93): no borrowed pointers, no observed mutation |
+
+## Bulletproofing
+
+The maintainer's direction for this milestone is correctness first;
+mj_manipulator is refactored onto this boundary afterward, so the boundary
+must hold without it. Beyond the rules above:
+
+- **Ingress is exhaustive and tested one rule at a time.** Every rejection
+  in Scene and Snapshot has a test that triggers exactly it: unloadable
+  MJB bytes, a truncated buffer, a version mismatch in each of the three
+  places, an unknown joint, a duplicate joint, a ball or free controlled
+  joint, an unknown body, site, or geom, an attachment object without a
+  free joint or whose free joint is not its first joint, a `qpos` of the
+  wrong length or with a NaN, mocap arrays of the wrong length or with a
+  non-unit quaternion, a non-rigid `T_gripper_object`, an allowed body id
+  out of range, and an attachment whose gripper body is not in the arm.
+- **Property tests** (Hypothesis) on the Python side generate snapshots
+  and configurations against small MJCF worlds and assert the invariants
+  that do not need an oracle: a snapshot never changes after capture even
+  when the live `MjData` does; the same scene and snapshot give the same
+  decision for the same configuration on every call and across two
+  validators; a configuration valid with no attachment stays valid when an
+  attached object is placed far from everything; decisions are independent
+  of the order in which attachments and allowed bodies are listed.
+- **Decision parity is the oracle** where one exists: the corpus against
+  mj_manipulator's checker on every coverage item of #84, and the
+  `mj_kinematics` versus `mj_forward` equivalence checked on the same
+  corpus by running both in Python and comparing `ncon` and the contact
+  geom pairs as sets.
+- **Sanitizers and leaks.** The C++ scene tests run under ASan, UBSan, and
+  LSan with MuJoCo linked, creating and destroying scenes and validators
+  in loops, so a missing `mj_deleteModel` or `mj_deleteData` fails CI.
+- **Isolation.** A test runs two solves concurrently from two threads on
+  one scene with two validators and asserts both results equal their
+  single-threaded runs.
+- **Determinism.** Fixed seeds are repeatable across two solves and across
+  the Python one-call path, on the release cases.
+- **Import safety.** A CI job installs the wheel into an environment
+  without `mujoco` and asserts `import pycbirrt` and a native finite
+  problem work, and that the MuJoCo scene reports its reason.
+- **Version binding** is tested by building against 3.14.0 and importing
+  with the pinned wheel only; a test monkeypatches the reported Python
+  version to a different string and asserts the scene refuses with a
+  message naming both.
+
+## Decisions
+
+1. **A separate extension module** for the MuJoCo scene: adopted. The core
+   imports without MuJoCo.
+2. **Exact MuJoCo pin** in the `mujoco` extra, refusal on mismatch:
+   adopted.
+3. **Which MuJoCo**: 3.14.0, the latest release, per the maintainer; the
+   workspace moves to it with this milestone.
+4. **The gripper-base rule stays in Python** as data on the snapshot:
+   adopted.
+5. **`mj_kinematics` in place of `mj_forward`** for the query: adopted,
+   with the equivalence checked on the corpus.
