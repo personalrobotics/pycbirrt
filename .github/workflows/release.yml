@@ -2,7 +2,8 @@ name: Release
 
 # Tag-driven release pipeline (#153), on the ssik pattern.
 #
-#   v*rc*              build wheels + sdist, publish to TestPyPI (the dry run)
+#   v*rc*              build wheels + sdist, publish to TestPyPI (the dry run; the artifacts may carry the
+#                      final version the tag rehearses, e.g. v3.0.0rc1 on the commit whose version is 3.0.0)
 #   v*                 build wheels + sdist, publish to PyPI, create the GitHub release from the CHANGELOG
 #   workflow_dispatch  build wheels + sdist only; publishes to TestPyPI only with publish_testpypi=true
 #
@@ -81,17 +82,17 @@ jobs:
         with:
           path: dist
           merge-multiple: true
-      - name: Every artifact carries the tag's version
+      - name: Every artifact carries the tag's version (an rc tag may carry the final version it rehearses)
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          TAG="${GITHUB_REF#refs/tags/v}"; ls -1 dist/
+          TAG="${GITHUB_REF#refs/tags/v}"; BASE="${TAG%%rc*}"; ls -1 dist/
           for f in dist/*; do
             case "$(basename "$f")" in
-              sscbirrt-"$TAG".tar.gz|sscbirrt-"$TAG"-*.whl) ;;
-              *) echo "::error::$(basename "$f") is not version $TAG (pyproject version and tag must agree)"; exit 1 ;;
+              sscbirrt-"$TAG".tar.gz|sscbirrt-"$TAG"-*.whl|sscbirrt-"$BASE".tar.gz|sscbirrt-"$BASE"-*.whl) ;;
+              *) echo "::error::$(basename "$f") is neither version $TAG nor $BASE (pyproject version and tag must agree)"; exit 1 ;;
             esac
           done
-          echo "OK: all artifacts are version $TAG"
+          echo "OK: all artifacts are version $TAG or $BASE"
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
