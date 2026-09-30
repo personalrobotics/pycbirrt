@@ -376,9 +376,10 @@ uv pip install -e ".[mujoco,ssik]"
 ```
 
 `numpy` and `sstsr` (Task Space Regions, imported as `tsr`) are installed as
-dependencies. Wheels include the native core; installing from a checkout or
-the sdist compiles it and needs CMake 3.16+ and a C++20 compiler (the build
-fetches scikit-build-core, pybind11, and ninja itself).
+dependencies. Wheels include the native core with the SSIK and MuJoCo
+adapters; installing from a checkout or the sdist compiles them and needs
+CMake 3.16+, a C++20 compiler, and Eigen 3 (the build fetches
+scikit-build-core, pybind11, ninja, ssik, and mujoco itself).
 
 ## Backends
 

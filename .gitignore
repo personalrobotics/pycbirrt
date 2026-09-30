@@ -32,3 +32,6 @@ Thumbs.db
 # Generated files
 *.png
 !docs/images/*.png
+
+# MuJoCo writes this next to the process when it warns
+MUJOCO_LOG.TXT
