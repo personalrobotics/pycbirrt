@@ -48,7 +48,7 @@ def run(seeds: int) -> dict[str, Any]:
     tool = _artifact_tool()
     rows = []
     for case in tool.cases():
-        if case["config"].abort_fn is not None or case["name"] == "timeout":
+        if "skipped" in case or case["config"].abort_fn is not None or case["name"] == "timeout":
             continue
         try:
             native.lower(case["problem"], case["config"])
