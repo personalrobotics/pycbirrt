@@ -19,7 +19,6 @@ dependencies = [
 [project.optional-dependencies]
 mujoco = ["mujoco==3.14.0"]  # exact: pycbirrt._native_mujoco is built against this MuJoCo and refuses another (docs/native-design.md, v1.7.0)
 ssik = ["ssik>=7.0,<8"]  # 7.0 ships the ssik_cpp headers and ssik.cpp.joint_data for the native SSIK adapter (ssik#641)
-eaik = ["eaik"]  # deprecated; removed in pycbirrt 2.0
 examples = [
     "matplotlib",
     "mediapy",
@@ -30,7 +29,7 @@ dev = [
     "ruff>=0.15,<0.16",  # formatter style only changes in minor releases; bump deliberately
     "hypothesis>=6.100",
 ]
-all = ["pycbirrt[mujoco,ssik,eaik,examples,dev]"]
+all = ["pycbirrt[mujoco,ssik,examples,dev]"]
 
 [build-system]
 # ssik is a build requirement so the isolated build can ask it for the ssik_cpp CMake package

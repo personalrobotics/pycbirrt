@@ -8,7 +8,7 @@ This example demonstrates three planning scenarios:
 2. Planning with both start and goal TSRs (no fixed configurations)
 3. Constrained planning with a trajectory-wide constraint TSR
 
-This example requires only numpy and TSR - no MuJoCo or EAIK needed.
+This example requires only numpy and TSR - no MuJoCo or SSIK needed.
 
 Run with:
     python examples/planar_arm.py

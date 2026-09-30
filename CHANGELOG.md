@@ -6,6 +6,13 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Removed
+- `EAIKSolver`, `pycbirrt.backends.eaik`, the `eaik` extra (and its place in
+  `all`), and the EAIK-specific URDFs under `urdf/`. Deprecated in 1.3.0 with a
+  stated 2.0 removal (#63). SSIK is the analytical IK backend:
+  `SSIKSolver(ssik.Manipulator.from_prebuilt("ur5e"))` replaces
+  `EAIKSolver.for_ur5e(...)`; the Python and native backends are unaffected (#81).
+
 ### Changed
 - The native lowering recognizes validators and IK solvers by two runtime-checkable
   protocols in `pycbirrt.backends.native`, `ValidatorIntegration` (`fresh()`,
