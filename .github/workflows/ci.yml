@@ -27,14 +27,20 @@ jobs:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
 
-      - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libeigen3-dev
+      - name: Install system dependencies (Eigen; Mesa's EGL so MuJoCo renders the demos without a display)
+        run: sudo apt-get update && sudo apt-get install -y libeigen3-dev libegl1 libegl-mesa0 libgl1-mesa-dri
 
       - name: Install dependencies (builds the extension; ssik is a build requirement, so the SSIK adapter is detected)
         run: |
           uv sync --all-extras --dev
           uv run python -c "import sscbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason(); print('native SSIK adapter built')"
           uv run python -c "from sscbirrt.backends import native_mujoco as m; assert m.available(), m.unavailable_reason(); print('native MuJoCo scene built')"
+
+      - name: Point the UR5e tests at the packaged models, and require headless rendering to work
+        run: |
+          echo "MUJOCO_MENAGERIE_PATH=$(uv run python -c 'import sscbirrt_assets; print(sscbirrt_assets.menagerie_path())')" >> "$GITHUB_ENV"
+          echo "MUJOCO_GL=egl" >> "$GITHUB_ENV"
+          echo "SSCBIRRT_REQUIRE_RENDER=1" >> "$GITHUB_ENV"
 
       - name: Ruff lint
         run: uv run ruff check .
