@@ -66,6 +66,32 @@ cmake.define = { SSCBIRRT_BUILD_PYTHON = "ON", SSCBIRRT_BUILD_TESTS = "OFF", SSC
 wheel.packages = ["src/sscbirrt"]
 sdist.include = ["cpp/", "src/", "tests/", "tools/", "docs/"]
 
+# Release wheels (.github/workflows/release.yml, #153): CPython 3.10 through 3.14 on manylinux_2_28 x86_64 and
+# macOS arm64, the platforms the mujoco wheel we build against covers. Inside the manylinux image there is no
+# Eigen; the CMake build downloads the pinned one. libmujoco is deliberately NOT bundled: sscbirrt._native_mujoco
+# links the mujoco wheel's own library through an rpath and refuses any other version, so the repair step
+# excludes it on both platforms. Every built wheel is installed with the extras and runs the reference
+# artifact check natively before it is kept.
+[tool.cibuildwheel]
+build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
+skip = ["*-musllinux_*", "*-manylinux_i686", "*-win*", "pp*", "*linux_aarch64", "cp314t-*"]
+build-verbosity = 1
+test-requires = ["mujoco==3.14.0", "ssik>=7.0,<8"]
+test-command = [
+    "python -c \"import sscbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason(); from sscbirrt.backends import native_mujoco as m; assert m.available(), m.unavailable_reason(); print('wheel: ssik and mujoco native modules ok')\"",
+    "python {project}/tools/reference_artifact.py --backend native --check",
+    "python {project}/tools/reference_artifact.py --backend auto --check",
+]
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux_2_28"
+repair-wheel-command = "auditwheel repair -w {dest_dir} --exclude libmujoco.so.3.14.0 {wheel}"
+
+[tool.cibuildwheel.macos]
+archs = ["arm64"]
+environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v --exclude libmujoco {wheel}"
+
 [project.urls]
 Homepage = "https://github.com/personalrobotics/sscbirrt"
 Repository = "https://github.com/personalrobotics/sscbirrt"
