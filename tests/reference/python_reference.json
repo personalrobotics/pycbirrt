@@ -3596,9 +3596,9 @@
  ],
  "issue": "https://github.com/personalrobotics/sscbirrt/issues/94",
  "versions": {
-  "numpy": "2.5.3",
-  "python": "3.14.7",
-  "sscbirrt": "2.0.0",
+  "numpy": "2.4.6",
+  "python": "3.13.3",
+  "sscbirrt": "3.0.0",
   "sstsr": "3.2.0"
  }
 }

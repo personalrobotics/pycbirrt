@@ -6,6 +6,24 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-09-30
+
+pycbirrt becomes **sscbirrt**, and this is the first release on PyPI:
+`pip install sscbirrt`, with the `ssik` and `mujoco` extras. The name is the
+one the C++ core, its targets, and its CMake package have carried since
+1.5.0; the distribution, the import path, the extension modules, and the
+repository now match it. Wheels for CPython 3.10 through 3.14 on Linux
+x86_64 and macOS arm64 ship the native core with the SSIK and MuJoCo
+adapters and are built by a tag-driven pipeline that runs the reference
+artifact check on every wheel before publishing. Nothing about planning
+changed since 2.0.0.
+
+**Migrating from 2.0.0.** Replace `pycbirrt` with `sscbirrt` in dependencies
+and imports (`import sscbirrt`, `sscbirrt.backends.native_mujoco`, and so
+on); the API is identical. Repository URLs under `personalrobotics/pycbirrt`
+redirect. Installing from source no longer needs an Eigen package: the build
+downloads the pinned one when none is found.
+
 ### Added
 - A tag-driven release pipeline (`.github/workflows/release.yml`): `v*rc*` tags
   build wheels and the sdist and publish to TestPyPI, `v*` tags publish to PyPI and
