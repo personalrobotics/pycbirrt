@@ -74,11 +74,18 @@ def can_position(xy: Sequence[float]) -> np.ndarray:
     return np.array([xy[0], xy[1], CAN_Z])
 
 
-def build_scene(cans: Mapping[str, Sequence[float]] | None = None) -> mujoco.MjModel:
+OBSTACLE_RGBA = (0.35, 0.55, 0.85, 0.30)  # translucent, so the obstacles do not hide the arm or the cans
+
+
+def build_scene(
+    cans: Mapping[str, Sequence[float]] | None = None,
+    obstacles: Mapping[str, tuple[Sequence[float], Sequence[float]]] | None = None,
+) -> mujoco.MjModel:
     """Compile the world: arm, gripper, floor, table, and one free-floating can per entry of ``cans``.
 
     ``cans`` maps a body name to the can's center (see :func:`can_position`). Cans are free bodies so a
-    planner can treat one as held (``attachments``); the demos never step the simulation.
+    planner can treat one as held (``attachments``); the demos never step the simulation. ``obstacles`` maps a
+    name to a floating box ``(center, half_extents)``: fixed, translucent, and solid to the collision checker.
     """
     from tsr import Robotiq2F85
 
@@ -114,7 +121,6 @@ def build_scene(cans: Mapping[str, Sequence[float]] | None = None) -> mujoco.MjM
     key.dir = [0.4, 0.5, -1.0]
     key.diffuse = [0.45, 0.45, 0.45]
     key.specular = [0.1, 0.1, 0.1]
-    key.castshadow = True
 
     floor = world.add_geom()
     floor.name = "floor"
@@ -147,9 +153,7 @@ def build_scene(cans: Mapping[str, Sequence[float]] | None = None) -> mujoco.MjM
         leg.type = mujoco.mjtGeom.mjGEOM_CYLINDER
         leg.pos = [x * (TABLE_HALF[0] - 0.03), y * (TABLE_HALF[1] - 0.03), leg_half - TABLE_CENTER[2]]
         leg.size = [0.025, leg_half, 0]
-        leg.material = "table_leg"
-        leg.contype = 0
-        leg.conaffinity = 0
+        leg.material = "table_leg"  # solid: a planner must not route the arm through the legs
 
     for i, (name, pos) in enumerate((cans or {}).items()):
         body = world.add_body()
@@ -162,6 +166,18 @@ def build_scene(cans: Mapping[str, Sequence[float]] | None = None) -> mujoco.MjM
         geom.size = [CAN_RADIUS, CAN_HALF_HEIGHT, 0]
         geom.rgba = list(CAN_COLORS[i % len(CAN_COLORS)])
 
+    # No light casts shadows (the UR5e model brings its own spotlight): translucent obstacles cast opaque ones.
+    for light in arm.lights:
+        light.castshadow = False
+
+    for name, (center, half) in (obstacles or {}).items():
+        box = world.add_geom()
+        box.name = name
+        box.type = mujoco.mjtGeom.mjGEOM_BOX
+        box.pos = list(center)
+        box.size = list(half)
+        box.rgba = list(OBSTACLE_RGBA)
+
     return arm.compile()
 
 
@@ -170,7 +186,8 @@ def _style(spec: mujoco.MjSpec) -> None:
     spec.visual.global_.offwidth = 1920
     spec.visual.global_.offheight = 1080
     spec.visual.quality.offsamples = 8
-    spec.visual.quality.shadowsize = 4096
+    # Without shadows, the default far plane clips the infinite floor and leaves black gaps under the sky.
+    spec.visual.map.zfar = 5000.0
     spec.visual.headlight.ambient = [0.35, 0.35, 0.35]
     spec.visual.headlight.diffuse = [0.30, 0.30, 0.30]
     spec.visual.headlight.specular = [0.05, 0.05, 0.05]

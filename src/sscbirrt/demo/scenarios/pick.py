@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Siddhartha Srinivasa
 
-"""pick: the goal is a set, every side grasp of any of three cans, and one call plans to it."""
+"""pick: the goal is a set, every side grasp of any of three cans, and one call plans to it around obstacles."""
 
 from __future__ import annotations
 
@@ -20,9 +20,17 @@ CANS = {
     "yellow can": can_position((0.40, -0.25)),
 }
 
+# Floating boxes across the direct routes: one hovering above the cans, one over the near table edge, two beside.
+OBSTACLES = {
+    "box_over_cans": ((0.50, 0.00, 0.78), (0.12, 0.14, 0.04)),
+    "box_near_edge": ((0.22, -0.02, 0.62), (0.05, 0.10, 0.06)),
+    "box_left": ((0.25, 0.48, 0.70), (0.07, 0.07, 0.07)),
+    "box_right": ((-0.10, -0.45, 0.60), (0.08, 0.08, 0.08)),
+}
+
 
 def run(seed: int) -> Outcome:
-    model = build_scene({name.replace(" ", "_"): pos for name, pos in CANS.items()})
+    model = build_scene({name.replace(" ", "_"): pos for name, pos in CANS.items()}, OBSTACLES)
     data = mujoco.MjData(model)
     set_arm(model, data, HOME)
     arm = Arm(model, UR5E_JOINTS, EE_SITE, mjcf=ur5e_xml())
