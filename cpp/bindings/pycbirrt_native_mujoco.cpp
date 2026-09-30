@@ -14,6 +14,7 @@
 
 #include "sscbirrt/mujoco/scene.hpp"
 #include "sscbirrt/mujoco/snapshot.hpp"
+#include "sscbirrt/mujoco/validator.hpp"
 
 namespace py = pybind11;
 using namespace sscbirrt;
@@ -21,6 +22,8 @@ using sscbirrt::mujoco::Attachment;
 using sscbirrt::mujoco::Scene;
 using sscbirrt::mujoco::SceneProvenance;
 using sscbirrt::mujoco::Snapshot;
+using sscbirrt::mujoco::InvalidContact;
+using sscbirrt::mujoco::SceneValidator;
 
 namespace {
 using Rows4 = std::array<std::array<double, 4>, 4>;
@@ -110,4 +113,22 @@ PYBIND11_MODULE(_native_mujoco, m) {
       .def_readonly("mocap_quat", &Snapshot::mocap_quat)
       .def_readonly("attachments", &Snapshot::attachments)
       .def_readonly("sha256", &Snapshot::sha256);
+
+  py::class_<InvalidContact>(m, "InvalidContact")
+      .def_readonly("body1", &InvalidContact::body1)
+      .def_readonly("body2", &InvalidContact::body2)
+      .def_readonly("geom1", &InvalidContact::geom1)
+      .def_readonly("geom2", &InvalidContact::geom2)
+      .def_readonly("dist", &InvalidContact::dist)
+      .def_property_readonly("kind", [](const InvalidContact& c) {
+        return std::string(c.kind == InvalidContact::Kind::SelfCollision ? "self_collision" : "robot_environment");
+      });
+
+  // Derives from the StateValidator registered by pycbirrt._native, so a native PlanningProblem accepts it.
+  py::class_<SceneValidator, StateValidator, std::shared_ptr<SceneValidator>>(m, "SceneValidator")
+      .def(py::init([](std::shared_ptr<const Scene> scene, const Snapshot& snapshot) { return std::make_shared<SceneValidator>(std::move(scene), snapshot); }),
+           py::arg("scene"), py::arg("snapshot"), "One private mjData per validator; use one validator per solve.")
+      .def("is_valid", [](const SceneValidator& v, const Config& q) { return v.is_valid(q); })
+      .def("invalid_contacts", [](const SceneValidator& v, const Config& q) { return v.invalid_contacts(q); })
+      .def_property_readonly("snapshot", &SceneValidator::snapshot);
 }

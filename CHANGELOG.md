@@ -31,6 +31,19 @@ follows [Semantic Versioning](https://semver.org/).
   constructor now rejects; the gripper x axis is the right-handed
   completion of the approach and up directions.
 
+### Added
+
+- **Native MuJoCo collision checking (in progress toward 1.7.0).**
+  `pycbirrt.backends.native_mujoco`: `NativeScene.from_model` (an owned
+  `mjModel` from the compiled model's MJB bytes, cached by content),
+  `Snapshot.capture` (qpos, mocap poses, and attachments as a value), and
+  `NativeCollisionChecker(scene, snapshot)`, a `CollisionChecker` with
+  mj_manipulator's attachment-aware contact policy implemented in C++ and
+  used by both backends; `backend="native"` lowers it to a per-solve
+  validator with its own `mjData`. Decisions are checked against
+  mj_manipulator's checker on a checked-in corpus
+  (`tools/mujoco_collision_corpus.py`) (#93, #84, #137, #138).
+
 ### Changed
 
 - The `mujoco` extra pins `mujoco==3.14.0` exactly, and mujoco is a build

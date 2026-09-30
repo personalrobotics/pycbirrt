@@ -176,3 +176,42 @@ class Snapshot:
     @property
     def qpos(self) -> np.ndarray:
         return np.array(self.native.qpos, dtype=float)
+
+
+class NativeCollisionChecker:
+    """A pycbirrt ``CollisionChecker`` over a scene and a snapshot, with mj_manipulator's contact policy.
+
+    ``is_valid`` calls the native validator, so the Python backend exercises the same implementation the
+    native backend lowers to. ``fresh()`` returns a new validator on the same scene and snapshot with its own
+    ``mjData``; lowering calls it so that every solve owns its validator.
+    """
+
+    def __init__(self, scene: NativeScene, snapshot: Snapshot):
+        if snapshot.scene is not scene:
+            raise ValueError("the snapshot was captured for a different scene")
+        self.scene = scene
+        self.snapshot = snapshot
+        self.native = _load().SceneValidator(scene.native, snapshot.native)
+
+    def fresh(self):
+        """A new native validator with its own mjData, for one solve."""
+        return _load().SceneValidator(self.scene.native, self.snapshot.native)
+
+    def is_valid(self, q) -> bool:
+        return bool(self.native.is_valid([float(x) for x in np.asarray(q, dtype=float)]))
+
+    def invalid_contacts(self, q) -> list[dict[str, Any]]:
+        """Every contact the policy counts against ``q``, with body names, for diagnostics."""
+        out = []
+        for c in self.native.invalid_contacts([float(x) for x in np.asarray(q, dtype=float)]):
+            out.append(
+                {
+                    "kind": c.kind,
+                    "body1": self.scene.native.body_name(c.body1),
+                    "body2": self.scene.native.body_name(c.body2),
+                    "geom1": c.geom1,
+                    "geom2": c.geom2,
+                    "dist": c.dist,
+                }
+            )
+        return out
