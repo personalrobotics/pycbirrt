@@ -142,7 +142,7 @@ default. A custom `motion_validator` owns the whole edge check, and
 default discretized check. A custom `sampler` proposes the free-space
 targets the trees grow toward and defaults to the space's uniform sampling;
 replacing it trades away probabilistic completeness unless it has full
-support over the space. [docs/design.md](docs/design.md) has the
+support over the space. [docs/design.md](https://github.com/personalrobotics/sscbirrt/blob/main/docs/design.md) has the
 definitions, the composition rules, what the planner requires of each role,
 the tolerances, and the reference behavior artifact that pins the planner's
 semantics (`python tools/reference_artifact.py --check`).
@@ -374,18 +374,23 @@ implementations of them, not special cases; see
 ## Installation
 
 ```bash
-# From a checkout: every backend, the example dependencies, and the dev tools
-uv pip install -e ".[all]"
-
-# Or choose extras: mujoco, ssik (recommended IK), examples (matplotlib, mediapy)
-uv pip install -e ".[mujoco,ssik]"
+pip install sscbirrt                 # the planner, the C++ core, and Task Space Regions
+pip install "sscbirrt[ssik,mujoco]"  # plus analytical IK (SSIK) and the MuJoCo scene
 ```
 
-`numpy` and `sstsr` (Task Space Regions, imported as `tsr`) are installed as
-dependencies. Wheels include the native core with the SSIK and MuJoCo
-adapters; installing from a checkout or the sdist compiles them and needs
-CMake 3.16+, a C++20 compiler, and Eigen 3 (the build fetches
-scikit-build-core, pybind11, ninja, ssik, and mujoco itself).
+Wheels for Linux x86_64 and macOS arm64, Python 3.10 through 3.14, include the
+native core with the SSIK and MuJoCo adapters. `numpy` and `sstsr` (Task Space
+Regions, imported as `tsr`) are installed as dependencies; the `mujoco` extra
+pins the exact MuJoCo the extension is built against.
+
+From a checkout or the sdist, the extension compiles on install and needs
+CMake 3.16+ and a C++20 compiler; the build fetches scikit-build-core,
+pybind11, ninja, ssik, and mujoco itself, and Eigen if none is installed:
+
+```bash
+uv pip install -e ".[all]"          # every extra, the example dependencies, and the dev tools
+uv pip install -e ".[mujoco,ssik]"  # or choose extras: mujoco, ssik, examples (matplotlib, mediapy)
+```
 
 ## Backends
 
@@ -444,7 +449,7 @@ result.provenance   # versions, scene MJB hash, snapshot hash, SSIK family
 
 The snapshot is a value: `qpos`, mocap poses, and attachments copied at capture,
 so later changes to `data` do not reach a running solve. Downstream integration
-is described in [docs/migration-mj-manipulator.md](docs/migration-mj-manipulator.md). The contact policy is
+is described in [docs/migration-mj-manipulator.md](https://github.com/personalrobotics/sscbirrt/blob/main/docs/migration-mj-manipulator.md). The contact policy is
 mj_manipulator's (a grasped object may touch its gripper; everything else that
 touches the robot is a collision) and is checked against it on a checked-in
 corpus. `PlanResult.provenance` records the scene's MJB hash and the snapshot
@@ -496,7 +501,7 @@ tolerance.
 ### Native core (the default)
 
 The C++20 core in `cpp/` implements the same contract as the Python planner
-([docs/native-design.md](docs/native-design.md)). It is built into the wheel
+([docs/native-design.md](https://github.com/personalrobotics/sscbirrt/blob/main/docs/native-design.md)). It is built into the wheel
 as `sscbirrt._native`, and since 2.0 the planner selects it by default:
 
 ```python
