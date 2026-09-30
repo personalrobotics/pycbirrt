@@ -3597,7 +3597,7 @@
  "issue": "https://github.com/personalrobotics/pycbirrt/issues/94",
  "versions": {
   "numpy": "2.4.6",
-  "pycbirrt": "1.7.0",
+  "pycbirrt": "2.0.0",
   "python": "3.13.3",
   "sstsr": "3.2.0"
  }

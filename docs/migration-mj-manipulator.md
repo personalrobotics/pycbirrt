@@ -58,7 +58,7 @@ first criterion), and it does not own the simulator or its threads.
 4. **One validator per solve.** Lowering creates a fresh validator with its
    own `mjData` for every solve; two solves in parallel never share one. Do
    not hand one `NativeCollisionChecker` to two threads' Python code either.
-5. **Pin `mujoco==3.14.0`** while pycbirrt 1.7 is the version in use; the
+5. **Pin `mujoco==3.14.0`** for pycbirrt 1.7 and 2.0, the versions built against it; the
    native scene refuses another MuJoCo with a message naming the three
    versions it sees.
 6. **Unsupported means Python.** TSR chains, IK other than SSIK on a verified
