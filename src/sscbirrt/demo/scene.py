@@ -37,7 +37,12 @@ CAN_RADIUS = 0.03
 CAN_HALF_HEIGHT = 0.05
 CAN_Z = TABLE_TOP_Z + CAN_HALF_HEIGHT
 
-CAN_COLORS = [(0.85, 0.20, 0.15, 1), (0.20, 0.55, 0.85, 1), (0.95, 0.70, 0.15, 1), (0.30, 0.70, 0.35, 1)]
+CAN_COLORS = [
+    (0.25, 0.68, 0.35, 1),
+    (0.20, 0.55, 0.85, 1),
+    (0.95, 0.70, 0.15, 1),
+    (0.55, 0.35, 0.75, 1),
+]  # no red: red is for obstacles
 
 
 def menagerie_path() -> Path:
@@ -74,7 +79,7 @@ def can_position(xy: Sequence[float]) -> np.ndarray:
     return np.array([xy[0], xy[1], CAN_Z])
 
 
-OBSTACLE_RGBA = (0.35, 0.55, 0.85, 0.30)  # translucent, so the obstacles do not hide the arm or the cans
+OBSTACLE_RGBA = (0.80, 0.15, 0.12, 1.0)  # solid red; no can is red
 
 
 def build_scene(
@@ -85,7 +90,7 @@ def build_scene(
 
     ``cans`` maps a body name to the can's center (see :func:`can_position`). Cans are free bodies so a
     planner can treat one as held (``attachments``); the demos never step the simulation. ``obstacles`` maps a
-    name to a floating box ``(center, half_extents)``: fixed, translucent, and solid to the collision checker.
+    name to a box ``(center, half_extents)``, floating or resting on the table: fixed, solid red.
     """
     from tsr import Robotiq2F85
 
@@ -117,6 +122,7 @@ def build_scene(
 
     world = arm.worldbody
     key = world.add_light()
+    key.name = "key"
     key.type = mujoco.mjtLightType.mjLIGHT_DIRECTIONAL
     key.dir = [0.4, 0.5, -1.0]
     key.diffuse = [0.45, 0.45, 0.45]
@@ -166,7 +172,8 @@ def build_scene(
         geom.size = [CAN_RADIUS, CAN_HALF_HEIGHT, 0]
         geom.rgba = list(CAN_COLORS[i % len(CAN_COLORS)])
 
-    # No light casts shadows (the UR5e model brings its own spotlight): translucent obstacles cast opaque ones.
+    # No shadows: with the far plane the infinite floor needs (see _style), MuJoCo's shadow map spreads too thin to
+    # show them, and the default far plane blows the floor out and leaves a dark band under the sky.
     for light in arm.lights:
         light.castshadow = False
 
@@ -186,7 +193,7 @@ def _style(spec: mujoco.MjSpec) -> None:
     spec.visual.global_.offwidth = 1920
     spec.visual.global_.offheight = 1080
     spec.visual.quality.offsamples = 8
-    # Without shadows, the default far plane clips the infinite floor and leaves black gaps under the sky.
+    # The default far plane clips the infinite floor and leaves dark gaps under the sky.
     spec.visual.map.zfar = 5000.0
     spec.visual.headlight.ambient = [0.35, 0.35, 0.35]
     spec.visual.headlight.diffuse = [0.30, 0.30, 0.30]

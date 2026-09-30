@@ -11,17 +11,19 @@ from sscbirrt import CBiRRTConfig
 from sscbirrt.demo.grasps import side_grasps
 from sscbirrt.demo.render import Camera, Clip
 from sscbirrt.demo.scenarios import Outcome, Scenario
-from sscbirrt.demo.scene import EE_SITE, HOME, UR5E_JOINTS, build_scene, can_position, set_arm, ur5e_xml
+from sscbirrt.demo.scene import EE_SITE, HOME, TABLE_TOP_Z, UR5E_JOINTS, build_scene, can_position, set_arm, ur5e_xml
 from sscbirrt.mujoco import Arm, plan
 
 CANS = {
-    "red can": can_position((0.45, 0.22)),
+    "green can": can_position((0.45, 0.22)),
     "blue can": can_position((0.62, -0.05)),
     "yellow can": can_position((0.40, -0.25)),
 }
 
-# Floating boxes across the direct routes: one hovering above the cans, one over the near table edge, two beside.
+# Boxes across the direct routes: one resting in the middle of the table, one hovering above the cans, one over
+# the near table edge, and two beside the arm.
 OBSTACLES = {
+    "box_on_table": ((0.52, 0.08, TABLE_TOP_Z + 0.06), (0.05, 0.05, 0.06)),
     "box_over_cans": ((0.50, 0.00, 0.78), (0.12, 0.14, 0.04)),
     "box_near_edge": ((0.22, -0.02, 0.62), (0.05, 0.10, 0.06)),
     "box_left": ((0.25, 0.48, 0.70), (0.07, 0.07, 0.07)),

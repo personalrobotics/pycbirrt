@@ -110,7 +110,9 @@ def _overlay(frame: np.ndarray, title: str, lines: Sequence[str], caption: str |
 
 def _open_renderer(model: mujoco.MjModel, width: int, height: int) -> mujoco.Renderer:
     try:
-        return mujoco.Renderer(model, width=width, height=height)
+        renderer = mujoco.Renderer(model, width=width, height=height)
+        renderer.render()  # warm-up: the first frame from a fresh context can come out overexposed
+        return renderer
     except Exception as e:  # MuJoCo raises plain Exceptions for GL context failures
         gl = os.environ.get("MUJOCO_GL", "the platform default")
         raise RenderUnavailable(
