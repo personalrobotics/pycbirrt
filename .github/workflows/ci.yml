@@ -132,8 +132,33 @@ jobs:
           uv pip install --python "$RUNNER_TEMP/sdist-env/bin/python" dist/*.tar.gz
           "$RUNNER_TEMP/sdist-env/bin/python" -c "import pycbirrt._native as n; print('sdist ok; ssik adapter:', n.has_ssik())"
 
+  package-macos:
+    name: Wheel on macOS (arm64)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install Eigen
+        run: brew install eigen
+      - name: Build the wheel (ssik and mujoco are build requirements; both native adapters must be present)
+        run: uv build --wheel
+      - name: Install into a fresh environment with every extra and exercise every native module
+        run: |
+          uv venv --python 3.12 "$RUNNER_TEMP/mac-env"
+          uv pip install --python "$RUNNER_TEMP/mac-env/bin/python" --prerelease=allow --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ --index-strategy unsafe-best-match "$(ls dist/*.whl)[ssik,mujoco]"
+          "$RUNNER_TEMP/mac-env/bin/python" -c "
+          import mujoco, numpy as np
+          import pycbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason()
+          from pycbirrt.backends import native_mujoco as m; assert m.available(), m.unavailable_reason()
+          model = mujoco.MjModel.from_xml_string('<mujoco><worldbody><body><joint name=\"j\" type=\"hinge\"/><geom size=\"0.1\"/></body></worldbody></mujoco>')
+          s = m.NativeScene.from_model(model, ['j']); print('macOS wheel: ssik and mujoco native modules ok', s.provenance['mujoco'])
+          "
+          "$RUNNER_TEMP/mac-env/bin/python" tools/reference_artifact.py --backend native --check
+
   notify-robot-code:
-    needs: [test, cpp, cpp-consumer, package]
+    needs: [test, cpp, cpp-consumer, package, package-macos]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:

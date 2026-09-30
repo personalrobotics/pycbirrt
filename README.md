@@ -396,6 +396,28 @@ The differential solver is stateful and, when called without a seed
 configuration, tries a few random restarts within each joint's limits. Pass
 `seed=` for reproducible runs; `CBiRRT.plan(seed=...)` seeds the planner only.
 
+### Native MuJoCo scene (collision checking in C++)
+
+With `pycbirrt[mujoco]` (pinned to `mujoco==3.14.0`, the version the extension
+is built against), collision checking can run natively against a MuJoCo world
+the planner owns:
+
+```python
+from pycbirrt.backends.native_mujoco import NativeScene, Snapshot, NativeCollisionChecker
+
+scene = NativeScene.from_model(model, joint_names)              # an owned mjModel from the compiled model's MJB bytes
+snap = Snapshot.capture(scene, data, attachments={"can": ("robot/gripper/base", T_gripper_can)})
+checker = NativeCollisionChecker(scene, snap)                   # a CollisionChecker for either backend
+```
+
+The snapshot is a value: `qpos`, mocap poses, and attachments copied at capture,
+so later changes to `data` do not reach a running solve. The contact policy is
+mj_manipulator's (a grasped object may touch its gripper; everything else that
+touches the robot is a collision) and is checked against it on a checked-in
+corpus. `PlanResult.provenance` records the scene's MJB hash and the snapshot
+hash alongside the dependency versions; `PlanResult.stats` breaks the solve's
+cost down by component on both backends.
+
 ### SSIK (analytical IK, recommended)
 
 ```bash

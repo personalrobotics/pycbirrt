@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Siddhartha Srinivasa
 
+import functools
 import logging
 import time
 from dataclasses import dataclass, field
@@ -25,6 +26,24 @@ from pycbirrt.space import JointSpace
 from pycbirrt.tree import RRTree
 
 logger = logging.getLogger(__name__)
+
+
+@functools.lru_cache(maxsize=1)
+def _versions_cached() -> dict[str, str]:
+    import importlib.metadata as md
+
+    out = {}
+    for name in ("pycbirrt", "sstsr", "ssik", "mujoco"):
+        try:
+            out[name] = md.version(name)
+        except md.PackageNotFoundError:
+            pass
+    return out
+
+
+def versions() -> dict[str, str]:
+    """Installed versions of pycbirrt and its geometric dependencies, for result provenance (cached; a copy)."""
+    return dict(_versions_cached())
 
 
 @dataclass
@@ -66,6 +85,10 @@ class PlanResult:
     tree_goal: RRTree | None = field(default=None, repr=False)
     backend: str = "python"
     backend_reasons: tuple[str, ...] = field(default=())
+    provenance: dict = field(
+        default_factory=dict, repr=False
+    )  # versions; scene, MJB and snapshot hashes when native MuJoCo
+    stats: dict = field(default_factory=dict, repr=False)  # cost breakdown: counts and seconds per component
 
 
 class _AbortedDuringRoots(Exception):
@@ -212,9 +235,12 @@ class CBiRRT:
                 reasons = tuple(e.reasons)
             else:
                 return native.solve(lowered, seed, self.config.abort_fn)
+        self._counts = {"state_checks": 0, "edge_checks": 0}
         result = self._solve_python(problem, seed)
         result.backend = "python"
         result.backend_reasons = reasons
+        result.provenance = {**versions(), "backend": "python"}
+        result.stats = dict(self._counts)
         return result
 
     def _solve_python(self, problem: PlanningProblem, seed: int | None = None) -> PlanResult:
@@ -376,6 +402,9 @@ class CBiRRT:
         Every root, sample, projected extension, and edge sample goes through
         this, so nothing outside ``problem.space`` is ever stored in a tree.
         """
+        counts = getattr(self, "_counts", None)
+        if counts is not None:
+            counts["state_checks"] += 1
         why = problem.space.why_invalid(q)
         if why is not None:
             return False, f"outside joint space ({why})"
@@ -658,6 +687,9 @@ class CBiRRT:
             return start_idx, True  # already there; never add a duplicate
 
         validator = self._motion_validator(problem)
+        counts = getattr(self, "_counts", None)
+        if counts is not None:
+            counts["edge_checks"] += 1
         motion = validator.validate(q_from, q_target)
         configs = [np.asarray(q, dtype=float) for q in motion.configs]
 

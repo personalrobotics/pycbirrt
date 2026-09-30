@@ -196,6 +196,19 @@ PYBIND11_MODULE(_native, m) {
         return out;
       });
 
+  py::class_<SolveStats>(m, "SolveStats")
+      .def_readonly("state_checks", &SolveStats::state_checks)
+      .def_readonly("edge_checks", &SolveStats::edge_checks)
+      .def_readonly("set_samples", &SolveStats::set_samples)
+      .def_readonly("set_projections", &SolveStats::set_projections)
+      .def_readonly("seconds_state_checks", &SolveStats::seconds_state_checks)
+      .def_readonly("seconds_edge_checks", &SolveStats::seconds_edge_checks)
+      .def_readonly("seconds_set_samples", &SolveStats::seconds_set_samples)
+      .def_readonly("seconds_set_projections", &SolveStats::seconds_set_projections)
+      .def_readonly("seconds_roots", &SolveStats::seconds_roots)
+      .def_readonly("seconds_search", &SolveStats::seconds_search)
+      .def_readonly("seconds_smoothing", &SolveStats::seconds_smoothing);
+
   py::class_<PlanResult>(m, "PlanResult")
       .def_property_readonly("status", [](const PlanResult& r) { return std::string(status_name(r.status)); })
       .def_property_readonly("success", &PlanResult::success)
@@ -208,6 +221,7 @@ PYBIND11_MODULE(_native, m) {
       .def_readonly("tree_sizes", &PlanResult::tree_sizes)
       .def_readonly("start_roots", &PlanResult::start_roots)
       .def_readonly("goal_roots", &PlanResult::goal_roots)
+      .def_readonly("stats", &PlanResult::stats)
       .def_readonly("tree_start", &PlanResult::tree_start)
       .def_readonly("tree_goal", &PlanResult::tree_goal);
 

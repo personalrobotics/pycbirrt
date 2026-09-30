@@ -38,6 +38,22 @@ class Tree {
   std::vector<Node> nodes_;
 };
 
+// Where the time went, so a benchmark can separate planning overhead from IK, state validation, and
+// edge validation (#89). Counts are exact; seconds come from steady_clock around each call.
+struct SolveStats {
+  long state_checks = 0;          // validator + space + constraint membership evaluations
+  long edge_checks = 0;           // motion-validator calls (growth, connection, shortcuts)
+  long set_samples = 0;           // calls to a set's sample() (roots and bias); IK lives here for TSR sets
+  long set_projections = 0;       // calls to a path constraint's project(); IK lives here too
+  double seconds_state_checks = 0.0;
+  double seconds_edge_checks = 0.0;   // includes the state checks made inside edges
+  double seconds_set_samples = 0.0;
+  double seconds_set_projections = 0.0;
+  double seconds_roots = 0.0;
+  double seconds_search = 0.0;
+  double seconds_smoothing = 0.0;
+};
+
 struct PlanResult {
   Status status = Status::MaxIterations;
   std::string reason;              // empty on success; prefixes "Timeout", "Aborted", "Max iterations"
@@ -47,6 +63,7 @@ struct PlanResult {
   double planning_seconds = 0.0;
   std::pair<int, int> tree_sizes{0, 0};
   RootReport start_roots, goal_roots;
+  SolveStats stats;
   std::shared_ptr<const Tree> tree_start, tree_goal;  // null unless SolveOptions::keep_trees
 
   bool success() const { return status == Status::Success; }

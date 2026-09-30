@@ -1,0 +1,167 @@
+{
+ "artifact": "Python versus native backend timings with the native cost breakdown",
+ "cases": [
+  {
+   "case": "fixed_to_fixed",
+   "native": {
+    "iterations": 1,
+    "stats": {
+     "edge_checks": 154.0,
+     "seconds_edge_checks": 4.9791e-05,
+     "seconds_roots": 1.291e-06,
+     "seconds_search": 1.4958e-05,
+     "seconds_set_projections": 0.0,
+     "seconds_set_samples": 0.0,
+     "seconds_smoothing": 0.000182167,
+     "seconds_state_checks": 1.2371000000000048e-05,
+     "set_projections": 0.0,
+     "set_samples": 0.0,
+     "state_checks": 579.0
+    },
+    "wall_seconds": 0.0003532501868903637
+   },
+   "python": {
+    "iterations": 1,
+    "stats": {
+     "edge_checks": 175.0,
+     "state_checks": 681.0
+    },
+    "wall_seconds": 0.009654500056058168
+   },
+   "seeds": 5,
+   "speedup": 27.33048817623013
+  },
+  {
+   "case": "multiple_roots",
+   "native": {
+    "iterations": 1,
+    "stats": {
+     "edge_checks": 143.0,
+     "seconds_edge_checks": 4.6411999999999995e-05,
+     "seconds_roots": 1.833e-06,
+     "seconds_search": 1.2292e-05,
+     "seconds_set_projections": 0.0,
+     "seconds_set_samples": 0.0,
+     "seconds_smoothing": 0.000175458,
+     "seconds_state_checks": 1.1203000000000033e-05,
+     "set_projections": 0.0,
+     "set_samples": 0.0,
+     "state_checks": 530.0
+    },
+    "wall_seconds": 0.00030416669324040413
+   },
+   "python": {
+    "iterations": 1,
+    "stats": {
+     "edge_checks": 170.0,
+     "state_checks": 636.0
+    },
+    "wall_seconds": 0.009278999641537666
+   },
+   "seeds": 5,
+   "speedup": 30.506297526152302
+  },
+  {
+   "case": "wrapped_seam",
+   "native": {
+    "iterations": 1,
+    "stats": {
+     "edge_checks": 107.0,
+     "seconds_edge_checks": 3.108999999999999e-05,
+     "seconds_roots": 1.125e-06,
+     "seconds_search": 1.6042e-05,
+     "seconds_set_projections": 0.0,
+     "seconds_set_samples": 0.0,
+     "seconds_smoothing": 0.000114583,
+     "seconds_state_checks": 7.493999999999996e-06,
+     "set_projections": 0.0,
+     "set_samples": 0.0,
+     "state_checks": 328.0
+    },
+    "wall_seconds": 0.00026175007224082947
+   },
+   "python": {
+    "iterations": 1,
+    "stats": {
+     "edge_checks": 130.0,
+     "state_checks": 407.0
+    },
+    "wall_seconds": 0.008480333257466555
+   },
+   "seeds": 5,
+   "speedup": 32.398589940651554
+  },
+  {
+   "case": "unreachable",
+   "native": {
+    "iterations": 300,
+    "stats": {
+     "edge_checks": 849.0,
+     "seconds_edge_checks": 0.00019460899999999883,
+     "seconds_roots": 2.459e-06,
+     "seconds_search": 0.008402584,
+     "seconds_set_projections": 0.0,
+     "seconds_set_samples": 3.6250000000000013e-06,
+     "seconds_smoothing": 0.0,
+     "seconds_state_checks": 4.42879999999996e-05,
+     "set_projections": 0.0,
+     "set_samples": 26.0,
+     "state_checks": 1944.0
+    },
+    "wall_seconds": 0.010226000100374222
+   },
+   "python": {
+    "iterations": 300,
+    "stats": {
+     "edge_checks": 851.0,
+     "state_checks": 1939.0
+    },
+    "wall_seconds": 0.04629124980419874
+   },
+   "seeds": 5,
+   "speedup": 4.526818829437006
+  },
+  {
+   "case": "ur5e_tsr_goal_union_with_path_tsr",
+   "native": {
+    "iterations": 1,
+    "stats": {
+     "edge_checks": 525.0,
+     "seconds_edge_checks": 0.0014759649999999984,
+     "seconds_roots": 0.000242083,
+     "seconds_search": 0.008957417,
+     "seconds_set_projections": 0.009011608000000032,
+     "seconds_set_samples": 0.00019620899999999998,
+     "seconds_smoothing": 0.00227225,
+     "seconds_state_checks": 0.0013367249999999824,
+     "set_projections": 523.0,
+     "set_samples": 7.0,
+     "state_checks": 2254.0
+    },
+    "wall_seconds": 0.011962334159761667
+   },
+   "python": {
+    "iterations": 1,
+    "stats": {
+     "edge_checks": 651.0,
+     "state_checks": 2209.0
+    },
+    "wall_seconds": 0.28380687488242984
+   },
+   "seeds": 5,
+   "speedup": 23.725041542233953
+  }
+ ],
+ "issue": "https://github.com/personalrobotics/pycbirrt/issues/89",
+ "machine": {
+  "machine": "arm64",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.3"
+ },
+ "versions": {
+  "numpy": "2.4.6",
+  "pycbirrt": "1.5.0",
+  "python": "3.13.3",
+  "sstsr": "3.2.0"
+ }
+}
