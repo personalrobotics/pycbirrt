@@ -316,6 +316,12 @@ config = CBiRRTConfig(
 `tsr_tolerance` is a deprecated alias that sets both `membership_tolerance`
 and `connection_tolerance` and warns.
 
+`membership_tolerance`, `max_projection_iters` and
+`projection_progress_tolerance` configure the sets that `plan(...)` builds
+from its arguments. A set you construct yourself and pass to `solve` keeps
+its own constructor values (`FiniteSet(tolerance=1e-6)`,
+`TSRConfigurationSet(tolerance=1e-3, ...)`).
+
 ### Angular joints
 
 Mark a joint angular only if it has **no limits**. The space never infers

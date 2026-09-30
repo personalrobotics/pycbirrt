@@ -173,7 +173,7 @@ class TestRobotModelLimits:
         model, data = model_data
         robot = MuJoCoRobotModel(model, data, "attachment_site", JOINTS)
         collision = MuJoCoCollisionChecker(model, data, JOINTS)
-        with pytest.raises(ValueError, match=r"joint 1 has non-finite limits.*angular_joints"):
+        with pytest.raises(ValueError, match=r"joint 'h_free' \(index 1\) has no finite limits.*angular_joints"):
             CBiRRT(robot, solver(model_data), collision)
 
         # The hinge is periodic: declare it angular. The slide is a rail, unbounded but not
@@ -195,3 +195,54 @@ class TestRobotModelLimits:
         planner = CBiRRT(WithRailLimits(robot), solver(model_data), collision, config)
         assert planner.space.angular_joints.tolist() == [False, True, False, False]
         assert planner.space.joint_limits[0][3] == -0.5
+
+
+FREE_BODY_XML = """
+<mujoco><worldbody>
+  <body name="link"><joint name="j0" type="hinge" axis="0 0 1" range="-1 1"/>
+    <geom type="capsule" size="0.02" fromto="0 0 0 0.3 0 0"/><site name="tip" pos="0.3 0 0"/></body>
+  <body name="can" pos="1 0 0"><freejoint name="can_free"/><geom type="cylinder" size="0.03 0.05"/></body>
+</worldbody></mujoco>"""
+
+
+class TestJointAndSiteSelection:
+    """#173/#174: the adapters take only the arm's joints and say what exists when a name is wrong."""
+
+    def test_default_joints_refuse_a_scene_with_a_free_body(self):
+        from sscbirrt.backends.mujoco import MuJoCoRobotModel
+
+        model = mujoco.MjModel.from_xml_string(FREE_BODY_XML)
+        data = mujoco.MjData(model)
+        for make in (
+            lambda: MuJoCoRobotModel(model, data, "tip"),
+            lambda: MuJoCoCollisionChecker(model, data),
+            lambda: MuJoCoIKSolver(model, data, "tip"),
+        ):
+            with pytest.raises(ValueError, match=r"joint_names is required.*can_free.*from: j0"):
+                make()
+        assert MuJoCoRobotModel(model, data, "tip", ["j0"]).dof == 1
+
+    def test_default_joints_are_fine_without_free_bodies(self, model_data):
+        from sscbirrt.backends.mujoco import MuJoCoRobotModel
+
+        model, data = model_data
+        assert MuJoCoRobotModel(model, data, "attachment_site").dof == model.njnt
+
+    def test_wrong_site_lists_the_sites(self, model_data):
+        from sscbirrt.backends.mujoco import MuJoCoRobotModel
+
+        model, data = model_data
+        with pytest.raises(ValueError, match=r"site 'nope' not found in the model; its sites are: attachment_site"):
+            MuJoCoRobotModel(model, data, "nope", JOINTS)
+
+    def test_joint_limits_override_makes_an_unlimited_joint_plannable(self, model_data):
+        from sscbirrt import CBiRRT
+        from sscbirrt.backends.mujoco import MuJoCoRobotModel
+
+        model, data = model_data
+        lower, upper = np.full(4, -2.0), np.full(4, 2.0)
+        robot = MuJoCoRobotModel(model, data, "attachment_site", JOINTS, joint_limits=(lower, upper))
+        planner = CBiRRT(robot, solver(model_data), MuJoCoCollisionChecker(model, data, JOINTS))
+        assert np.array_equal(planner.space.lower, lower) and np.array_equal(planner.space.upper, upper)
+        with pytest.raises(ValueError, match=r"expected two arrays of length 4"):
+            MuJoCoRobotModel(model, data, "attachment_site", JOINTS, joint_limits=(lower[:3], upper))

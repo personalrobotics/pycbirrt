@@ -106,7 +106,7 @@ class TestTopologyIsDeclared:
     """Bounded joints need finite limits; angular joints ignore theirs (#107)."""
 
     def test_infinite_limit_on_bounded_joint_raises(self):
-        with pytest.raises(ValueError, match=r"joint 1 has non-finite limits.*mark it angular"):
+        with pytest.raises(ValueError, match=r"joint 1 has no finite limits.*angular_joints.*joint_limits"):
             JointSpace(np.array([-1.0, -np.inf]), np.array([1.0, np.inf]))
 
     def test_one_infinite_side_is_enough_to_raise(self):

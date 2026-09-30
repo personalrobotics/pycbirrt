@@ -25,7 +25,9 @@ class CBiRRTConfig:
     timeout: float = 30.0  # Wall-clock timeout in seconds
     max_iterations: int = 100000  # Safety limit (timeout is the primary control)
 
-    # Tolerances. Each has one meaning:
+    # Tolerances. Each has one meaning. membership_tolerance, projection_progress_tolerance and
+    # max_projection_iters configure the sets plan() builds from its arguments; a set passed to solve() in a
+    # PlanningProblem keeps its own constructor values (FiniteSet tolerance 1e-6, TSRConfigurationSet 1e-3).
     membership_tolerance: float = 1e-3  # A configuration is in a TSR-induced set if its TSR distance is within this
     connection_tolerance: float = 1e-3  # Tree growth counts as reaching its target within this joint-space distance
     edge_resolution: float | None = None  # Spacing of validity checks along an edge; None means step_size

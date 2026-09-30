@@ -78,3 +78,15 @@ class MotionContractError(ValueError):
     """
 
     pass
+
+
+class NativeUnsupported(Exception):
+    """The native backend cannot take this problem, or is not installed. ``reasons`` lists every blocker.
+
+    Raised by ``backend="native"`` and by the native MuJoCo scene; ``backend="auto"`` records the same reasons in
+    ``PlanResult.backend_reasons`` and plans in Python instead.
+    """
+
+    def __init__(self, reasons: list[str]):
+        self.reasons = list(reasons)
+        super().__init__("; ".join(self.reasons) if self.reasons else "native backend unavailable")

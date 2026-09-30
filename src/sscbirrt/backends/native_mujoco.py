@@ -228,10 +228,11 @@ class NativeCollisionChecker:
 
 
 class _NoIK:
-    """Stands in for the IK solver when a problem has no TSR sets; any use is a programming error."""
+    """Stands in for the IK solver when a problem has no pose regions; ``plan_native`` rejects pose regions
+    without an ``ik`` before planning, so any use is a programming error."""
 
     def solve(self, pose, q_init=None):
-        raise RuntimeError("this problem has no pose regions; no IK solver was given to plan_native")
+        raise RuntimeError("internal error: plan_native planned pose regions without an IK solver")
 
 
 def plan_native(
@@ -266,11 +267,24 @@ def plan_native(
     from sscbirrt import CBiRRT, CBiRRTConfig
     from sscbirrt.backends.mujoco import MuJoCoRobotModel
 
-    scene = NativeScene.from_model(model, joint_names, extra_arm_bodies)
+    # Check the arguments before any work, so the first error is about what the caller passed (#172).
+    if ik is None and (goal_tsrs or constraint_tsrs):
+        raise ValueError(
+            "plan_native: goal_tsrs and constraint_tsrs need an IK solver; pass ik= "
+            "(for example SSIKSolver(ssik.Manipulator.from_mjcf(...), T_ee=...))"
+        )
+    if robot is None:
+        robot = MuJoCoRobotModel(model, data, ee_site, list(joint_names))  # checks the site and every joint name
+    try:
+        scene = NativeScene.from_model(model, joint_names, extra_arm_bodies)
+    except NativeUnsupported as e:
+        # There is no Python form of the owned scene, so fallback cannot cover it.
+        raise NativeUnsupported(
+            [f"plan_native needs the native MuJoCo scene ({r}); fallback=True covers planning components, not the scene"
+             for r in e.reasons]
+        ) from None  # fmt: skip
     snapshot = Snapshot.capture(scene, data, attachments)
     checker = NativeCollisionChecker(scene, snapshot)
-    if robot is None:
-        robot = MuJoCoRobotModel(model, data, ee_site, list(joint_names))
     planner = CBiRRT(
         robot,
         ik if ik is not None else _NoIK(),

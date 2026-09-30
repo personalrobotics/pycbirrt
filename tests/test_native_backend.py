@@ -17,6 +17,7 @@ from sscbirrt import (
     CBiRRT,
     CBiRRTConfig,
     FiniteSet,
+    PlanningError,
     PlanningProblem,
     PredicateSet,
     TSRConfigurationSet,
@@ -109,7 +110,7 @@ class TestLowering:
         )
         result = planner.solve(problem, seed=4)
         assert result.success and result.backend == "python"
-        assert result.backend_reasons == ("path_constraint: PredicateSet has no native form in v1.5.0",)
+        assert result.backend_reasons == ("path_constraint: PredicateSet has no native form",)
 
     def test_default_backend_is_auto_and_python_stays_explicit(self, caplog):
         cfg = CBiRRTConfig(step_size=0.2, edge_resolution=0.05, timeout=30.0)
@@ -145,6 +146,31 @@ class TestLowering:
         )
         with pytest.raises(AllStartConfigurationsInCollision):
             planner.solve(problem, seed=0)
+
+    @pytest.mark.parametrize(
+        "starts",
+        [
+            [np.zeros(2)],  # one in collision
+            [np.zeros(2), np.array([0.5, 0.0])],  # two in collision
+            [np.zeros(2), np.array([9.0, 0.0])],  # one in collision, one outside the joint space
+        ],
+    )
+    def test_no_roots_count_and_class_match_python(self, starts):
+        """#170: the native count added explicit candidates to rejections, counting each explicit one twice."""
+        raised = {}
+        for backend in ("python", "native"):
+            planner = _planner(backend, collision=Wall(axis=0, lo=-1.0, hi=1.0))
+            problem = PlanningProblem(
+                space=planner.space,
+                start=_finite(planner, starts),
+                goal=_finite(planner, [np.array([2.0, 2.0])]),
+                validator=planner.collision,
+            )
+            with pytest.raises(PlanningError) as info:
+                planner.solve(problem, seed=0)
+            raised[backend] = (type(info.value), info.value.n_configs)
+        assert raised["native"] == raised["python"]
+        assert raised["python"][1] == len(starts)
 
     def test_abort_fn_is_honored(self):
         planner = _planner("native", abort_fn=lambda: True)

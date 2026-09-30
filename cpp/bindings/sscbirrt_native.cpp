@@ -77,6 +77,7 @@ PYBIND11_MODULE(_native, m) {
       .def_readonly("details", &RootReport::details)
       .def("rejections", &RootReport::rejections)
       .def("only_collisions", &RootReport::only_collisions)
+      .def("candidates", &RootReport::candidates)
       .def("summary", &RootReport::summary);
 
   // ----- space --------------------------------------------------------------------------------
