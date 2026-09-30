@@ -1207,10 +1207,15 @@ against: the build records `mjVERSION_HEADER`, and at import the module
 compares it with `mj_version()` of the library it loaded and
 `pycbirrt.backends.native_mujoco` compares both with `mujoco.__version__`.
 Any difference refuses the scene with a reason naming the three versions.
-The `mujoco` extra pins the exact version the wheel was built against
-(`mujoco==3.9.0` in this workspace today; #93 asks for 3.14.0 as the first
-verified artifact, which means upgrading the workspace first, a decision
-listed below).
+The `mujoco` extra pins the exact version the wheel was built against:
+**`mujoco==3.14.0`**, the latest release, which #93 names for the first
+verified artifact; the workspace moves to it with this milestone. The
+3.14.0 headers carry every entry point and field this contract uses
+(`mj_loadModelBuffer`, `mj_saveModel`, `mj_sizeModel`, `mj_kinematics`,
+`mj_collision`, `mj_makeData`, `mj_deleteData`, `mj_deleteModel`,
+`mj_name2id`, `mj_version`, `mju_mat2Quat`, `mjContact::geom`,
+`mjModel::signature`, `geom_bodyid`, `jnt_qposadr`, `body_parentid`,
+`mocap_pos`).
 
 ## Scene
 
@@ -1413,19 +1418,59 @@ the Python backend as well and are compared as the other cases are.
 | `mj_forward` in the checker | `mj_kinematics` then `mj_collision` | same contacts; no dynamics run |
 | live `MjModel`, `MjData` | `Scene` from MJB, `Snapshot` by value | difference by design (#93): no borrowed pointers, no observed mutation |
 
-## Decisions for review
+## Bulletproofing
 
-1. **A separate extension module** for the MuJoCo scene, so the core
-   imports without MuJoCo, versus one module with a runtime `dlopen`
-   table.
-2. **Exact MuJoCo pin** in the `mujoco` extra to the version the wheel was
-   built against, with refusal on mismatch. The alternative, building per
-   MuJoCo minor and publishing several wheels, is a packaging project of
-   its own.
-3. **Which MuJoCo**: the workspace runs 3.9.0; #93 names 3.14.0 for the
-   first verified artifact. Building against 3.9.0 now and moving with the
-   workspace keeps one version everywhere; upgrading the workspace first
-   satisfies #93 as written.
-4. **The gripper-base rule stays in Python** as data on the snapshot.
-5. **`mj_kinematics` in place of `mj_forward`** for the query, on the
-   argument that contacts depend on geom poses only. The corpus checks it.
+The maintainer's direction for this milestone is correctness first;
+mj_manipulator is refactored onto this boundary afterward, so the boundary
+must hold without it. Beyond the rules above:
+
+- **Ingress is exhaustive and tested one rule at a time.** Every rejection
+  in Scene and Snapshot has a test that triggers exactly it: unloadable
+  MJB bytes, a truncated buffer, a version mismatch in each of the three
+  places, an unknown joint, a duplicate joint, a ball or free controlled
+  joint, an unknown body, site, or geom, an attachment object without a
+  free joint or whose free joint is not its first joint, a `qpos` of the
+  wrong length or with a NaN, mocap arrays of the wrong length or with a
+  non-unit quaternion, a non-rigid `T_gripper_object`, an allowed body id
+  out of range, and an attachment whose gripper body is not in the arm.
+- **Property tests** (Hypothesis) on the Python side generate snapshots
+  and configurations against small MJCF worlds and assert the invariants
+  that do not need an oracle: a snapshot never changes after capture even
+  when the live `MjData` does; the same scene and snapshot give the same
+  decision for the same configuration on every call and across two
+  validators; a configuration valid with no attachment stays valid when an
+  attached object is placed far from everything; decisions are independent
+  of the order in which attachments and allowed bodies are listed.
+- **Decision parity is the oracle** where one exists: the corpus against
+  mj_manipulator's checker on every coverage item of #84, and the
+  `mj_kinematics` versus `mj_forward` equivalence checked on the same
+  corpus by running both in Python and comparing `ncon` and the contact
+  geom pairs as sets.
+- **Sanitizers and leaks.** The C++ scene tests run under ASan, UBSan, and
+  LSan with MuJoCo linked, creating and destroying scenes and validators
+  in loops, so a missing `mj_deleteModel` or `mj_deleteData` fails CI.
+- **Isolation.** A test runs two solves concurrently from two threads on
+  one scene with two validators and asserts both results equal their
+  single-threaded runs.
+- **Determinism.** Fixed seeds are repeatable across two solves and across
+  the Python one-call path, on the release cases.
+- **Import safety.** A CI job installs the wheel into an environment
+  without `mujoco` and asserts `import pycbirrt` and a native finite
+  problem work, and that the MuJoCo scene reports its reason.
+- **Version binding** is tested by building against 3.14.0 and importing
+  with the pinned wheel only; a test monkeypatches the reported Python
+  version to a different string and asserts the scene refuses with a
+  message naming both.
+
+## Decisions
+
+1. **A separate extension module** for the MuJoCo scene: adopted. The core
+   imports without MuJoCo.
+2. **Exact MuJoCo pin** in the `mujoco` extra, refusal on mismatch:
+   adopted.
+3. **Which MuJoCo**: 3.14.0, the latest release, per the maintainer; the
+   workspace moves to it with this milestone.
+4. **The gripper-base rule stays in Python** as data on the snapshot:
+   adopted.
+5. **`mj_kinematics` in place of `mj_forward`** for the query: adopted,
+   with the equivalence checked on the corpus.
