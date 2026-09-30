@@ -557,7 +557,9 @@ contract; `planner.py` is the reference for anything it leaves open.
    order, with its provenance. Then, if the set is not finite and samples,
    draw up to `sample_draws` times or until `num_tree_roots` roots exist,
    keeping at most `max_per_draw` admissible candidates per draw, skipping
-   a candidate whose provenance equals an explicit seed's. Rejections are
+   a candidate whose provenance equals an explicit seed's. A draw with more
+   candidates than `max_per_draw` is first put in a random order
+   (Fisher-Yates on `index()`), as the reference does (#168). Rejections are
    counted in the `RootReport`. No roots for a role throws `NoRoots`.
    Before each draw the cancellation token is checked; if set, the solve
    returns `Status::Aborted` with the roots gathered so far.

@@ -134,17 +134,24 @@ def test_planner_keeps_a_collision_free_branch_when_others_collide(ur5e):
 
 
 def test_unconstrained_baseline_violates_constraint(ur5e):
-    """Sanity check that the constraint above is not vacuous for this start/goal pair."""
+    """Sanity check that the constraint above is not vacuous for this start/goal pair.
+
+    Whether one unconstrained plan tilts depends on which goal roots its seed draws (many stay upright
+    since #168), so the claim is over a few seeds: without the constraint, some plans tilt the gripper.
+    """
     robot, _, _, planner = ur5e
-    result = planner.plan(
-        start_tsrs=[create_grasp_tsr(np.array([0.55, -0.35, 0.47]))],
-        goal_tsrs=[create_grasp_tsr(np.array([-0.30, 0.45, 0.47]))],
-        seed=0,
-        return_details=True,
-    )
-    assert result.success
     upright = gripper_down_everywhere()
-    assert max(upright.distance(robot.forward_kinematics(q))[0] for q in result.path) > 1.0
+    tilts = []
+    for seed in range(5):
+        result = planner.plan(
+            start_tsrs=[create_grasp_tsr(np.array([0.55, -0.35, 0.47]))],
+            goal_tsrs=[create_grasp_tsr(np.array([-0.30, 0.45, 0.47]))],
+            seed=seed,
+            return_details=True,
+        )
+        assert result.success
+        tilts.append(max(upright.distance(robot.forward_kinematics(q))[0] for q in result.path))
+    assert max(tilts) > 1.0, tilts
 
 
 def test_projection_near_a_winding_does_not_take_a_full_turn(ur5e):

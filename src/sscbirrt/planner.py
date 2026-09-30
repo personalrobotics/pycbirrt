@@ -444,7 +444,9 @@ class CBiRRT:
         an explicit seed (same provenance) is skipped. Each draw may yield
         several candidates (for example the IK branches of one pose); at
         most ``max_ik_per_pose`` admissible ones per draw are kept, for
-        diversity. Mixture weights govern sampling only, never whether
+        diversity. A draw with more candidates than that is visited in a
+        uniformly random order, so the kept ones are a random subset rather
+        than the first ones the sampler listed. Mixture weights govern sampling only, never whether
         explicit seeds are roots.
 
         Raises:
@@ -480,6 +482,11 @@ class CBiRRT:
                 if not candidates:
                     stats["sample_failed"] += 1
                     continue
+                if len(candidates) > self.config.max_ik_per_pose:
+                    # A draw can yield many more candidates than are kept (an IK solver that enumerates
+                    # branches and joint windings returns hundreds, in a fixed order); visit them in a
+                    # random order so the kept ones are a uniform subset, not the first corner (#168).
+                    candidates = [candidates[k] for k in self._rng.permutation(len(candidates))]
                 kept = 0
                 for smp in candidates:
                     if kept >= self.config.max_ik_per_pose or len(roots) >= self.config.num_tree_roots:
