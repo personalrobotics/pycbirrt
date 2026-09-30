@@ -10,9 +10,9 @@ constraints. Task Space Regions are one representation of a set; the planner
 does not depend on it, and sets you define yourself take the same roles.
 
 <table>
-<tr><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_yellow_seed0.gif" alt="UR5e reaching the yellow can, over the boxes" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_green_seed1.gif" alt="UR5e reaching the green can, straight in" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_blue_seed34.gif" alt="UR5e reaching the blue can, into the gap" width="100%"></td></tr>
+<tr><td><img src="docs/images/pick_yellow_seed0.gif" alt="UR5e reaching the yellow can, over the boxes" width="100%"></td><td><img src="docs/images/pick_green_seed1.gif" alt="UR5e reaching the green can, straight in" width="100%"></td><td><img src="docs/images/pick_blue_seed34.gif" alt="UR5e reaching the blue can, into the gap" width="100%"></td></tr>
 <tr><td align="center"><sub>yellow can, over the boxes (seed 0)</sub></td><td align="center"><sub>green can, straight in (seed 1)</sub></td><td align="center"><sub>blue can, into the gap (seed 34)</sub></td></tr>
-<tr><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_yellow_seed16.gif" alt="UR5e reaching the yellow can, from another side" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_green_seed17.gif" alt="UR5e reaching the green can, a different grasp" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_yellow_seed9.gif" alt="UR5e reaching the yellow can, around the right box" width="100%"></td></tr>
+<tr><td><img src="docs/images/pick_yellow_seed16.gif" alt="UR5e reaching the yellow can, from another side" width="100%"></td><td><img src="docs/images/pick_green_seed17.gif" alt="UR5e reaching the green can, a different grasp" width="100%"></td><td><img src="docs/images/pick_yellow_seed9.gif" alt="UR5e reaching the yellow can, around the right box" width="100%"></td></tr>
 <tr><td align="center"><sub>yellow can, from another side (seed 16)</sub></td><td align="center"><sub>green can, a different grasp (seed 17)</sub></td><td align="center"><sub>yellow can, around the right box (seed 9)</sub></td></tr>
 </table>
 
@@ -22,7 +22,7 @@ different can, grasp, and route around the red boxes, planned natively in
 0.01 to 0.18 s. `sscbirrt-demo pick --seed N` renders any of them.
 
 <table>
-<tr><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/transport_free.gif" alt="UR5e carried freely: the can tips" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/transport_upright.gif" alt="UR5e carried upright: a path constraint" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/door.gif" alt="UR5e opening a door: a TSR chain" width="100%"></td></tr>
+<tr><td><img src="docs/images/transport_free.gif" alt="UR5e carried freely: the can tips" width="100%"></td><td><img src="docs/images/transport_upright.gif" alt="UR5e carried upright: a path constraint" width="100%"></td><td><img src="docs/images/door.gif" alt="UR5e opening a door: a TSR chain" width="100%"></td></tr>
 <tr><td align="center"><sub>carried freely: the can tips</sub></td><td align="center"><sub>carried upright: a path constraint</sub></td><td align="center"><sub>opening a door: a TSR chain</sub></td></tr>
 </table>
 
@@ -235,7 +235,7 @@ default. A custom `motion_validator` owns the whole edge check, and
 default discretized check. A custom `sampler` proposes the free-space
 targets the trees grow toward and defaults to the space's uniform sampling;
 replacing it trades away probabilistic completeness unless it has full
-support over the space. [docs/design.md](https://github.com/personalrobotics/sscbirrt/blob/main/docs/design.md) has the
+support over the space. [docs/design.md](docs/design.md) has the
 definitions, the composition rules, what the planner requires of each role,
 the tolerances, and the reference behavior artifact that pins the planner's
 semantics (`python tools/reference_artifact.py --check`).
@@ -339,7 +339,7 @@ returns the path, or the `PlanResult` with `return_details=True`:
 ## How it works
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/example1_result.png" alt="Basic planning" width="600">
+  <img src="docs/images/example1_result.png" alt="Basic planning" width="600">
 </p>
 
 Two trees grow at once, blue from the start set and green from the goal set.
@@ -356,13 +356,13 @@ The right panel is configuration space; red regions are in collision.
    passes the same validation as a tree edge.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/example3_result.png" alt="Constrained planning" width="600">
+  <img src="docs/images/example3_result.png" alt="Constrained planning" width="600">
   <br>
   <em>With a path constraint, the end effector stays within the yellow band throughout the motion.</em>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/tsr_union_demo.gif" alt="UR5e planning side grasps" width="400">
+  <img src="docs/images/tsr_union_demo.gif" alt="UR5e planning side grasps" width="400">
   <br>
   <em>UR5e planning into a union of side-grasp regions.</em>
 </p>
@@ -531,7 +531,7 @@ before 3.1.0 and is deprecated.
 
 The snapshot is a value: `qpos`, mocap poses, and attachments copied at capture,
 so later changes to `data` do not reach a running solve. Downstream integration
-is described in [docs/migration-mj-manipulator.md](https://github.com/personalrobotics/sscbirrt/blob/main/docs/migration-mj-manipulator.md). The contact policy is
+is described in [docs/migration-mj-manipulator.md](docs/migration-mj-manipulator.md). The contact policy is
 mj_manipulator's (a grasped object may touch its gripper; everything else that
 touches the robot is a collision) and is checked against it on a checked-in
 corpus. `PlanResult.provenance` records the scene's MJB hash and the snapshot
@@ -588,7 +588,7 @@ tolerance.
 ### Native core (the default)
 
 The C++20 core in `cpp/` implements the same contract as the Python planner
-([docs/native-design.md](https://github.com/personalrobotics/sscbirrt/blob/main/docs/native-design.md)). It is built into the wheel
+([docs/native-design.md](docs/native-design.md)). It is built into the wheel
 as `sscbirrt._native`, and since 2.0 the planner selects it by default:
 
 ```python

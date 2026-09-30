@@ -81,6 +81,17 @@ follows [Semantic Versioning](https://semver.org/).
   them (#173).
 
 ### Documentation
+- README images and links use relative paths, so they render on every
+  branch, in pull requests and in local previews. The release build pins
+  them to the release tag in the PyPI description (`tools/pypi_readme.py`),
+  so PyPI shows each release's own images; before this, relative images
+  were broken on PyPI.
+- The README starts with installing and a runnable MuJoCo plan
+  (`sscbirrt.mujoco` with the packaged UR5e), then the concepts. The
+  `PlanResult` table lists `backend`, `backend_reasons`, `provenance` and
+  `stats`. The MuJoCo snippets use real site names, and the tsr hand models
+  are introduced for grasp regions. `tests/test_readme.py` runs the snippets
+  (#178).
 - The README starts with installing and a runnable MuJoCo plan
   (`sscbirrt.mujoco` with the packaged UR5e), then the concepts. The
   `PlanResult` table lists `backend`, `backend_reasons`, `provenance` and

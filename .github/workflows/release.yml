@@ -7,6 +7,9 @@ name: Release
 #   v*                 build wheels + sdist, publish to PyPI, create the GitHub release from the CHANGELOG
 #   workflow_dispatch  build wheels + sdist only; publishes to TestPyPI only with publish_testpypi=true
 #
+# The README in the repository uses relative image and link paths; each build job first pins them to the tag
+# (tools/pypi_readme.py), so the PyPI description shows the images from that release.
+#
 # Auth: Trusted Publishing (PyPI / TestPyPI OIDC). No API tokens. The publish jobs run inside the GitHub
 # environments `release` and `testpypi-release` so environment-protection rules apply.
 #
@@ -37,6 +40,8 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
+      - name: Pin the README's relative images and links to this tag, for the PyPI description
+        run: python3 tools/pypi_readme.py --ref "${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || github.sha }}"
       - name: Build and test wheels
         uses: pypa/cibuildwheel@v3.4.1
       - uses: actions/upload-artifact@v4
@@ -52,6 +57,8 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
+      - name: Pin the README's relative images and links to this tag, for the PyPI description
+        run: python3 tools/pypi_readme.py --ref "${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || github.sha }}"
       - name: Build the sdist
         run: uv build --sdist
       - name: The sdist compiles on a machine with no Eigen (the build downloads the pinned one)
