@@ -488,35 +488,42 @@ Prebuilt artifacts use the vendor's nominal geometry and can differ from a
 simulator model by a millimeter, which matters at the default membership
 tolerance.
 
-### Native core (opt-in)
+### Native core (the default)
 
 The C++20 core in `cpp/` implements the same contract as the Python planner
 ([docs/native-design.md](docs/native-design.md)). It is built into the wheel
-as `pycbirrt._native` and selected per planner:
+as `pycbirrt._native`, and since 2.0 the planner selects it by default:
 
 ```python
-planner = CBiRRT(robot, ik, collision, config, backend="native")  # or "auto"; default "python"
+planner = CBiRRT(robot, ik, collision, config)                    # backend="auto": native where it can, else Python
+planner = CBiRRT(robot, ik, collision, config, backend="native")  # native or NativeUnsupported; never a silent fallback
+planner = CBiRRT(robot, ik, collision, config, backend="python")  # the reference implementation, always
 result = planner.solve(problem, seed=0)
 result.backend          # "native" or "python"
-result.backend_reasons  # with "auto": why Python was chosen, one entry per component
+result.backend_reasons  # under "auto": why Python was chosen, one entry per component; also logged at INFO
 ```
 
-The native core plans problems whose components all have a native form:
-finite sets, `AnyOf`/`AllOf` with the named strategies, `EmptySet`, the
-validators in `pycbirrt.testing`, and, since 1.6.0, `TSRConfigurationSet`s
-whose region is a single `TSR` and whose IK is an `SSIKSolver` around an
-`ssik.Manipulator` of a verified family (the UR family,
-`ikgeo.three_parallel`). TSRs and SSIK then run entirely in C++: the TSR
-math is checked against sstsr on a conformance corpus and the SSIK adapter
-against the Python one on the UR5e. Anything else (TSR chains, other IK,
-predicates, custom validators, samplers, or motion validators, or an
-extension built without SSIK) makes `backend="native"` raise
-`NativeUnsupported` listing every blocker, and `backend="auto"` fall back
-to Python. Lowering also checks that the robot model's forward kinematics
-agrees with SSIK's on the problem's explicit configurations. The native solve releases the GIL and
-calls no Python after entry. Same seed, same path within a backend; the two
-backends agree on outcomes and validated paths but not on waypoints, because
-they use different random-number engines.
+Selection is decided by the problem's components, never by which optional
+packages happen to import: a missing extension or adapter is itself one of
+the stated reasons. The native core plans problems whose components all have
+a native form: finite sets, `AnyOf`/`AllOf` with the named strategies,
+`EmptySet`, the validators in `pycbirrt.testing`, any validator or IK solver
+that implements the integration protocols below (the MuJoCo scene and SSIK
+do), and `TSRConfigurationSet`s whose region is a single `TSR` and whose IK
+has a native form (SSIK around an `ssik.Manipulator` of a verified family,
+the UR family `ikgeo.three_parallel`). TSRs and SSIK then run entirely in
+C++: the TSR math is checked against sstsr on a conformance corpus and the
+SSIK adapter against the Python one on the UR5e. Anything else (TSR chains,
+Python-only IK, predicates, Python-only validators, samplers, or motion
+validators) makes `backend="native"` raise `NativeUnsupported` listing every
+blocker, and the default fall back to Python with the same list on the
+result. Lowering also checks that the robot model's forward kinematics
+agrees with the native IK model's on the problem's explicit configurations.
+The native solve releases the GIL and calls no Python after entry. Same
+seed, same path within a backend; the two backends agree on outcomes and
+validated paths but not on waypoints, because they use different
+random-number engines. `tools/reference_artifact.py --backend {python,native,auto} --check`
+runs the behavior artifact through each selection.
 
 ### Adding an integration
 

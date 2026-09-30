@@ -7,6 +7,13 @@ follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- `CBiRRT` defaults to `backend="auto"`: the native core for every problem whose
+  components have a native form, else the Python reference with the reasons on
+  `PlanResult.backend_reasons` and logged at INFO. Pass `backend="python"` for the
+  reference implementation or `backend="native"` to refuse instead of falling back.
+  Selection depends on the problem's components, never on which optional packages
+  import; `tools/reference_artifact.py --backend auto --check` runs the behavior
+  artifact under the default and requires Python to be chosen only with a reason (#86).
 - The native lowering recognizes validators and IK solvers by two runtime-checkable
   protocols in `pycbirrt.backends.native`, `ValidatorIntegration` (`fresh()`,
   `provenance`) and `KinematicsIntegration` (`native_kinematics()`, `provenance`),

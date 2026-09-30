@@ -624,7 +624,7 @@ native object. The public Python surface in v1.5.0 is:
 from pycbirrt.backends.native import lower, NativeUnsupported
 
 lowered = lower(problem, config)       # PlanningProblem + CBiRRTConfig -> native problem, or raises NativeUnsupported
-planner = CBiRRT(robot, ik, collision, config, backend="native")   # "python" (default) | "native" | "auto"
+planner = CBiRRT(robot, ik, collision, config, backend="native")   # "python" | "native" | "auto" (default since 2.0; "python" in 1.x)
 ```
 
 A note for the parity gate (#92): provenance is a property of the draws
@@ -652,9 +652,13 @@ and both are correct.
 lowering, not only the first. With `backend="auto"`, the planner catches it,
 selects the Python backend, records the reasons on
 `PlanResult.backend_reasons`, and sets `PlanResult.backend = "python"`; with
-`backend="native"` it propagates; with the default `"python"` no lowering is
-attempted. Default `plan(...)` behavior is therefore unchanged in 1.x. v2.0.0
-flips the default to `"auto"` under #86.
+`backend="native"` it propagates; with `"python"` no lowering is attempted.
+The default was `"python"` through 1.x, so `plan(...)` was unchanged by the
+native core's arrival; 2.0 made `"auto"` the default (#86), and the planner
+also logs the reasons at INFO when it selects Python, so a caller of the
+legacy `plan(...)` that never sees a `PlanResult` still has a diagnostic.
+`tools/reference_artifact.py --backend auto --check` runs the artifact under
+the default and requires Python to have been chosen only with a stated reason.
 
 Native results are converted to Python `PlanResult`s: `Status::Success` and
 the three search failures map to `success` and `failure_reason` with the

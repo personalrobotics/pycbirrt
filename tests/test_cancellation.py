@@ -11,7 +11,11 @@ from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK
 
 
 def _planner(**kw):
-    return CBiRRT(PlanarArm(), PlanarIK(), NoCollision(), CBiRRTConfig(step_size=0.1, timeout=10.0, **kw))
+    # The reference implementation, explicitly: these tests patch its internals (the native core's cancellation
+    # is covered in test_native_isolation.py).
+    return CBiRRT(
+        PlanarArm(), PlanarIK(), NoCollision(), CBiRRTConfig(step_size=0.1, timeout=10.0, **kw), backend="python"
+    )
 
 
 def _reach(planner, xy, radius=0.1):

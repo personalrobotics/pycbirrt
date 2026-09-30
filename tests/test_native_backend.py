@@ -111,10 +111,26 @@ class TestLowering:
         assert result.success and result.backend == "python"
         assert result.backend_reasons == ("path_constraint: PredicateSet has no native form in v1.5.0",)
 
-    def test_default_backend_is_python_and_plan_is_unchanged(self):
-        planner = _planner("python")
-        assert planner.backend == "python"
+    def test_default_backend_is_auto_and_python_stays_explicit(self, caplog):
+        cfg = CBiRRTConfig(step_size=0.2, edge_resolution=0.05, timeout=30.0)
+        planner = CBiRRT(PlanarArm(), PlanarIK(), NoCollision(), cfg)
+        assert planner.backend == "auto"
         result = planner.plan(start=np.zeros(2), goal=np.array([1.0, 0.5]), seed=0, return_details=True)
+        assert result.success and result.backend == "native" and result.backend_reasons == ()
+        # An unsupported component under the default is Python with a diagnostic on the result and in the log.
+        problem = PlanningProblem(
+            space=planner.space,
+            start=_finite(planner, [np.zeros(2)]),
+            goal=_finite(planner, [np.array([1.0, 0.5])]),
+            validator=planner.collision,
+            path_constraint=PredicateSet(lambda q: True, name="p"),
+        )
+        with caplog.at_level("INFO", logger="pycbirrt.planner"):
+            result = planner.solve(problem, seed=0)
+        assert result.backend == "python" and result.backend_reasons[0].startswith("path_constraint: PredicateSet")
+        assert any("planning in Python" in r.message and "PredicateSet" in r.message for r in caplog.records)
+        explicit = _planner("python")
+        result = explicit.plan(start=np.zeros(2), goal=np.array([1.0, 0.5]), seed=0, return_details=True)
         assert result.success and result.backend == "python" and result.backend_reasons == ()
         with pytest.raises(ValueError, match="backend must be"):
             _planner("cuda")

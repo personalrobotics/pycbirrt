@@ -601,6 +601,7 @@ def run_case(case: dict[str, Any], backend: str = "python") -> dict[str, Any]:
             "validation": None,
         }
     planner: CBiRRT = case["planner"]
+    planner.backend = "python" if backend == "native" else backend  # the native branch below drives the core itself
     if backend == "native":
         from pycbirrt.backends import native
 
@@ -640,6 +641,9 @@ def run_case(case: dict[str, Any], backend: str = "python") -> dict[str, Any]:
     }
     if python_calls is not None:
         record["native_python_calls"] = python_calls  # the no-callback proof: Python functions entered during the solve
+    if backend == "auto":
+        record["backend"] = result.backend  # which implementation the default selection chose, and why not native
+        record["backend_reasons"] = list(result.backend_reasons)
     return record
 
 
@@ -740,13 +744,49 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=ARTIFACT)
     parser.add_argument(
         "--backend",
-        choices=["python", "native"],
+        choices=["python", "native", "auto"],
         default="python",
-        help="which implementation to run; with --check, native is compared with the stored Python artifact",
+        help="which implementation to run; with --check, native and auto are compared with the stored Python artifact",
     )
     args = parser.parse_args(argv)
 
     fresh = generate(args.backend)
+    if args.check and args.backend == "auto":
+        stored = json.loads(ARTIFACT.read_text())
+        ran = [c for c in fresh["cases"] if c["status"] != "skipped"]
+        # Cases the default ran natively are held to the parity rules (provenance only where uniquely rooted);
+        # cases it ran in Python must reproduce the stored Python artifact exactly.
+        by_python = {c["name"] for c in ran if c["backend"] == "python"}
+        bad = parity_mismatches(stored, {"cases": [c for c in ran if c["backend"] == "native"]})
+        bad += semantic_mismatches(
+            {"cases": [c for c in stored["cases"] if c["name"] in by_python]},
+            {"cases": [c for c in ran if c["backend"] == "python"]},
+        )
+        # Default selection must be explicit: Python only with a stated reason, native whenever it could.
+        bad += [
+            f"{c['name']}: Python was selected with no reason"
+            for c in ran
+            if c["backend"] == "python" and not c["backend_reasons"]
+        ]
+        bad += [
+            f"{c['name']}: reasons recorded but the native backend ran"
+            for c in ran
+            if c["backend"] == "native" and c["backend_reasons"]
+        ]
+        if bad:
+            print("MISMATCH: default backend selection disagrees with the Python artifact:", file=sys.stderr)
+            for line in bad:
+                print(f"  {line}", file=sys.stderr)
+            return 1
+        native_names = [c["name"] for c in ran if c["backend"] == "native"]
+        python_names = {c["name"]: c["backend_reasons"] for c in ran if c["backend"] == "python"}
+        print(
+            f"default selection matches the Python artifact on {len(ran)} cases; "
+            f"native on {len(native_names)}: {', '.join(native_names)}"
+        )
+        for name, why in python_names.items():
+            print(f"  Python for {name}: {'; '.join(why)}")
+        return 0
     if args.check and args.backend == "native":
         stored = json.loads(ARTIFACT.read_text())
         mismatches = parity_mismatches(stored, fresh)

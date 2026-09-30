@@ -26,7 +26,8 @@ built from the same MJCF as the MuJoCo model.
 ## What the result carries
 
 `PlanResult.backend` is `"native"` or `"python"`; `backend_reasons` says why
-Python was chosen under `backend="auto"`. `PlanResult.provenance` records the
+Python was chosen under `backend="auto"`, the default since pycbirrt 2.0 (it
+was `"python"` in 1.x; pass it explicitly to keep the reference). `PlanResult.provenance` records the
 dependency versions, the scene's model signature and MJB hash, the snapshot
 hash, and the SSIK family. `PlanResult.stats` breaks the cost down by
 component. Zero Python functions run during a native solve; the reference

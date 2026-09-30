@@ -302,7 +302,11 @@ not compared, so the artifact is stable across platforms while behavior is
 pinned. `tests/test_reference_artifact.py` regenerates it and fails on any
 semantic change; `--check` also reports whether the regeneration is
 bit-for-bit on the same versions. This artifact is the definition of
-"compatible with the Python reference" for the native backends.
+"compatible with the Python reference" for the native backends, and the tool
+runs it under each selection: `--backend python` regenerates it,
+`--backend native` checks parity on every case the core supports, and
+`--backend auto` checks the default selection, which must pick the native
+core wherever it can and Python only with a stated reason.
 
 ## The TSR instantiation
 

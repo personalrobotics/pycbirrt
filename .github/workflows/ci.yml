@@ -156,6 +156,7 @@ jobs:
           s = m.NativeScene.from_model(model, ['j']); print('macOS wheel: ssik and mujoco native modules ok', s.provenance['mujoco'])
           "
           "$RUNNER_TEMP/mac-env/bin/python" tools/reference_artifact.py --backend native --check
+          "$RUNNER_TEMP/mac-env/bin/python" tools/reference_artifact.py --backend auto --check
 
   notify-robot-code:
     needs: [test, cpp, cpp-consumer, package, package-macos]

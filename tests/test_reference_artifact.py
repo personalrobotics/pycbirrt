@@ -121,3 +121,15 @@ def test_native_backend_matches_the_artifact(tool):
             assert case["status"] == "success" and case["native_python_calls"] == 0, name
     assert tool.parity_mismatches(json.loads(ARTIFACT.read_text()), native) == []
     assert tool.main(["--check", "--backend", "native"]) == 0
+
+
+def test_default_selection_matches_the_artifact_and_explains_every_python_choice(tool):
+    """Under the default backend, native runs wherever it can and Python only with a stated reason (#86)."""
+    pytest.importorskip("pycbirrt._native")
+    auto = tool.generate("auto")
+    ran = {c["name"]: c for c in auto["cases"] if c["status"] != "skipped"}
+    assert ran["fixed_to_fixed"]["backend"] == "native" and ran["fixed_to_fixed"]["backend_reasons"] == []
+    assert ran["tsr_chain_goal"]["backend"] == "python"
+    assert ran["tsr_chain_goal"]["backend_reasons"] == ["goal: TSRChain has no native form (TSR chains stay Python)"]
+    assert all(c["backend_reasons"] for c in ran.values() if c["backend"] == "python")
+    assert tool.main(["--check", "--backend", "auto"]) == 0
