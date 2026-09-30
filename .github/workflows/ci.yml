@@ -34,6 +34,7 @@ jobs:
         run: |
           uv sync --all-extras --dev
           uv run python -c "import pycbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason(); print('native SSIK adapter built')"
+          uv run python -c "from pycbirrt.backends import native_mujoco as m; assert m.available(), m.unavailable_reason(); print('native MuJoCo scene built')"
 
       - name: Ruff lint
         run: uv run ruff check .
@@ -63,8 +64,10 @@ jobs:
           uv venv "$RUNNER_TEMP/ssik-env"
           uv pip install --python "$RUNNER_TEMP/ssik-env/bin/python" --prerelease=allow --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ --index-strategy unsafe-best-match "ssik>=7.0.0rc1,<8"
           echo "SSIK_CMAKE_DIR=$("$RUNNER_TEMP/ssik-env/bin/python" -c 'import ssik; print(ssik.get_cmake_dir())')" >> "$GITHUB_ENV"
+          uv pip install --python "$RUNNER_TEMP/ssik-env/bin/python" "mujoco==3.14.0"
+          echo "MUJOCO_DIR=$("$RUNNER_TEMP/ssik-env/bin/python" -c 'import mujoco, os; print(os.path.dirname(mujoco.__file__))')" >> "$GITHUB_ENV"
       - name: Configure
-        run: cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Debug -DSSCBIRRT_SANITIZE=ON -DSSCBIRRT_WITH_SSIK=ON -DSSCBIRRT_SSIK_CMAKE_DIR="$SSIK_CMAKE_DIR"
+        run: cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Debug -DSSCBIRRT_SANITIZE=ON -DSSCBIRRT_WITH_SSIK=ON -DSSCBIRRT_SSIK_CMAKE_DIR="$SSIK_CMAKE_DIR" -DSSCBIRRT_WITH_MUJOCO=ON -DSSCBIRRT_MUJOCO_DIR="$MUJOCO_DIR"
       - name: Build
         run: cmake --build build/cpp --parallel
       - name: Test
@@ -104,6 +107,24 @@ jobs:
           r = p.solve(PlanningProblem(space=p.space, start=f([np.zeros(2)]), goal=f([np.array([1.0, 0.5])]), validator=p.collision), seed=0)
           assert r.success and r.backend == 'native', r
           print('wheel ok:', len(r.path), 'waypoints natively')
+          "
+      - name: Without mujoco installed, pycbirrt imports and the MuJoCo scene reports its reason
+        run: |
+          "$RUNNER_TEMP/wheel-env/bin/python" -c "
+          import pycbirrt
+          from pycbirrt.backends import native_mujoco as m
+          assert not m.available() and 'mujoco is not installed' in m.unavailable_reason(), m.unavailable_reason()
+          print('no-mujoco import ok:', m.unavailable_reason())
+          "
+      - name: With the mujoco extra, the native scene loads against the pinned MuJoCo
+        run: |
+          uv pip install --python "$RUNNER_TEMP/wheel-env/bin/python" "$(ls dist/*.whl)[mujoco]"
+          "$RUNNER_TEMP/wheel-env/bin/python" -c "
+          import mujoco
+          from pycbirrt.backends import native_mujoco as m
+          assert m.available(), m.unavailable_reason()
+          model = mujoco.MjModel.from_xml_string('<mujoco><worldbody><body><joint name=\"j\" type=\"hinge\"/><geom size=\"0.1\"/></body></worldbody></mujoco>')
+          s = m.NativeScene.from_model(model, ['j']); print('scene ok:', s.provenance)
           "
       - name: Install the sdist into a fresh environment (compiles from source)
         run: |

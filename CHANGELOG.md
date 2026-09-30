@@ -33,6 +33,12 @@ follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The `mujoco` extra pins `mujoco==3.14.0` exactly, and mujoco is a build
+  requirement of the extension: the native MuJoCo scene
+  (`pycbirrt._native_mujoco`, a separate module so `import pycbirrt` never
+  loads MuJoCo) is built against that version and refuses another with a
+  message naming the compiled, loaded, and installed versions (#137). The
+  workspace lock moves to 3.14.0.
 - The `ssik` extra requires `ssik>=7.0.0rc1,<8`: 7.0 ships the `ssik_cpp`
   headers and `ssik.cpp.joint_data`, which the native SSIK adapter is built
   on (#129; personalrobotics/ssik#641). Until 7.0.0 reaches PyPI the release

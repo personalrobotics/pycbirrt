@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-mujoco = ["mujoco>=3.0"]
+mujoco = ["mujoco==3.14.0"]  # exact: pycbirrt._native_mujoco is built against this MuJoCo and refuses another (docs/native-design.md, v1.7.0)
 ssik = ["ssik>=7.0.0rc1,<8"]  # 7.0 ships the ssik_cpp headers and ssik.cpp.joint_data for the native SSIK adapter (ssik#641)
 eaik = ["eaik"]  # deprecated; removed in pycbirrt 2.0
 examples = [
@@ -35,7 +35,7 @@ all = ["pycbirrt[mujoco,ssik,eaik,examples,dev]"]
 [build-system]
 # ssik is a build requirement so the isolated build can ask it for the ssik_cpp CMake package
 # (SSCBIRRT_WITH_SSIK=AUTO); without it the extension builds with the adapter disabled.
-requires = ["scikit-build-core>=0.10", "pybind11>=2.12", "ssik>=7.0.0rc1,<8"]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.12", "ssik>=7.0.0rc1,<8", "mujoco==3.14.0"]
 build-backend = "scikit_build_core.build"
 
 # The C++ core under cpp/ is the primary build; the wheel reuses it with the Python

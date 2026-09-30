@@ -1224,7 +1224,7 @@ namespace sscbirrt::mujoco {
 
 struct SceneProvenance {
   std::string mujoco_version;       // mj_versionString() of the loaded library
-  std::uint64_t model_signature;    // mjModel::signature, also held by the mjSpec that compiled it
+  std::uint64_t model_signature;    // the Python model's signature as passed; mj_saveModel does not serialize it
   std::string mjb_sha256;           // of the bytes the scene was loaded from
 };
 
@@ -1255,9 +1255,12 @@ class Scene {
 The `mjModel` is shared read-only by every validator built on the scene and
 never written after construction. The Python model that produced the MJB
 may be destroyed or changed afterward; the scene does not observe it
-(#93's first criterion). A structural change to the world (a body added,
-a geom's type changed) is a new MJB and a new scene; the Python side
-compares `mjModel.signature` and reconstructs. Limits follow the rule of
+(#93's first criterion). Any change to the world, structural (a body
+added) or numeric (a geom resized in place), is a new MJB and a new scene;
+the Python side keys its scene cache on the SHA-256 of the MJB bytes and
+reconstructs. `mjModel.signature` is recorded as provenance but is not the
+key: it hashes structure only, and a geom resized in place keeps its
+signature (verified on 3.14.0). Limits follow the rule of
 #107: an unlimited joint is `±infinity` and the planner's `JointSpace`
 demands a declaration.
 

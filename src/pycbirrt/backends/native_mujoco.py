@@ -1,0 +1,178 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Siddhartha Srinivasa
+
+"""The owned MuJoCo scene and immutable snapshots (docs/native-design.md, v1.7.0 addendum).
+
+``import pycbirrt`` never imports MuJoCo. This module imports ``pycbirrt._native_mujoco`` lazily and
+turns a missing module or a version mismatch into ``NativeUnsupported`` with a reason.
+"""
+
+from __future__ import annotations
+
+import hashlib
+from typing import Any
+
+import numpy as np
+
+from pycbirrt.backends.native import NativeUnsupported
+
+_module: Any = None
+
+
+def _load():
+    """The native scene module, or raise NativeUnsupported with the reason."""
+    global _module
+    if _module is not None:
+        return _module
+    try:
+        import mujoco
+    except ImportError:
+        raise NativeUnsupported(["mujoco is not installed; install pycbirrt[mujoco] (mujoco==3.14.0)"]) from None
+    try:
+        import importlib
+
+        _native_mujoco = importlib.import_module("pycbirrt._native_mujoco")
+    except ImportError as e:
+        raise NativeUnsupported(
+            [f"pycbirrt._native_mujoco is not available: built without MuJoCo support, or it failed to load ({e})"]
+        ) from None
+    compiled, loaded, installed = (
+        _native_mujoco.compiled_mujoco_version(),
+        _native_mujoco.loaded_mujoco_version(),
+        mujoco.__version__,
+    )
+    if not (compiled == loaded == installed):
+        raise NativeUnsupported(
+            [
+                f"MuJoCo version mismatch: pycbirrt._native_mujoco was built against {compiled}, loaded library "
+                f"{loaded}, installed mujoco package {installed}; install mujoco=={compiled}"
+            ]
+        )
+    _module = _native_mujoco
+    return _module
+
+
+def available() -> bool:
+    try:
+        _load()
+        return True
+    except NativeUnsupported:
+        return False
+
+
+def unavailable_reason() -> str | None:
+    try:
+        _load()
+        return None
+    except NativeUnsupported as e:
+        return e.reasons[0]
+
+
+def export_mjb(model) -> bytes:
+    """The MJB bytes of a compiled ``mujoco.MjModel``."""
+    import mujoco
+
+    buf = np.zeros(mujoco.mj_sizeModel(model), dtype=np.uint8)
+    mujoco.mj_saveModel(model, None, buf)
+    return buf.tobytes()
+
+
+class NativeScene:
+    """An owned native ``mjModel`` for the controlled joints, built once from a Python model.
+
+    The Python model may be destroyed or mutated afterward; the scene does not observe it. ``from_model``
+    caches by the SHA-256 of the model's MJB bytes, the joint list, and the extra bodies, so any change to
+    the source model, structural or numeric, yields a new scene on the next call. MuJoCo's ``signature``
+    is not the key: it hashes structure only (a geom resized in place keeps its signature), and is
+    recorded as provenance.
+    """
+
+    _cache: dict[tuple, "NativeScene"] = {}
+
+    def __init__(self, native, joint_names: tuple[str, ...], extra_arm_bodies: tuple[str, ...]):
+        self.native = native
+        self.joint_names = joint_names
+        self.extra_arm_bodies = extra_arm_bodies
+
+    @classmethod
+    def from_model(cls, model, joint_names, extra_arm_bodies=()) -> "NativeScene":
+        mod = _load()
+        mjb = export_mjb(model)
+        key = (hashlib.sha256(mjb).hexdigest(), tuple(joint_names), tuple(extra_arm_bodies))
+        scene = cls._cache.get(key)
+        if scene is None:
+            native = mod.Scene(mjb, list(joint_names), list(extra_arm_bodies), int(model.signature))
+            scene = cls(native, tuple(joint_names), tuple(extra_arm_bodies))
+            cls._cache[key] = scene
+        return scene
+
+    @property
+    def dof(self) -> int:
+        return self.native.dof
+
+    @property
+    def joint_limits(self) -> tuple[np.ndarray, np.ndarray]:
+        return np.array(self.native.lower, dtype=float), np.array(self.native.upper, dtype=float)
+
+    @property
+    def provenance(self) -> dict[str, Any]:
+        p = self.native.provenance
+        return {"mujoco": p.mujoco_version, "model_signature": p.model_signature, "mjb_sha256": p.mjb_sha256}
+
+
+def gripper_allowed_bodies(scene: NativeScene, gripper_body_name: str) -> list[int]:
+    """mj_manipulator's gripper rule as data: the subtree of ``<prefix>/base`` when that body exists, else of
+    the attachment body itself. Contacts between the grasped object and these bodies are allowed."""
+    native = scene.native
+    base = None
+    if "/" in gripper_body_name:
+        candidate = gripper_body_name.rsplit("/", 1)[0] + "/base"
+        if native.body_id(candidate) >= 0:
+            base = candidate
+    root = native.body_id(base if base is not None else gripper_body_name)
+    if root < 0:
+        raise ValueError(f"gripper body '{gripper_body_name}' not found in the scene")
+    return list(native.subtree(root))
+
+
+class Snapshot:
+    """An immutable copy of what a geometric query reads from a live ``MjData``: qpos, mocap poses, attachments."""
+
+    def __init__(self, native, scene: NativeScene):
+        self.native = native
+        self.scene = scene
+
+    @classmethod
+    def capture(
+        cls, scene: NativeScene, data, attachments: dict[str, tuple[str, np.ndarray]] | None = None
+    ) -> "Snapshot":
+        """Copy the live state now. ``attachments`` is mj_manipulator's ``{object: (gripper_body, T_gripper_object)}``.
+        Call on the thread that owns ``data``."""
+        mod = _load()
+        native = scene.native
+        atts = []
+        for obj, (gripper, T) in (attachments or {}).items():
+            ob, gb = native.body_id(obj), native.body_id(gripper)
+            if ob < 0:
+                raise ValueError(f"attached object body '{obj}' not found in the scene")
+            if gb < 0:
+                raise ValueError(f"gripper body '{gripper}' not found in the scene")
+            atts.append(
+                mod.Attachment(ob, gb, np.asarray(T, dtype=float).tolist(), gripper_allowed_bodies(scene, gripper))
+            )
+        snap = mod.Snapshot(
+            native,
+            np.asarray(data.qpos, dtype=float).tolist(),
+            np.asarray(data.mocap_pos, dtype=float).reshape(-1).tolist(),
+            np.asarray(data.mocap_quat, dtype=float).reshape(-1).tolist(),
+            atts,
+        )
+        return cls(snap, scene)
+
+    @property
+    def sha256(self) -> str:
+        return self.native.sha256
+
+    @property
+    def qpos(self) -> np.ndarray:
+        return np.array(self.native.qpos, dtype=float)

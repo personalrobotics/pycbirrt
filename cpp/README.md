@@ -39,3 +39,8 @@ search (#117), the Python binding (#118), install/export, consumer, and the
 parity gate (#119). v1.6.0 slices: the pose region `sscbirrt::tsr` with the
 sstsr conformance corpus (#127), kinematics interfaces and the lifted set
 (#128), the SSIK adapter (#129), lowering and the UR5e artifact (#130).
+v1.7.0 slices: the owned MuJoCo scene and snapshot (#137), the validator
+with the decision-parity corpus (#138), isolation and packaging (#139), the
+one-call path and release artifacts (#140). `sscbirrt::mujoco` needs the
+`mujoco` package's headers and library; pass
+`-DSSCBIRRT_MUJOCO_DIR=$(python -c "import mujoco, os; print(os.path.dirname(mujoco.__file__))")`.
