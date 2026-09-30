@@ -189,7 +189,11 @@ sampler or projector.
   sample, admissible candidates are added until `num_tree_roots` roots
   exist or the draw budget (`tsr_samples`) is spent, keeping at most
   `max_ik_per_pose` per draw for diversity and skipping candidates that
-  repeat a seed. Bias sampling draws from any sampleable set.
+  repeat a seed. A draw with more candidates than the cap is visited in a
+  random order from the planner's RNG, so the kept ones are a uniform
+  subset; an IK solver that enumerates branches and joint windings lists
+  hundreds in a fixed order, and the first few are one corner of that set
+  (#168). Bias sampling draws from any sampleable set.
 - **Roots are taken from $\mathcal{S} \cap \mathcal{C}$ (and $\mathcal{G} \cap \mathcal{C}$) by
   rejection**: a candidate outside the path constraint or rejected by the
   validator is not a root. If no root survives, the planner raises the

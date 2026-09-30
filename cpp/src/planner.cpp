@@ -185,6 +185,11 @@ std::vector<Sample> Solve::roots(const StateSet& s, const std::string& role, Roo
         ++report.draws_empty;
         continue;
       }
+      if (static_cast<int>(candidates.size()) > cfg_.max_per_draw) {
+        // Visit a large draw in a random order so the kept candidates are a uniform subset, not the first
+        // corner of an enumeration (#168). Fisher-Yates on index(), not std::shuffle, for portability.
+        for (std::size_t k = candidates.size() - 1; k > 0; --k) std::swap(candidates[k], candidates[index(rng_, k + 1)]);
+      }
       int kept = 0;
       for (Sample& c : candidates) {
         if (kept >= cfg_.max_per_draw || static_cast<int>(out.size()) >= cfg_.num_tree_roots) break;

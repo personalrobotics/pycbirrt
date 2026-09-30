@@ -14,6 +14,17 @@ follows [Semantic Versioning](https://semver.org/).
   `pip install "sscbirrt[demo]"` running the demos without a Menagerie
   clone (#162).
 
+### Fixed
+- Roots kept from one sampling draw are now a random subset of its
+  candidates, as `max_ik_per_pose`'s "for diversity" promised, on both
+  backends. Previously the first `max_ik_per_pose` candidates were kept,
+  in the sampler's order. An IK solver that enumerates branches and joint
+  windings (SSIK on the UR5e returns 256 solutions per pose) lists them in
+  a fixed order, so every draw contributed near-duplicates from one
+  corner of the solution set. Draws at or under the cap consume no
+  randomness: the planar reference cases are bit-for-bit unchanged, and
+  the three UR5e cases have new paths that pass every validation (#168).
+
 ## [3.0.0] - 2026-09-30
 
 pycbirrt becomes **sscbirrt**, and this is the first release on PyPI:
