@@ -704,6 +704,25 @@ The consumer example is the acceptance test of the export: it is built
 against `cmake --install`'s output, not the source tree, exactly as ssik's
 `cpp/examples/consumer` is.
 
+### Release wheels (#153, v3.0.0)
+
+`release.yml` builds the wheels with cibuildwheel from the settings in
+`pyproject.toml`: CPython 3.10 through 3.14 on manylinux_2_28 x86_64 and
+macOS arm64, the platforms for which the mujoco wheel we build against
+exists. Two rules keep the dependency boundary intact in the published
+artifacts. First, **libmujoco is excluded from wheel repair** (auditwheel and
+delocate both take `--exclude`): `sscbirrt._native_mujoco` links the mujoco
+wheel's own library through its rpath and refuses any other version, and a
+bundled copy would silently defeat that check while doubling the wheel.
+Second, **Eigen is fetched when absent**: the manylinux image has no Eigen,
+so the CMake build downloads the pinned 3.4.0 release with a checked hash
+and generates an `Eigen3Config.cmake` for it, which is also what makes the
+sdist compile on a bare machine. Every wheel is installed with
+`[mujoco,ssik]` in cibuildwheel's test environment and runs
+`tools/reference_artifact.py --backend native --check` and `--backend auto
+--check` before it is kept, so the published artifact is the one that passed
+the parity gate.
+
 ## Minimal standalone consumer
 
 ```cpp

@@ -6,6 +6,18 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- A tag-driven release pipeline (`.github/workflows/release.yml`): `v*rc*` tags
+  build wheels and the sdist and publish to TestPyPI, `v*` tags publish to PyPI and
+  create the GitHub release from this file's section, with Trusted Publishing and a
+  guard that every artifact carries the tag's version. Wheels for CPython 3.10 to
+  3.14 on manylinux_2_28 x86_64 and macOS arm64, each installed with `[mujoco,ssik]`
+  and run through the reference artifact check before it is kept. libmujoco is not
+  bundled: the module keeps linking the mujoco wheel's own library (#153).
+- The CMake build downloads the pinned Eigen 3.4.0 (checked hash) when no Eigen3
+  package is installed, so the sdist compiles on a bare machine and the wheels build
+  inside the manylinux image. `SSCBIRRT_FETCH_EIGEN=OFF` restores the old requirement (#153).
+
 ### Changed
 - **Renamed to `sscbirrt`.** The distribution is `sscbirrt`, the import path is
   `import sscbirrt`, the extension modules are `sscbirrt._native` and
