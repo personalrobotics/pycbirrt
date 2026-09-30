@@ -1,10 +1,28 @@
 [project]
 name = "sscbirrt"
 version = "2.0.0"
-description = "CBiRRT motion planner with TSR constraints"
+description = "CBiRRT: a motion planner over sets of starts, goals, and path constraints, with a C++ core and Task Space Regions"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["motion-planning", "cbirrt", "rrt", "task-space-regions", "tsr", "manipulation", "robotics", "mujoco"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: C++",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 authors = [
     {name = "Siddhartha Srinivasa", email = "siddhartha.srinivasa@gmail.com"},
 ]
@@ -51,6 +69,8 @@ sdist.include = ["cpp/", "src/", "tests/", "tools/", "docs/"]
 [project.urls]
 Homepage = "https://github.com/personalrobotics/sscbirrt"
 Repository = "https://github.com/personalrobotics/sscbirrt"
+Documentation = "https://github.com/personalrobotics/sscbirrt#readme"
+Changelog = "https://github.com/personalrobotics/sscbirrt/blob/main/CHANGELOG.md"
 Issues = "https://github.com/personalrobotics/sscbirrt/issues"
 
 [tool.ruff]
