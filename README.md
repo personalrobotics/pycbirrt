@@ -9,6 +9,74 @@ a bidirectional RRT that grows trees from many roots and projects onto
 constraints. Task Space Regions are one representation of a set; the planner
 does not depend on it, and sets you define yourself take the same roles.
 
+## Install
+
+```bash
+pip install sscbirrt                                  # the planner, its C++ core, and Task Space Regions
+pip install "sscbirrt[mujoco,ssik]" sscbirrt-assets   # plus MuJoCo, analytical IK, and the UR5e model below
+```
+
+Wheels for Linux x86_64 and macOS arm64, Python 3.10 through 3.14, include the
+native core with the SSIK and MuJoCo adapters. `numpy` and `sstsr` (Task Space
+Regions, imported as `tsr`) are installed as dependencies; the `mujoco` extra
+pins the exact MuJoCo the extension is built against. `sscbirrt-assets` packages
+the MuJoCo Menagerie UR5e and Robotiq 2F-85 so the examples need no clone.
+
+From a checkout or the sdist, the extension compiles on install and needs
+CMake 3.16+ and a C++20 compiler; the build fetches scikit-build-core,
+pybind11, ninja, ssik, and mujoco itself, and Eigen if none is installed:
+
+```bash
+uv pip install -e ".[all]"          # every extra, the example dependencies, and the dev tools
+```
+
+## Plan in MuJoCo
+
+Describe the arm once, then plan from where it is to a region:
+
+```python
+import mujoco
+import numpy as np
+import sscbirrt_assets
+from tsr import TSR
+
+from sscbirrt.mujoco import Arm, plan
+
+xml = sscbirrt_assets.ur5e_xml()                       # the Menagerie UR5e, packaged
+model = mujoco.MjModel.from_xml_path(str(xml))
+data = mujoco.MjData(model)
+data.qpos[:] = [0, -1.57, 1.57, -1.57, -1.57, 0]       # where the arm is now
+
+joints = ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint",
+          "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"]
+arm = Arm(model, joints, ee_site="attachment_site", mjcf=xml)   # SSIK built from the same MJCF
+
+# Goal: the flange pointing down, within 2 cm of (0.5, 0.2, 0.3) and up to 5 cm above it, any yaw
+T = np.eye(4)
+T[:3, :3] = np.diag([1.0, -1.0, -1.0])
+T[:3, 3] = [0.5, 0.2, 0.3]
+goal = TSR(T0_w=T, Bw=[[-0.02, 0.02], [-0.02, 0.02], [0, 0.05], [0, 0], [0, 0], [-np.pi, np.pi]])
+
+result = plan(model, data, arm, goal=goal, seed=0)
+print(result.success, result.backend, len(result.path), f"{result.planning_time:.3f} s")
+```
+
+`plan(model, data, arm, goal=..., start=..., constraint=..., holding=...)`
+takes each role in whatever form you have it: a configuration, a list of
+configurations, a TSR, a list of TSRs (any of them, for a start or goal; all
+of them, for a constraint), or any [set](#what-a-set-is). `start` defaults to
+where the arm is now. `holding="can"` carries a body rigidly with the gripper
+and lets it touch the gripper, with the grasp taken from the current poses.
+Collision checking runs on a native copy of the MuJoCo world; the search runs
+natively whenever every piece has a native form and in Python otherwise, and
+`result.backend` and `result.backend_reasons` say which and why.
+
+For a gripper, the `tsr` package's hand models give the grasp regions:
+`tsr.Robotiq2F85().grasp_cylinder_side(radius, height)` returns templates for
+every side grasp of a cylinder, and `template.instantiate(T_world_cylinder_bottom)`
+places each as a TSR on the gripper's grasp frame. Pass them all as the goal
+and the planner chooses among them; `result.goal_index` says which.
+
 ## Why sets
 
 A point-to-point planner takes one start configuration and one goal
@@ -76,7 +144,7 @@ Leaves provided: `FiniteSet(configs, tolerance, metric)`, `PredicateSet(fn)`,
 `EmptySet()`, and `TSRConfigurationSet(tsr, robot, ik, space)`, which is
 $\{q : \mathrm{FK}(q) \in \mathrm{TSR}\}$ with all four capabilities.
 
-## Quick start
+## Quick start without a simulator
 
 Three roles, three kinds of set: a finite start, a goal induced by a pose
 region, and a path constraint written for this problem that only implements
@@ -228,7 +296,8 @@ constraint pays that on every edge sample.
 
 ## Result
 
-`return_details=True` returns a `PlanResult`:
+`sscbirrt.mujoco.plan` and `CBiRRT.solve` return a `PlanResult`; `CBiRRT.plan`
+returns the path, or the `PlanResult` with `return_details=True`:
 
 | Field | Meaning |
 |---|---|
@@ -238,6 +307,9 @@ constraint pays that on every edge sample.
 | `start_index`, `goal_index` | index into the legacy `start`/`goal` list or TSR list; 0 for single inputs |
 | `iterations`, `planning_time`, `tree_sizes` | search statistics |
 | `tree_start`, `tree_goal` | the two trees, for inspection |
+| `backend`, `backend_reasons` | `"native"` or `"python"`, and why not native when `"auto"` chose Python |
+| `provenance` | dependency versions, and for MuJoCo the scene and snapshot hashes and the SSIK family |
+| `stats` | the cost of the solve by component (counts and seconds) |
 
 ## How it works
 
@@ -377,27 +449,6 @@ a native counterpart in the C++ core (`StateSet`, `StateValidator`,
 implementations of them, not special cases; see
 [Adding an integration](#adding-an-integration).
 
-## Installation
-
-```bash
-pip install sscbirrt                 # the planner, the C++ core, and Task Space Regions
-pip install "sscbirrt[ssik,mujoco]"  # plus analytical IK (SSIK) and the MuJoCo scene
-```
-
-Wheels for Linux x86_64 and macOS arm64, Python 3.10 through 3.14, include the
-native core with the SSIK and MuJoCo adapters. `numpy` and `sstsr` (Task Space
-Regions, imported as `tsr`) are installed as dependencies; the `mujoco` extra
-pins the exact MuJoCo the extension is built against.
-
-From a checkout or the sdist, the extension compiles on install and needs
-CMake 3.16+ and a C++20 compiler; the build fetches scikit-build-core,
-pybind11, ninja, ssik, and mujoco itself, and Eigen if none is installed:
-
-```bash
-uv pip install -e ".[all]"          # every extra, the example dependencies, and the dev tools
-uv pip install -e ".[mujoco,ssik]"  # or choose extras: mujoco, ssik, examples (matplotlib, mediapy)
-```
-
 ## Backends
 
 sscbirrt ships three integrations. Each implements one interface the core
@@ -417,14 +468,20 @@ shape ([Adding an integration](#adding-an-integration)).
 
 ### MuJoCo
 
+`sscbirrt.mujoco` ([above](#plan-in-mujoco)) is the way in. The pieces it is
+built from are usable on their own:
+
 ```python
 from sscbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoIKSolver, MuJoCoRobotModel
 
-robot = MuJoCoRobotModel(model, data, ee_site="end_effector")
-collision = MuJoCoCollisionChecker(model, data)
-ik = MuJoCoIKSolver(model, data, ee_site="end_effector", collision_checker=collision, seed=0)
+robot = MuJoCoRobotModel(model, data, ee_site="attachment_site", joint_names=joints)
+collision = MuJoCoCollisionChecker(model, data, joint_names=joints)   # any contact is a collision
+ik = MuJoCoIKSolver(model, data, ee_site="attachment_site", joint_names=joints, collision_checker=collision, seed=0)
 ```
 
+Name the arm's joints: a model with free bodies (objects on a table) refuses
+`joint_names=None`. `MuJoCoRobotModel(joint_limits=(lower, upper))` replaces the
+model's limits, for example to give an unlimited joint finite planning limits.
 The differential solver is stateful and, when called without a seed
 configuration, tries a few random restarts within each joint's limits. Pass
 `seed=` for reproducible runs; `CBiRRT.plan(seed=...)` seeds the planner only.
@@ -443,15 +500,9 @@ snap = Snapshot.capture(scene, data, attachments={"can": ("robot/gripper/base", 
 checker = NativeCollisionChecker(scene, snap)                   # a CollisionChecker for either backend
 ```
 
-One call does all of it from a live world, with SSIK for the pose regions:
-
-```python
-from sscbirrt.backends.native_mujoco import plan_native
-
-result = plan_native(model, data, joint_names, ik=ssik_solver, start=q_now, goal_tsrs=[grasp_tsr],
-                     attachments={"can": ("robot/gripper/base", T_gripper_can)}, seed=0)
-result.provenance   # versions, scene MJB hash, snapshot hash, SSIK family
-```
+`sscbirrt.mujoco.plan` builds the scene, the snapshot, and the checker for
+you. `plan_native(model, data, joint_names, ...)` in this module did the same
+before 3.1.0 and is deprecated.
 
 The snapshot is a value: `qpos`, mocap poses, and attachments copied at capture,
 so later changes to `data` do not reach a running solve. Downstream integration
@@ -482,14 +533,19 @@ the planner sees the complete TSR-induced configuration set. The adapter does
 no collision checking and applies no solution cap; joint limits are enforced
 by `JointSpace` and collision by the planner's validator.
 
+`sscbirrt.mujoco.Arm(..., mjcf=path)` builds SSIK for you, computes both
+frame offsets from the MuJoCo model (so the arm can stand anywhere in the
+world), and checks that the two agree. By hand:
+
 ```python
 import ssik
+import sscbirrt_assets
 from sscbirrt.backends.mujoco import site_offset_in_body
 from sscbirrt.backends.ssik import SSIKSolver
 
 # From the same MJCF as the MuJoCo model, so the frames agree to machine precision
-arm = ssik.Manipulator.from_mjcf("ur5e.xml", base="world", ee="wrist_3_link")
-ik = SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site"))
+arm = ssik.Manipulator.from_mjcf(sscbirrt_assets.ur5e_xml(), base="world", ee="wrist_3_link")
+ik = SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site"))  # the site is on wrist_3_link
 
 # Or a prebuilt artifact (vendor nominal geometry) or a URDF
 from ssik.prebuilt import ur5e_ik
@@ -592,9 +648,8 @@ python examples/planar_arm.py -e 2      # Start/goal TSRs
 python examples/planar_arm.py -e 3      # Constrained planning
 python examples/multi_config_demo.py    # Several start and goal configurations
 
-# UR5e with Robotiq gripper (requires MuJoCo and the MuJoCo Menagerie)
-git clone https://github.com/google-deepmind/mujoco_menagerie.git
-export MUJOCO_MENAGERIE_PATH=$PWD/mujoco_menagerie
+# UR5e with Robotiq gripper (MuJoCo; the models from sscbirrt-assets or a Menagerie clone)
+export MUJOCO_MENAGERIE_PATH=$(python -c "import sscbirrt_assets; print(sscbirrt_assets.menagerie_path())")
 python examples/ur5e_mujoco.py --no-viz         # Grasp planning with a TSR goal
 python examples/tsr_union_demo.py               # Multiple grasp approaches, rendered to video
 python examples/ur5e_transport.py --no-viz      # Constrained transport: gripper kept pointing down
