@@ -13,6 +13,17 @@ follows [Semantic Versioning](https://semver.org/).
   `assets-v*` tag pipeline. It is the first step toward
   `pip install "sscbirrt[demo]"` running the demos without a Menagerie
   clone (#162).
+- `sscbirrt.mujoco`, the one-call MuJoCo API (#175).
+  - `Arm(model, joints, ee_site, mjcf=...)` describes the arm once and
+    builds analytical IK from its MJCF. The frames that relate SSIK to the
+    world are computed from the model, so an arm attached anywhere, with a
+    name prefix, just works, and they are checked.
+  - `plan(model, data, arm, goal=..., start=..., constraint=..., holding=...)`
+    always returns a `PlanResult`.
+  - `start` defaults to where the arm is now.
+  - `start`, `goal` and `constraint` each take a configuration,
+    configurations, a TSR, TSRs, or any set.
+  - `holding="can"` takes the grasp from the current poses.
 
 ### Changed
 - Errors name what exists: a missing site or joint lists the model's sites
@@ -22,6 +33,10 @@ follows [Semantic Versioning](https://semver.org/).
   from `sscbirrt` (#174).
 - `CBiRRTConfig`'s set tolerances are documented as applying to the sets
   `plan(...)` builds (#177).
+
+### Deprecated
+- `sscbirrt.backends.native_mujoco.plan_native`: use `sscbirrt.mujoco.plan`.
+  It keeps working, with a `DeprecationWarning`, until 4.0 (#175).
 
 ### Fixed
 - Roots kept from one sampling draw are now a random subset of its
