@@ -18,7 +18,7 @@ from tsr import TSR
 
 from sscbirrt import AllStartConfigurationsInvalid, CBiRRT, CBiRRTConfig, PlanningProblem
 from sscbirrt.legacy import legacy_problem
-from sscbirrt.sets import AllOf, AnyOf, EmptySet, FiniteSet, PredicateSet, Sample, is_finite, members, seeds
+from sscbirrt.sets import AllOf, AnyOf, EmptySet, FiniteSet, PredicateSet, Sample, explicit_samples, is_finite, members
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 BOX = np.array([[-0.05, 0.05], [-0.05, 0.05], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]])
@@ -74,7 +74,7 @@ def has_root(roots, q):
 
 
 # ---------------------------------------------------------------------------
-# seeds() semantics
+# explicit_samples() semantics
 # ---------------------------------------------------------------------------
 
 
@@ -85,7 +85,7 @@ class TestSeeds:
         role = AnyOf([fixed, sampled], weights=[0.0, 1.0])
         assert not is_finite(role)
         assert members(role) == []
-        assert [s.source for s in seeds(role)] == [(0, 0)]
+        assert [s.source for s in explicit_samples(role)] == [(0, 0)]
         roots = planner._roots(problem(planner, role, role), role, "Start")
         assert has_root(roots, [0.0, 0.0])
         assert has_root(roots, [1.0, 1.0])
@@ -93,24 +93,26 @@ class TestSeeds:
     def test_seeds_equal_members_when_finite(self):
         a, b, c = (np.array([float(i), 0.0]) for i in range(3))
         s = AnyOf([FiniteSet([a]), AnyOf([FiniteSet([b]), FiniteSet([c])])])
-        assert [m.source for m in members(s)] == [m.source for m in seeds(s)] == [(0, 0), (1, 0, 0), (1, 1, 0)]
+        assert (
+            [m.source for m in members(s)] == [m.source for m in explicit_samples(s)] == [(0, 0), (1, 0, 0), (1, 1, 0)]
+        )
 
     def test_union_seeds_carry_child_index_regardless_of_weight(self):
         s = AnyOf([Deterministic([9.0, 9.0]), FiniteSet([np.zeros(2)])], weights=[1.0, 0.0])
-        assert [x.source for x in seeds(s)] == [(1, 0)]
+        assert [x.source for x in explicit_samples(s)] == [(1, 0)]
 
     def test_intersection_filters_seeds_by_other_children(self):
         keep, drop = np.array([0.0, 0.5]), np.array([0.0, -0.5])
         s = AllOf([FiniteSet([drop, keep]), PredicateSet(lambda q: q[1] > 0), Deterministic([0, 0])])
-        assert [x.source for x in seeds(s)] == [(1,)]
+        assert [x.source for x in explicit_samples(s)] == [(1,)]
 
     def test_intersection_with_no_seed_bearing_child(self):
-        assert seeds(AllOf([Deterministic([0, 0]), PredicateSet(lambda q: True)])) == []
+        assert explicit_samples(AllOf([Deterministic([0, 0]), PredicateSet(lambda q: True)])) == []
 
     def test_leaves_without_seeds(self):
-        assert seeds(Deterministic([0, 0])) == []
-        assert seeds(PredicateSet(lambda q: True)) == []
-        assert seeds(EmptySet()) == []
+        assert explicit_samples(Deterministic([0, 0])) == []
+        assert explicit_samples(PredicateSet(lambda q: True)) == []
+        assert explicit_samples(EmptySet()) == []
 
     @settings(max_examples=200, deadline=None)
     @given(st.lists(st.floats(-1, 1), min_size=1, max_size=3), st.booleans(), st.booleans())
@@ -121,13 +123,13 @@ class TestSeeds:
             s = AnyOf([s, FiniteSet([np.array([5.0, 5.0])])])
         if mixed:
             s = AnyOf([s, Deterministic([2.0, 2.0])], weights=[1, 1])
-        for x in seeds(s):
+        for x in explicit_samples(s):
             assert s.contains(x.q)
         assert is_finite(s) == (not mixed)
         if is_finite(s):
-            assert [m.source for m in members(s)] == [m.source for m in seeds(s)]
+            assert [m.source for m in members(s)] == [m.source for m in explicit_samples(s)]
         else:
-            assert members(s) == [] and len(seeds(s)) == len(xs) + (1 if nested else 0)
+            assert members(s) == [] and len(explicit_samples(s)) == len(xs) + (1 if nested else 0)
 
 
 # ---------------------------------------------------------------------------
@@ -254,7 +256,7 @@ class TestFiniteIntersections:
         inter = AllOf([mixed, FiniteSet([np.array([1.0, 0.0])])])
         assert is_finite(inter) and inter.contains(np.array([1.0, 0.0]))
         assert [m.q.tolist() for m in members(inter)] == [[1.0, 0.0]]
-        assert [m.q.tolist() for m in seeds(inter)] == [[1.0, 0.0]]
+        assert [m.q.tolist() for m in explicit_samples(inter)] == [[1.0, 0.0]]
         roots = planner._roots(problem(planner, inter, inter), inter, "Start")
         assert has_root(roots, [1.0, 0.0])
 
@@ -272,7 +274,7 @@ class TestFiniteIntersections:
         right = AnyOf([FiniteSet([np.array([2.0, 0.0])]), Region(4.0)], weights=[1, 1])
         inter = AllOf([keep, left, right, PredicateSet(lambda q: True)])
         assert not is_finite(inter)
-        got = seeds(inter)
+        got = explicit_samples(inter)
         # [-1,0] fails `keep`; [1,0] from `left` is not in `right`... only configs the whole intersection contains
         assert all(inter.contains(m.q) for m in got)
         # Both [1,0] and [2,0] are seeds of some child, but neither is in every other child: intersection of
@@ -285,7 +287,7 @@ class TestFiniteIntersections:
         right = AnyOf([FiniteSet([shared]), Region(4.0)], weights=[1, 1])
         inter = AllOf([PredicateSet(lambda q: True), left, right])  # first child bears no seeds
         assert not is_finite(inter)
-        got = seeds(inter)
+        got = explicit_samples(inter)
         assert [m.q.tolist() for m in got] == [[1.0, 0.0]]
         assert got[0].source == (0, 0)  # first occurrence wins: from `left`, its finite child, member 0
 
@@ -293,7 +295,7 @@ class TestFiniteIntersections:
         q = np.array([0.5, 0.5])
         a = AnyOf([FiniteSet([q]), Region(4.0)], weights=[1, 1])
         b = AnyOf([Region(4.0), FiniteSet([q])], weights=[1, 1])
-        got = seeds(AllOf([b, a]))
+        got = explicit_samples(AllOf([b, a]))
         assert len(got) == 1 and got[0].source == (1, 0)  # from b: child 1, member 0
 
     @settings(max_examples=200, deadline=None)
@@ -332,9 +334,9 @@ class TestFiniteIntersections:
         got = sorted({tuple(m.q.tolist()) for m in members(s)})
         if is_finite(s):
             assert got == expected
-            assert sorted({tuple(m.q.tolist()) for m in seeds(s)}) == expected
+            assert sorted({tuple(m.q.tolist()) for m in explicit_samples(s)}) == expected
         else:
             assert got == []
             # seeds are members, and every pool config that s contains and that some finite leaf lists
             # is found when it is embedded in a seed-bearing path
-            assert all(s.contains(m.q) for m in seeds(s))
+            assert all(s.contains(m.q) for m in explicit_samples(s))

@@ -33,8 +33,6 @@ class CBiRRTConfig:
     edge_resolution: float | None = None  # Spacing of validity checks along an edge; None means step_size
     progress_tolerance: float = 1e-6  # Tree growth stops when the distance to target shrinks by less than this
     projection_progress_tolerance: float = 1e-6  # Projection gives up when the violation shrinks by less than this
-    # Deprecated: sets both membership_tolerance and connection_tolerance. Reading it returns membership_tolerance.
-    tsr_tolerance: float | None = None
 
     # Tree growth parameters
     step_size: float = 0.1  # Maximum joint space step
@@ -48,10 +46,10 @@ class CBiRRTConfig:
     # Constraint projection
     max_projection_iters: int = 50  # Max iterations for projecting onto constraint manifold
 
-    # TSR sampling
-    tsr_samples: int = 100  # Max pose samples to try from TSR
+    # Roots: how many configurations each tree starts from, drawn from a sampleable start or goal set
+    sample_draws: int = 100  # Sampling draws per role (a TSR set's draw is one pose and its IK solutions)
     num_tree_roots: int = 100  # Target number of root configs to seed each tree with
-    max_ik_per_pose: int = 3  # Max IK solutions to take per pose sample (for diversity)
+    max_per_draw: int = 3  # Candidates kept per draw, a random subset when a draw has more (for diversity)
 
     # Smoothing
     smooth_path: bool = True
@@ -63,24 +61,14 @@ class CBiRRTConfig:
     # A limited joint is a bounded interval however wide its range: a +-2*pi joint
     # like the UR5e's can reach any angle, but q and q + 2*pi are different states
     # and moving between them is a real full rotation. Leave such joints False
-    # (or angular_joints None) so the planner respects their limits.
-    angular_joints: tuple[bool, ...] | None = None
+    # (or continuous_joints None) so the planner respects their limits. Every
+    # revolute joint is angular; only an unlimited one is continuous.
+    continuous_joints: tuple[bool, ...] | None = None
 
     # Abort callback — return True to stop planning early
     abort_fn: Callable[[], bool] | None = field(default=None, repr=False)
 
     def __post_init__(self):
-        if self.tsr_tolerance is not None:
-            warnings.warn(
-                "CBiRRTConfig.tsr_tolerance is deprecated; set membership_tolerance and "
-                "connection_tolerance separately",
-                DeprecationWarning,
-                stacklevel=3,
-            )
-            self.membership_tolerance = self.tsr_tolerance
-            self.connection_tolerance = self.tsr_tolerance
-        # Keep the old attribute readable for callers that inspect it
-        self.tsr_tolerance = self.membership_tolerance
         self._validate_ranges()
 
     def _validate_ranges(self) -> None:
@@ -94,7 +82,7 @@ class CBiRRTConfig:
             check(name, getattr(self, name) > 0, "positive")
         for name in ("membership_tolerance", "connection_tolerance"):
             check(name, getattr(self, name) >= 0, "nonnegative")
-        for name in ("max_iterations", "tsr_samples", "num_tree_roots", "max_ik_per_pose", "max_projection_iters"):
+        for name in ("max_iterations", "sample_draws", "num_tree_roots", "max_per_draw", "max_projection_iters"):
             check(name, getattr(self, name) >= 1, "at least 1")
         for name in ("smoothing_iterations", "smoothing_patience"):
             check(name, getattr(self, name) >= 0, "nonnegative")
@@ -104,3 +92,76 @@ class CBiRRTConfig:
             check(name, getattr(self, name) is None or getattr(self, name) >= 1, "None or at least 1")
         for name in ("goal_bias", "start_bias"):
             check(name, 0.0 <= getattr(self, name) <= 1.0, "within [0, 1]")
+
+
+# Names renamed in 3.1.0 (#176). The old keyword still works in the constructor and the old attribute still reads and
+# writes, each with a DeprecationWarning, until 4.0. They are translated here rather than kept as dataclass fields, so
+# dataclasses.replace() and the constructor see only the current fields: a stored alias would copy a stale value back
+# over the one being replaced.
+_RENAMED = {
+    "tsr_samples": "sample_draws",
+    "max_ik_per_pose": "max_per_draw",
+    "angular_joints": "continuous_joints",
+}
+_dataclass_init = CBiRRTConfig.__init__
+
+
+def _warn_renamed(old: str, new: str, stacklevel: int) -> None:
+    warnings.warn(f"CBiRRTConfig.{old} is deprecated; use {new}", DeprecationWarning, stacklevel=stacklevel)
+
+
+def _init(self, *args, tsr_tolerance: float | None = None, **kwargs):
+    for old, new in _RENAMED.items():
+        if old in kwargs:
+            if new in kwargs:
+                raise TypeError(f"CBiRRTConfig got both {old} (deprecated) and {new}; pass only {new}")
+            _warn_renamed(old, new, 3)
+            kwargs[new] = kwargs.pop(old)
+    if tsr_tolerance is not None:
+        warnings.warn(
+            "CBiRRTConfig.tsr_tolerance is deprecated; set membership_tolerance and connection_tolerance separately",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        kwargs.setdefault("membership_tolerance", tsr_tolerance)
+        kwargs.setdefault("connection_tolerance", tsr_tolerance)
+    _dataclass_init(self, *args, **kwargs)
+
+
+_init.__signature__ = __import__("inspect").signature(_dataclass_init)
+CBiRRTConfig.__init__ = _init
+
+
+def _renamed_property(old: str, new: str) -> property:
+    def get(self):
+        _warn_renamed(old, new, 3)
+        return getattr(self, new)
+
+    def set_(self, value):
+        _warn_renamed(old, new, 3)
+        setattr(self, new, value)
+
+    return property(get, set_, doc=f"Deprecated alias of ``{new}``.")
+
+
+for _old, _new in _RENAMED.items():
+    setattr(CBiRRTConfig, _old, _renamed_property(_old, _new))
+
+
+def _tsr_tolerance_get(self):
+    warnings.warn(
+        "CBiRRTConfig.tsr_tolerance is deprecated; read membership_tolerance", DeprecationWarning, stacklevel=2
+    )
+    return self.membership_tolerance
+
+
+def _tsr_tolerance_set(self, value):
+    warnings.warn(
+        "CBiRRTConfig.tsr_tolerance is deprecated; set membership_tolerance and connection_tolerance",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    self.membership_tolerance = self.connection_tolerance = value
+
+
+CBiRRTConfig.tsr_tolerance = property(_tsr_tolerance_get, _tsr_tolerance_set, doc="Deprecated alias.")

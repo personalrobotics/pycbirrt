@@ -470,7 +470,7 @@ def main():
     else:
         print("Using MuJoCo differential IK solver")
         # Differential solver may need more pose samples
-        config = CBiRRTConfig(timeout=30.0, goal_bias=0.15, tsr_samples=100)
+        config = CBiRRTConfig(timeout=30.0, goal_bias=0.15, sample_draws=100)
 
     planner = CBiRRT(robot, ik_solver, collision, config)
 

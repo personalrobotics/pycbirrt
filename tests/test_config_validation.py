@@ -23,9 +23,9 @@ def test_defaults_construct():
         ("membership_tolerance", -1e-9, "nonnegative"),
         ("connection_tolerance", -1e-9, "nonnegative"),
         ("max_iterations", 0, "at least 1"),
-        ("tsr_samples", 0, "at least 1"),
+        ("sample_draws", 0, "at least 1"),
         ("num_tree_roots", 0, "at least 1"),
-        ("max_ik_per_pose", 0, "at least 1"),
+        ("max_per_draw", 0, "at least 1"),
         ("max_projection_iters", 0, "at least 1"),
         ("smoothing_iterations", -1, "nonnegative"),
         ("smoothing_patience", -1, "nonnegative"),
@@ -63,3 +63,63 @@ def test_deprecated_alias_is_validated_too():
     with pytest.warns(DeprecationWarning):
         with pytest.raises(ValueError, match="membership_tolerance must be nonnegative"):
             CBiRRTConfig(tsr_tolerance=-1.0)
+
+
+class TestRenamedNames:
+    """#176: renamed configuration names keep working, with a warning, until 4.0."""
+
+    @pytest.mark.parametrize(
+        "old, new, value",
+        [
+            ("tsr_samples", "sample_draws", 7),
+            ("max_ik_per_pose", "max_per_draw", 2),
+            ("angular_joints", "continuous_joints", (True,)),
+        ],
+    )
+    def test_old_keyword_and_attribute(self, old, new, value):
+        with pytest.warns(DeprecationWarning, match=f"CBiRRTConfig.{old} is deprecated; use {new}"):
+            cfg = CBiRRTConfig(**{old: value})
+        assert getattr(cfg, new) == value
+        with pytest.warns(DeprecationWarning):
+            assert getattr(cfg, old) == value
+        with pytest.raises(TypeError, match=f"both {old}"):
+            CBiRRTConfig(**{old: value, new: value})
+
+    def test_cbirrt_ik_solver_keyword(self):
+        from sscbirrt import CBiRRT
+        from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK
+
+        with pytest.warns(DeprecationWarning, match=r"CBiRRT\(ik_solver=...\) is deprecated; use ik="):
+            planner = CBiRRT(PlanarArm(), ik_solver=PlanarIK(), collision_checker=NoCollision())
+        assert isinstance(planner.ik, PlanarIK)
+
+    def test_configuration_planning_needs_no_ik(self):
+        import numpy as np
+
+        from sscbirrt import CBiRRT
+        from sscbirrt.testing import NoCollision, PlanarArm
+
+        planner = CBiRRT(PlanarArm(), collision_checker=NoCollision())
+        assert planner.plan(start=np.zeros(2), goal=np.array([1.0, 0.5]), seed=0) is not None
+        with pytest.raises(TypeError, match="needs a collision_checker"):
+            CBiRRT(PlanarArm())
+
+    def test_seeds_is_explicit_samples(self):
+        import numpy as np
+
+        from sscbirrt import FiniteSet, explicit_samples, seeds
+
+        s = FiniteSet([np.zeros(2)])
+        with pytest.warns(DeprecationWarning, match="use explicit_samples"):
+            assert [m.source for m in seeds(s)] == [m.source for m in explicit_samples(s)]
+
+
+def test_tsrs_without_ik_say_so():
+    from tsr import TSR
+
+    from sscbirrt import CBiRRT
+    from sscbirrt.testing import NoCollision, PlanarArm
+
+    planner = CBiRRT(PlanarArm(), collision_checker=NoCollision())
+    with pytest.raises(ValueError, match="need IK: CBiRRT"):
+        planner.plan(start=[0.0, 0.0], goal_tsrs=[TSR()])

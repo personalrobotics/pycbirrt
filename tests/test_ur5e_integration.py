@@ -54,7 +54,7 @@ def ur5e():
     )
     ik = SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site"))
     # The UR5e's joints are bounded intervals (±2π, elbow ±π), not continuous circles (#35).
-    config = CBiRRTConfig(max_iterations=5000, step_size=0.2, tsr_samples=100)
+    config = CBiRRTConfig(max_iterations=5000, step_size=0.2, sample_draws=100)
     return robot, collision, ik, CBiRRT(robot, ik, collision, config)
 
 

@@ -24,7 +24,7 @@ LIMITS = (np.array([-np.pi, -np.pi]), np.array([np.pi, np.pi]))
 def make_planner(angular, **cfg):
     robot = MockRobotModel()
     collision = MockCollisionChecker()
-    return CBiRRT(robot, MockIKSolver(robot, collision), collision, CBiRRTConfig(angular_joints=angular, **cfg))
+    return CBiRRT(robot, MockIKSolver(robot, collision), collision, CBiRRTConfig(continuous_joints=angular, **cfg))
 
 
 def problem(planner, q0, q1):
@@ -45,7 +45,7 @@ class TestUnwrapPath:
         assert all(np.array_equal(a, b) for a, b in zip(out, path))
 
     def test_angular_joint_takes_the_short_way(self):
-        space = JointSpace(*LIMITS, angular_joints=(True, False))
+        space = JointSpace(*LIMITS, continuous_joints=(True, False))
         path = [np.array([3.0, 0.0]), np.array([-3.0, 0.1])]
         out = space.unwrap_path(path)
         assert np.array_equal(out[0], path[0])
@@ -54,13 +54,13 @@ class TestUnwrapPath:
         assert space.distance(out[1], path[1]) < 1e-12  # same configuration
 
     def test_short_paths(self):
-        space = JointSpace(*LIMITS, angular_joints=(True, True))
+        space = JointSpace(*LIMITS, continuous_joints=(True, True))
         assert space.unwrap_path([]) == []
         q = np.array([1.0, 2.0])
         assert np.array_equal(space.unwrap_path([q])[0], q)
 
     def test_does_not_mutate_input(self):
-        space = JointSpace(*LIMITS, angular_joints=(True, True))
+        space = JointSpace(*LIMITS, continuous_joints=(True, True))
         path = [np.array([3.0, 3.0]), np.array([-3.0, -3.0])]
         copies = [p.copy() for p in path]
         space.unwrap_path(path)
@@ -73,7 +73,7 @@ class TestUnwrapPath:
     )
     def test_laws(self, points, angular):
         """Physical configurations, wrapped distances, and non-angular joints are preserved; angular steps are short."""
-        space = JointSpace(*LIMITS, angular_joints=angular if any(angular) else None)
+        space = JointSpace(*LIMITS, continuous_joints=angular if any(angular) else None)
         path = [np.array(p) for p in points]
         out = space.unwrap_path(path)
         assert len(out) == len(path)

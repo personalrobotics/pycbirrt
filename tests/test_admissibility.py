@@ -80,7 +80,7 @@ class TestJointSpaceContains:
             assert self.space.contains(q)
 
     def test_angular_joint_accepts_any_finite_value(self):
-        s = JointSpace(np.array([-np.pi, -1.0]), np.array([np.pi, 1.0]), angular_joints=(True, False))
+        s = JointSpace(np.array([-np.pi, -1.0]), np.array([np.pi, 1.0]), continuous_joints=(True, False))
         assert s.contains(np.array([100.0, 0.0]))
         assert not s.contains(np.array([np.inf, 0.0]))
         assert "joint 1" in s.why_invalid(np.array([100.0, 5.0]))
@@ -163,7 +163,7 @@ class TestRootsOutsideSpace:
             def sample(self, rng):
                 return [Sample(np.array([10.0, 0.0])), Sample(np.array([0.3, 0.1]))]
 
-        cfg = CBiRRTConfig(smooth_path=False, num_tree_roots=5, tsr_samples=20)
+        cfg = CBiRRTConfig(smooth_path=False, num_tree_roots=5, sample_draws=20)
         p = CBiRRT(planner.robot, planner.ik, planner.collision, cfg)
         result = p.solve(problem(p, FiniteSet([np.zeros(2)]), MixedSampler()), seed=0)
         assert result.success

@@ -42,7 +42,7 @@ import numpy as np
 from tsr import TSR, TSRChain
 
 from sscbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
-from sscbirrt.sets import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PredicateSet, seeds
+from sscbirrt.sets import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PredicateSet, explicit_samples
 from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall  # noqa: F401
 from sscbirrt.tsr_set import TSRConfigurationSet, tsr_weights
 
@@ -145,7 +145,7 @@ def cases() -> list[dict[str, Any]]:
     )
 
     # 4. wrapped joint across the seam
-    cfg = CBiRRTConfig(angular_joints=(True, False), **base)
+    cfg = CBiRRTConfig(continuous_joints=(True, False), **base)
     p = _planner(cfg)
     q0, q1 = np.array([3.0, 0.0]), np.array([-3.0, 0.0])
     add(
@@ -685,7 +685,7 @@ def uniquely_rooted(case_name: str) -> bool:
     """Whether both roles of the named case have exactly one admissible root, so provenance is comparable."""
     for c in cases():
         if c["name"] == case_name:
-            return len(seeds(c["problem"].start)) == 1 and len(seeds(c["problem"].goal)) == 1
+            return len(explicit_samples(c["problem"].start)) == 1 and len(explicit_samples(c["problem"].goal)) == 1
     raise KeyError(case_name)
 
 

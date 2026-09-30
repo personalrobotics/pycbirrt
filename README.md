@@ -295,9 +295,9 @@ config = CBiRRTConfig(
     max_projection_iters=50,            # Iterations to project onto the constraint set
 
     # Set sampling
-    tsr_samples=100,                    # Pose samples to try from each TSR
+    sample_draws=100,                    # Pose samples to try from each TSR
     num_tree_roots=100,                 # Target root configs to seed each tree
-    max_ik_per_pose=3,                  # IK solutions to take per pose sample
+    max_per_draw=3,                  # IK solutions to take per pose sample
 
     # Extension behavior (None = connect until blocked)
     extend_steps=None,                  # Steps toward a random sample
@@ -309,7 +309,7 @@ config = CBiRRTConfig(
     smoothing_patience=15,              # Stop early after this many attempts without improvement
 
     # Joints with no limits (see below); None = every joint is bounded
-    angular_joints=None,
+    continuous_joints=None,
 )
 ```
 
@@ -322,18 +322,18 @@ from its arguments. A set you construct yourself and pass to `solve` keeps
 its own constructor values (`FiniteSet(tolerance=1e-6)`,
 `TSRConfigurationSet(tolerance=1e-3, ...)`).
 
-### Angular joints
+### Continuous joints
 
-Mark a joint angular only if it has **no limits**. The space never infers
+Mark a joint continuous (`continuous_joints`) only if it has **no limits**. The space never infers
 this: a bounded joint must have finite limits, and a robot model that
 reports an unlimited joint (the MuJoCo model reports ±∞) fails at planner
-construction until you either mark the joint angular or give it finite
-planning limits. An angular joint ignores whatever limits were stored for
+construction until you either mark the joint continuous or give it finite
+planning limits. A continuous joint ignores whatever limits were stored for
 it, samples over one full turn, and its distance wraps at 2π so the planner
 may join the trees across the seam. Joints with limits
-wider than one turn, such as the UR5e's ±2π joints, are not angular: their
+wider than one turn, such as the UR5e's ±2π joints, are not continuous: their
 windings are distinct configurations and the planner respects the limits.
-Returned paths are unwrapped forward from the start, so on an angular joint
+Returned paths are unwrapped forward from the start, so on a continuous joint
 consecutive waypoints never differ by more than a step and an executor can
 interpolate them directly. The goal may therefore be re-expressed by a
 multiple of 2π.

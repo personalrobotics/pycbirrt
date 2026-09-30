@@ -16,7 +16,7 @@ caller must keep.
 | `self.env.fork()` for an isolated `MjData` | `NativeScene.from_model(model, joint_names, extra_arm_bodies)`: an `mjModel` sscbirrt owns, built once from the compiled model's MJB bytes and cached by their hash; nothing borrows the live model. |
 | `ContextRobotModel(model, data, ...)` | `MuJoCoRobotModel(model, data, ee_site, joint_names)`, or nothing: `plan_native` builds it. Its forward kinematics must agree with the SSIK model's; lowering checks that at the start configurations and refuses with a reason if they differ by more than 1e-6. |
 | `CollisionChecker(model, data, joint_names, grasped_objects=..., attachments=..., extra_arm_body_names=...)` in snapshot mode | `Snapshot.capture(scene, data, attachments={object: (gripper_body, T_gripper_object)})` on the owner thread, then `NativeCollisionChecker(scene, snapshot)`. The gripper-base rule (`<prefix>/base` when it exists, else the attachment body) is resolved to body ids at capture. |
-| `continuous_joints(model, joint_names)` | Unchanged: `CBiRRTConfig(angular_joints=...)`. Unlimited joints are reported as ±∞ by both robot models and the space demands the declaration. |
+| `continuous_joints(model, joint_names)` | Unchanged: `CBiRRTConfig(continuous_joints=...)`. Unlimited joints are reported as ±∞ by both robot models and the space demands the declaration. |
 | `CBiRRT(robot, ik, collision, config).plan(...)` | `plan_native(model, data, joint_names, ik=..., start=..., goal_tsrs=..., attachments=..., config=..., seed=...)`, or the same `CBiRRT(..., backend="native")` with a `NativeCollisionChecker` as the validator. |
 
 The IK is `SSIKSolver(ssik.Manipulator.from_mjcf(ur5e_xml, base="world",

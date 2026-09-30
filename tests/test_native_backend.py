@@ -23,7 +23,7 @@ from sscbirrt import (
     TSRConfigurationSet,
 )
 from sscbirrt.backends import native
-from sscbirrt.sets import seeds
+from sscbirrt.sets import explicit_samples
 from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall
 
 pytest.importorskip("sscbirrt._native")
@@ -244,7 +244,7 @@ class TestParityWithTheArtifact:
                     )
                 ), (case["name"], v)
                 # Provenance is compared only where the reached root is unique.
-                if len(seeds(problem.start)) == 1 and len(seeds(problem.goal)) == 1:
+                if len(explicit_samples(problem.start)) == 1 and len(explicit_samples(problem.goal)) == 1:
                     assert (nat.start_source, nat.goal_source) == (py.start_source, py.goal_source), case["name"]
         assert lowered_any
 

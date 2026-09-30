@@ -35,6 +35,18 @@ follows [Semantic Versioning](https://semver.org/).
   `plan(...)` builds (#177).
 
 ### Deprecated
+- Consistent names; the old ones keep working, with a `DeprecationWarning`,
+  until 4.0 (#176).
+  - `CBiRRT(ik_solver=)` is now `ik=`. `ik` is optional: planning between
+    configurations never uses it, and TSRs without it raise a clear error.
+  - `CBiRRTConfig.tsr_samples` / `max_ik_per_pose` are now `sample_draws` /
+    `max_per_draw`, the names the native core already used. The budgets
+    apply to any sampleable set, not only TSRs.
+  - `CBiRRTConfig.angular_joints` and `JointSpace(angular_joints=)` are now
+    `continuous_joints`. Every revolute joint is angular; the flag means
+    unlimited.
+  - `sscbirrt.seeds` is now `explicit_samples`, because `seed` means an RNG
+    seed everywhere else.
 - `sscbirrt.backends.native_mujoco.plan_native`: use `sscbirrt.mujoco.plan`.
   It keeps working, with a `DeprecationWarning`, until 4.0 (#175).
 
@@ -48,6 +60,10 @@ follows [Semantic Versioning](https://semver.org/).
   corner of the solution set. Draws at or under the cap consume no
   randomness: the planar reference cases are bit-for-bit unchanged, and
   the three UR5e cases have new paths that pass every validation (#168).
+- `dataclasses.replace(config, membership_tolerance=x)` kept the old value,
+  because the deprecated `tsr_tolerance` was a stored field mirroring it.
+  Deprecated names are no longer fields (#176).
+
 - The native backend's "All N start/goal configuration(s)" count matches
   Python's; it counted each rejected explicit candidate twice (#170).
 - `plan(start=[0.1, 0.2])`: a flat list is one configuration on every

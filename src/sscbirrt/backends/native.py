@@ -97,7 +97,7 @@ def _space_metric(metric, space: JointSpace) -> bool:
 
 
 def _lower_space(space: JointSpace):
-    angular = [] if space.angular_joints is None else [bool(a) for a in space.angular_joints]
+    angular = [] if space.continuous_joints is None else [bool(a) for a in space.continuous_joints]
     return _native.JointSpace(list(space.lower), list(space.upper), angular)
 
 
@@ -142,9 +142,9 @@ class _Lowering:
                 "not a sscbirrt ForwardKinematics and IKSolver"
             )
         # The native set uses the integration's FK where the Python set used the robot model's: they must agree.
-        from sscbirrt.sets import seeds
+        from sscbirrt.sets import explicit_samples
 
-        for smp in seeds(self.problem.start) + seeds(self.problem.goal):
+        for smp in explicit_samples(self.problem.start) + explicit_samples(self.problem.goal):
             q = np.asarray(smp.q, dtype=float)
             if q.shape != (arm.dof,):
                 continue
@@ -268,9 +268,9 @@ def _lower_config(config: CBiRRTConfig):
     c.start_bias = float(config.start_bias)
     c.extend_steps = config.extend_steps
     c.connect_steps = config.connect_steps
-    c.sample_draws = int(config.tsr_samples)
+    c.sample_draws = int(config.sample_draws)
     c.num_tree_roots = int(config.num_tree_roots)
-    c.max_per_draw = int(config.max_ik_per_pose)
+    c.max_per_draw = int(config.max_per_draw)
     c.smooth_path = bool(config.smooth_path)
     c.smoothing_iterations = int(config.smoothing_iterations)
     c.smoothing_patience = int(config.smoothing_patience)

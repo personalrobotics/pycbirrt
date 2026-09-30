@@ -4,6 +4,7 @@
 import functools
 import logging
 import time
+import warnings
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -21,7 +22,7 @@ from sscbirrt.interfaces import CollisionChecker, IKSolver, RobotModel
 from sscbirrt.legacy import legacy_index, legacy_problem
 from sscbirrt.motion import DiscreteMotionValidator, MotionValidator
 from sscbirrt.problem import PlanningProblem
-from sscbirrt.sets import Sample, SetProjector, SetSampler, StateSet, is_finite, seeds, supports
+from sscbirrt.sets import Sample, SetProjector, SetSampler, StateSet, explicit_samples, is_finite, supports
 from sscbirrt.space import JointSpace
 from sscbirrt.tree import RRTree
 
@@ -133,17 +134,20 @@ class CBiRRT:
     def __init__(
         self,
         robot: RobotModel,
-        ik_solver: IKSolver,
-        collision_checker: CollisionChecker,
+        ik: IKSolver | None = None,
+        collision_checker: CollisionChecker | None = None,
         config: CBiRRTConfig | None = None,
         backend: str = "auto",
+        *,
+        ik_solver: IKSolver | None = None,
     ):
         """Initialize the CBiRRT planner.
 
         Args:
             robot: Robot model providing FK and joint limits
-            ik_solver: Inverse kinematics solver
-            collision_checker: Collision checking interface
+            ik: Inverse kinematics solver; needed only for TSR (pose-region) starts, goals and constraints.
+                ``ik_solver=`` is its deprecated name.
+            collision_checker: Collision checking interface (required)
             config: Planner configuration (uses defaults if None)
             backend: "auto" (the default since 2.0): the native core when every
                 component of the problem has a native form, else the Python
@@ -152,8 +156,15 @@ class CBiRRT:
                 naming every blocker; never a silent fallback. "python": the
                 reference implementation, always.
         """
+        if ik_solver is not None:
+            if ik is not None:
+                raise TypeError("CBiRRT got both ik and ik_solver (deprecated); pass only ik")
+            warnings.warn("CBiRRT(ik_solver=...) is deprecated; use ik=", DeprecationWarning, stacklevel=2)
+            ik = ik_solver
+        if collision_checker is None:
+            raise TypeError("CBiRRT needs a collision_checker")
         self.robot = robot
-        self.ik = ik_solver
+        self.ik = ik
         self.collision = collision_checker
         self.config = config or CBiRRTConfig()
         if backend not in ("python", "native", "auto"):
@@ -163,10 +174,13 @@ class CBiRRT:
         self.backend = backend
 
         # Joint-space geometry: limits, metric, interpolation, sampling.
-        # Raises ValueError if angular_joints length does not match robot DOF.
+        # Raises ValueError if continuous_joints length does not match robot DOF.
         lower, upper = robot.joint_limits
         self.space = JointSpace(
-            lower, upper, angular_joints=self.config.angular_joints, joint_names=getattr(robot, "joint_names", None)
+            lower,
+            upper,
+            continuous_joints=self.config.continuous_joints,
+            joint_names=getattr(robot, "joint_names", None),
         )
 
         self._rng = np.random.default_rng()
@@ -226,6 +240,8 @@ class CBiRRT:
             # Mix configs and TSRs
             path = planner.plan(start=[q1], goal_tsrs=[tsr1, tsr2])
         """
+        if self.ik is None and (start_tsrs or goal_tsrs or constraint_tsrs):
+            raise ValueError("TSR starts, goals and constraints need IK: CBiRRT(robot, ik=..., collision_checker=...)")
         start_configs = None if start is None else as_configurations(start, self.space.dof, "start")
         goal_configs = None if goal is None else as_configurations(goal, self.space.dof, "goal")
 
@@ -442,7 +458,7 @@ class CBiRRT:
 
     def _sample_admissible(self, problem: PlanningProblem, s: StateSet) -> np.ndarray | None:
         """Draw one admissible configuration from ``s``, or None within the sample budget."""
-        for _ in range(self.config.tsr_samples):
+        for _ in range(self.config.sample_draws):
             for smp in s.sample(self._rng):
                 if self._admissible(problem, smp.q)[0]:
                     return smp.q
@@ -451,7 +467,7 @@ class CBiRRT:
     def _roots(self, problem: PlanningProblem, s: StateSet, role: str) -> list[Sample]:
         """Collect tree roots for a start or goal set.
 
-        Every explicit configuration embedded in the set (``seeds``: the
+        Every explicit configuration embedded in the set (``explicit_samples``: the
         members of finite sets, also inside unions with sampleable regions)
         is a candidate root, validated and filtered with a warning.
         ``abort_fn`` is polled before each sampling draw; if it fires,
@@ -459,10 +475,10 @@ class CBiRRT:
         ``solve`` returns an Aborted result. If the
         set is not finite and supports sampling, admissible samples are
         added until ``num_tree_roots`` roots exist or the sample budget
-        (``tsr_samples`` draws) is spent; a sampled candidate that repeats
+        (``sample_draws`` draws) is spent; a sampled candidate that repeats
         an explicit seed (same provenance) is skipped. Each draw may yield
         several candidates (for example the IK branches of one pose); at
-        most ``max_ik_per_pose`` admissible ones per draw are kept, for
+        most ``max_per_draw`` admissible ones per draw are kept, for
         diversity. A draw with more candidates than that is visited in a
         uniformly random order, so the kept ones are a random subset rather
         than the first ones the sampler listed. Mixture weights govern sampling only, never whether
@@ -478,7 +494,7 @@ class CBiRRT:
         invalid_details: list[str] = []
         all_in_collision = True
 
-        explicit = seeds(s)
+        explicit = explicit_samples(s)
         seed_sources = {m.source for m in explicit}
         for m in explicit:
             ok, reason = self._admissible(problem, m.q)
@@ -492,7 +508,7 @@ class CBiRRT:
         stats = None
         if not is_finite(s) and supports(s, SetSampler):
             stats = {"sample_failed": 0, "outside_space": 0, "in_collision": 0, "constraint_violated": 0}
-            for _ in range(self.config.tsr_samples):
+            for _ in range(self.config.sample_draws):
                 if len(roots) >= self.config.num_tree_roots:
                     break
                 if self._aborted():
@@ -501,14 +517,14 @@ class CBiRRT:
                 if not candidates:
                     stats["sample_failed"] += 1
                     continue
-                if len(candidates) > self.config.max_ik_per_pose:
+                if len(candidates) > self.config.max_per_draw:
                     # A draw can yield many more candidates than are kept (an IK solver that enumerates
                     # branches and joint windings returns hundreds, in a fixed order); visit them in a
                     # random order so the kept ones are a uniform subset, not the first corner (#168).
                     candidates = [candidates[k] for k in self._rng.permutation(len(candidates))]
                 kept = 0
                 for smp in candidates:
-                    if kept >= self.config.max_ik_per_pose or len(roots) >= self.config.num_tree_roots:
+                    if kept >= self.config.max_per_draw or len(roots) >= self.config.num_tree_roots:
                         break
                     if smp.source in seed_sources:
                         continue  # an explicit seed drawn again; already a root or already rejected
@@ -576,7 +592,7 @@ class CBiRRT:
         direct ``solve(problem)`` may use a different topology, and every
         geometric operation in a query must agree.
         """
-        if space.angular_joints is None:
+        if space.continuous_joints is None:
             # Use tree's built-in nearest (faster); Euclidean matches the space metric
             return tree.nearest(q_target)
 

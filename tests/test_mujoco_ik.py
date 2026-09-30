@@ -173,7 +173,7 @@ class TestRobotModelLimits:
         model, data = model_data
         robot = MuJoCoRobotModel(model, data, "attachment_site", JOINTS)
         collision = MuJoCoCollisionChecker(model, data, JOINTS)
-        with pytest.raises(ValueError, match=r"joint 'h_free' \(index 1\) has no finite limits.*angular_joints"):
+        with pytest.raises(ValueError, match=r"joint 'h_free' \(index 1\) has no finite limits.*continuous_joints"):
             CBiRRT(robot, solver(model_data), collision)
 
         # The hinge is periodic: declare it angular. The slide is a rail, unbounded but not
@@ -191,9 +191,9 @@ class TestRobotModelLimits:
                 lo[3], hi[3] = -0.5, 0.5
                 return lo, hi
 
-        config = CBiRRTConfig(angular_joints=(False, True, False, False))
+        config = CBiRRTConfig(continuous_joints=(False, True, False, False))
         planner = CBiRRT(WithRailLimits(robot), solver(model_data), collision, config)
-        assert planner.space.angular_joints.tolist() == [False, True, False, False]
+        assert planner.space.continuous_joints.tolist() == [False, True, False, False]
         assert planner.space.joint_limits[0][3] == -0.5
 
 

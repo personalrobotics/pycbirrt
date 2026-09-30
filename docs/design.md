@@ -33,7 +33,7 @@ validator** (below, under edges) and the **sampler**
 (`PlanningProblem.sampler`, a `SpaceSampler` with `sample(rng) -> q`), which
 proposes the free-space targets the trees grow toward. The default sampler
 is the space itself, uniform within the limits and over one full turn on
-angular joints. Start and goal bias remain the planner's: they mix the role
+continuous joints. Start and goal bias remain the planner's: they mix the role
 sets' own samplers with the free-space sampler, and a custom sampler is not
 consulted for roots or bias draws. A target outside the space is handled by
 not growing toward it. Replacing the default trades away probabilistic
@@ -45,24 +45,24 @@ needs them.
 
 ## The state space
 
-`JointSpace(lower, upper, angular_joints)` owns the geometry of
+`JointSpace(lower, upper, continuous_joints)` owns the geometry of
 $\mathcal{Q}$: joint limits, the distance metric, the direction between two
 configurations, straight-line interpolation, and uniform sampling. The planner
 and every set that needs a metric share one instance.
 
-A joint is **angular** only if the caller says so, and the space never
+A joint is **continuous** only if the caller says so, and the space never
 infers it. A bounded joint must have finite limits, because a sampler needs
 a bounded domain; the constructor rejects a non-finite limit on a joint not
-marked angular. An angular joint has no limits: whatever was stored for it
+marked continuous. A continuous joint has no limits: whatever was stored for it
 is ignored, its limit check always passes, it samples over one full turn,
 and its distance wraps at $2\pi$. Backends report unlimited joints as
 $\pm\infty$ (the MuJoCo model does; MuJoCo itself stores them as $(0, 0)$),
 so an undeclared continuous joint fails at construction rather than being
 silently frozen or never sampled. Unbounded is not periodic: a rail without
-stops needs finite planning limits, not the angular flag. A joint with
+stops needs finite planning limits, not the continuous flag. A joint with
 limits is a bounded interval however wide its range. The UR5e's $\pm 2\pi$ joints are bounded: a value and
 that value plus one turn are different joint states, and moving between them
-is a real full rotation. Marking such a joint angular lets the planner join
+is a real full rotation. Marking such a joint continuous lets the planner join
 configurations a turn apart and the returned path spins the joint through
 360° on execution.
 
@@ -182,13 +182,13 @@ sampler or projector.
   may filter limits early as an optimization, but correctness does not
   depend on it.
 - **Start and goal** must be finite, sampleable, or both. Every explicit
-  configuration embedded in the set is a candidate root: `seeds(s)` walks
+  configuration embedded in the set is a candidate root: `explicit_samples(s)` walks
   the expression and collects the members of finite sets, including those
   inside a union with a sampleable region, so mixture weights never decide
   whether a fixed configuration is a root. If the set is not finite and can
   sample, admissible candidates are added until `num_tree_roots` roots
-  exist or the draw budget (`tsr_samples`) is spent, keeping at most
-  `max_ik_per_pose` per draw for diversity and skipping candidates that
+  exist or the draw budget (`sample_draws`) is spent, keeping at most
+  `max_per_draw` per draw for diversity and skipping candidates that
   repeat a seed. A draw with more candidates than the cap is visited in a
   random order from the planner's RNG, so the kept ones are a uniform
   subset; an IK solver that enumerates branches and joint windings lists
@@ -247,12 +247,12 @@ sampler or projector.
   space is shorter than the segment it replaces, as in the original CBiRRT;
   fewer waypoints is not the criterion. The first and last waypoints of a
   path are preserved exactly, except as the next rule says.
-- **Output representation on angular joints.** A returned path is unwrapped
-  forward from its first waypoint, so on an angular joint each consecutive
+- **Output representation on continuous joints.** A returned path is unwrapped
+  forward from its first waypoint, so on a continuous joint each consecutive
   raw difference is the short way around and never exceeds one step. The
   first waypoint is the start as given; the last waypoint is the goal as a
   configuration but may differ from the value given by a multiple of 2π.
-  Paths without angular joints are unaffected. This is what lets an
+  Paths without continuous joints are unaffected. This is what lets an
   executor that interpolates raw joint values follow the path (#77).
 
 ## Tolerances
@@ -276,8 +276,8 @@ naming the field: `timeout`, `step_size`, `progress_tolerance`, and
 `projection_progress_tolerance` positive (a zero progress tolerance can loop
 forever under a projector that stalls); `membership_tolerance` and
 `connection_tolerance` nonnegative (zero means exact); `edge_resolution`
-None or positive; `max_iterations`, `tsr_samples`, `num_tree_roots`,
-`max_ik_per_pose`, and `max_projection_iters` at least 1;
+None or positive; `max_iterations`, `sample_draws`, `num_tree_roots`,
+`max_per_draw`, and `max_projection_iters` at least 1;
 `smoothing_iterations` and `smoothing_patience` nonnegative; `extend_steps`
 and `connect_steps` None or at least 1; `goal_bias` and `start_bias` within
 $[0, 1]$. The native `PlannerConfig` applies the same ranges.
@@ -292,7 +292,7 @@ provenance, iterations, path), and an **independent** validation report
 computed from the problem alone: every waypoint in the space, the first in
 the declared start set, the last in the declared goal set, every waypoint
 admissible, every consecutive pair validated at `edge_resolution` along
-the space's direction, and raw steps within one step size (the angular
+the space's direction, and raw steps within one step size (the continuous-joint
 output rule above). The matrix covers fixed endpoints, multiple roots, a
 nested finite goal, a wrapped joint across the seam, rejection-only and
 projected path constraints, a TSR union goal, a TSR chain goal, an `AllOf`
