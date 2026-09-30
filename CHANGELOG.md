@@ -6,6 +6,21 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- The native lowering recognizes validators and IK solvers by two runtime-checkable
+  protocols in `pycbirrt.backends.native`, `ValidatorIntegration` (`fresh()`,
+  `provenance`) and `KinematicsIntegration` (`native_kinematics()`, `provenance`),
+  instead of by class name. `NativeCollisionChecker` and `SSIKSolver` implement them;
+  the SSIK-specific checks moved into `SSIKSolver.native_kinematics()`. A third
+  collision or IK backend now plugs in without a change to pycbirrt (#147).
+- Reasons for a Python-only validator or IK solver name the protocol to implement;
+  the FK-agreement reason says "native IK model's" rather than "SSIK model's".
+
+### Documentation
+- README: the shipped backends presented as three integrations of the core's
+  interfaces, with an "Adding an integration" section; design doc: an
+  "Integrations" section with the checklist for a new simulator or IK library (#147).
+
 ## [1.7.0] - 2026-09-30
 
 Collision checking joins the native path. A MuJoCo world becomes a scene the

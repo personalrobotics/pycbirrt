@@ -82,6 +82,27 @@ class SSIKSolver:
         self._T_base_inv = None if self.T_base is None else np.linalg.inv(self.T_base)
         self._T_ee_inv = None if self.T_ee is None else np.linalg.inv(self.T_ee)
 
+    def native_kinematics(self):
+        """The native SSIK arm for this solver (``pycbirrt.backends.native.KinematicsIntegration``).
+
+        Raises ``NativeUnsupported`` when the wrapped solver is not an ``ssik.Manipulator`` of a verified
+        family or the extension was built without SSIK.
+        """
+        from pycbirrt.backends import native_ssik
+        from pycbirrt.backends.native import NativeUnsupported
+
+        if not hasattr(self.solver, "solver_name"):
+            raise NativeUnsupported([f"SSIKSolver wraps {type(self.solver).__name__}, not an ssik.Manipulator"])
+        why = native_ssik.unsupported_reason(self.solver)
+        if why is not None:
+            raise NativeUnsupported([why])
+        return native_ssik.arm_from_manipulator(self.solver, T_base=self.T_base, T_ee=self.T_ee)
+
+    @property
+    def provenance(self) -> dict[str, Any]:
+        name = getattr(self.solver, "solver_name", None)
+        return {} if name is None else {"ssik_solver_name": str(name)}
+
     def solve(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
         target = np.asarray(pose, dtype=float)
         if target.shape != (4, 4):

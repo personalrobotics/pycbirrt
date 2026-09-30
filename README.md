@@ -365,6 +365,12 @@ class CollisionChecker(Protocol):
         """Return True if collision-free."""
 ```
 
+Together with `StateSet`, these are the planner's extension points. Each has
+a native counterpart in the C++ core (`StateSet`, `StateValidator`,
+`ForwardKinematics`, `IKSolver`), and the shipped backends below are
+implementations of them, not special cases; see
+[Adding an integration](#adding-an-integration).
+
 ## Installation
 
 ```bash
@@ -382,6 +388,21 @@ CMake 3.16+, a C++20 compiler, and Eigen 3 (the build fetches
 scikit-build-core, pybind11, ninja, ssik, and mujoco itself).
 
 ## Backends
+
+pycbirrt ships three integrations. Each implements one interface the core
+defines and each lives in its own module, so none is required by the others:
+
+| Integration | Implements | C++ target | Python |
+|---|---|---|---|
+| Task Space Regions (`sstsr`) | `StateSet` | `sscbirrt::tsr` | `pycbirrt.tsr_set` |
+| SSIK | `ForwardKinematics`, `IKSolver` | `sscbirrt::ssik` (the only target that uses Eigen) | `pycbirrt.backends.ssik`, `native_ssik` |
+| MuJoCo | `StateValidator` | `sscbirrt::mujoco`, module `pycbirrt._native_mujoco` | `pycbirrt.backends.mujoco`, `native_mujoco` |
+
+`sscbirrt::core` depends on none of them and on nothing but the C++ standard
+library. `import pycbirrt` and the native planner work with no simulator and
+no IK library installed; a missing one is reported as a reason, never an
+import error. Another simulator or IK library is a fourth module of the same
+shape ([Adding an integration](#adding-an-integration)).
 
 ### MuJoCo
 
@@ -496,6 +517,45 @@ agrees with SSIK's on the problem's explicit configurations. The native solve re
 calls no Python after entry. Same seed, same path within a backend; the two
 backends agree on outcomes and validated paths but not on waypoints, because
 they use different random-number engines.
+
+### Adding an integration
+
+The native lowering (`pycbirrt.backends.native`) recognizes validators and IK
+solvers by two protocols, never by type, so a new collision or IK backend
+plugs in without a change to pycbirrt:
+
+```python
+from pycbirrt.backends.native import ValidatorIntegration, KinematicsIntegration
+
+class MyChecker:                       # a CollisionChecker for the Python backend ...
+    def is_valid(self, q) -> bool: ...
+    def fresh(self):                   # ... and, for the native one, a sscbirrt StateValidator per solve
+        return my_native_module.Validator(self.world_handle)
+    @property
+    def provenance(self) -> dict:      # what it checked against; merged into PlanResult.provenance
+        return {"my_world_sha256": self.world_hash}
+
+class MyIK:                            # an IKSolver ...
+    def solve(self, pose, q_init=None) -> list: ...
+    def native_kinematics(self):       # ... that is also a sscbirrt ForwardKinematics and IKSolver,
+        return my_native_module.Arm(self.spec)   # or raises NativeUnsupported([reason])
+    provenance = {"ik_backend": "mine"}
+```
+
+On the C++ side, subclass `sscbirrt::StateValidator` (one virtual, `is_valid`)
+or `sscbirrt::ForwardKinematics` and `sscbirrt::IKSolver` in a target that
+links `sscbirrt::core`, and bind it with pybind11 in your own extension
+module, declaring the base registered by `pycbirrt._native` so a native
+`PlanningProblem` accepts your object. `NativeCollisionChecker` and
+`SSIKSolver` are the two shipped implementations of these protocols and are
+the templates to copy. The rules that made them trustworthy apply to a new
+one too: the native form and the Python form are one implementation or are
+checked against each other on a corpus (MuJoCo: 490 configurations against
+mj_manipulator; SSIK: the UR5e artifact), the library version is pinned and
+verified at import, and per-solve scratch state comes from `fresh()` so a
+validator is never shared between concurrent solves. Lowering itself checks
+that your `native_kinematics()` agrees with the problem's `RobotModel` on the
+explicit configurations, and refuses with a reason if it does not.
 
 ### EAIK (deprecated)
 
