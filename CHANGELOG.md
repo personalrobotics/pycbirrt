@@ -43,6 +43,13 @@ follows [Semantic Versioning](https://semver.org/).
   validator with its own `mjData`. Decisions are checked against
   mj_manipulator's checker on a checked-in corpus
   (`tools/mujoco_collision_corpus.py`) (#93, #84, #137, #138).
+- `PlanResult.provenance` (dependency versions, backend, and for a native
+  MuJoCo solve the scene's model signature, MJB hash, and snapshot hash;
+  the SSIK family when SSIK lifted a set) and `PlanResult.stats` (counts
+  and seconds per component: roots, search, smoothing, state checks, edge
+  checks, set samples, set projections) on both backends.
+  `tools/benchmark_native.py` records both backends' timings with that
+  breakdown (#89, #139).
 
 ### Changed
 

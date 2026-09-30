@@ -4,6 +4,7 @@
 """The native backend: lowering, explicit fallback, no Python callbacks, and semantic parity (#118)."""
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -304,3 +305,15 @@ class TestTSRLowering:
             return_details=True,
         )
         assert result.success and result.backend == "native" and result.backend_reasons == ()
+
+
+def test_benchmark_tool_runs_and_records_the_breakdown(tmp_path):
+    spec = importlib.util.spec_from_file_location("benchmark_native", ROOT / "tools" / "benchmark_native.py")
+    tool = importlib.util.module_from_spec(spec)
+    sys.modules["benchmark_native"] = tool
+    spec.loader.exec_module(tool)
+    out = tmp_path / "bench.json"
+    assert tool.main(["--seeds", "1", "--quiet", "--output", str(out)]) == 0
+    data = json.loads(out.read_text())
+    assert data["cases"] and all("seconds_edge_checks" in row["native"]["stats"] for row in data["cases"])
+    assert all(row["native"]["stats"]["state_checks"] > 0 for row in data["cases"])

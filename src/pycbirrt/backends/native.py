@@ -15,7 +15,7 @@ from __future__ import annotations
 import threading
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -62,6 +62,7 @@ class Lowered:
     problem: Any  # _native.PlanningProblem
     config: Any  # _native.PlannerConfig
     space: Any  # _native.JointSpace
+    provenance: dict = field(default_factory=dict)  # scene, MJB, snapshot hashes; SSIK solver_name
 
 
 def _space_metric(metric, space: JointSpace) -> bool:
@@ -267,7 +268,19 @@ def lower(problem: PlanningProblem, config: CBiRRTConfig) -> Lowered:
     np_problem.goal = goal
     np_problem.validator = validator
     np_problem.path_constraint = constraint
-    return Lowered(np_problem, _lower_config(config), nspace)
+    provenance: dict = {}
+    v = problem.validator
+    if type(v).__name__ == "NativeCollisionChecker" and hasattr(v, "scene"):
+        provenance.update(
+            {
+                "scene_model_signature": v.scene.provenance["model_signature"],
+                "scene_mjb_sha256": v.scene.provenance["mjb_sha256"],
+                "snapshot_sha256": v.snapshot.sha256,
+            }
+        )
+    for arm in ctx.arms.values():
+        provenance["ssik_solver_name"] = arm.family
+    return Lowered(np_problem, _lower_config(config), nspace, provenance)
 
 
 def _rebuild_tree(tree) -> RRTree | None:
@@ -330,13 +343,27 @@ def solve(lowered: Lowered, seed: int | None, abort_fn: Callable[[], bool] | Non
         stop.set()
         if poller is not None:
             poller.join()
-    return convert(r)
+    return convert(r, lowered.provenance)
 
 
-def convert(r):
+def convert(r, provenance: dict | None = None):
     """A native PlanResult as the Python PlanResult."""
-    from pycbirrt.planner import PlanResult
+    from pycbirrt.planner import PlanResult, versions
 
+    s = r.stats
+    stats = {
+        "state_checks": s.state_checks,
+        "edge_checks": s.edge_checks,
+        "set_samples": s.set_samples,
+        "set_projections": s.set_projections,
+        "seconds_state_checks": s.seconds_state_checks,
+        "seconds_edge_checks": s.seconds_edge_checks,
+        "seconds_set_samples": s.seconds_set_samples,
+        "seconds_set_projections": s.seconds_set_projections,
+        "seconds_roots": s.seconds_roots,
+        "seconds_search": s.seconds_search,
+        "seconds_smoothing": s.seconds_smoothing,
+    }
     success = r.success
     start_source, goal_source = tuple(r.start_source), tuple(r.goal_source)
     return PlanResult(
@@ -353,4 +380,6 @@ def convert(r):
         tree_start=_rebuild_tree(r.tree_start),
         tree_goal=_rebuild_tree(r.tree_goal),
         backend="native",
+        provenance={**versions(), "backend": "native", **(provenance or {})},
+        stats=stats,
     )

@@ -96,7 +96,34 @@ class Solve {
 
  private:
   bool aborted() const { return opt_.cancel && opt_.cancel->cancelled(); }
-  bool admissible(ConfigView q) const { return !Planner::why_inadmissible(p_, q).has_value(); }
+  bool admissible(ConfigView q) const {
+    const auto t = Clock::now();
+    const bool ok = !Planner::why_inadmissible(p_, q).has_value();
+    ++stats_.state_checks;
+    stats_.seconds_state_checks += std::chrono::duration<double>(Clock::now() - t).count();
+    return ok;
+  }
+  std::optional<std::string> why_inadmissible_counted(ConfigView q) const {
+    const auto t = Clock::now();
+    auto why = Planner::why_inadmissible(p_, q);
+    ++stats_.state_checks;
+    stats_.seconds_state_checks += std::chrono::duration<double>(Clock::now() - t).count();
+    return why;
+  }
+  std::vector<Sample> sample_counted(const StateSet& s) {
+    const auto t = Clock::now();
+    std::vector<Sample> out = s.sampler()->sample(rng_);
+    ++stats_.set_samples;
+    stats_.seconds_set_samples += std::chrono::duration<double>(Clock::now() - t).count();
+    return out;
+  }
+  std::optional<Config> project_counted(const SetProjector& proj, ConfigView a, ConfigView b) const {
+    const auto t = Clock::now();
+    std::optional<Config> out = proj.project(a, b);
+    ++stats_.set_projections;
+    stats_.seconds_set_projections += std::chrono::duration<double>(Clock::now() - t).count();
+    return out;
+  }
   const MotionValidator& motion_validator() {
     if (p_.motion_validator) return *p_.motion_validator;
     if (!default_mv_) {
@@ -122,6 +149,7 @@ class Solve {
   std::shared_ptr<DiscreteMotionValidator> default_mv_;
   std::shared_ptr<Tree> tree_start_, tree_goal_;
   RootReport start_report_, goal_report_;
+  mutable SolveStats stats_;
   Clock::time_point t0_;
 };
 
@@ -136,7 +164,7 @@ std::vector<Sample> Solve::roots(const StateSet& s, const std::string& role, Roo
   std::vector<Sample> explicit_seeds = s.seeds();
   report.explicit_candidates = static_cast<int>(explicit_seeds.size());
   for (Sample& m : explicit_seeds) {
-    if (auto why = Planner::why_inadmissible(p_, m.q)) {
+    if (auto why = why_inadmissible_counted(m.q)) {
       ++report.explicit_rejected;
       count_reason(*why);
       const int legacy = m.source.empty() ? 0 : m.source.back();
@@ -152,7 +180,7 @@ std::vector<Sample> Solve::roots(const StateSet& s, const std::string& role, Roo
       if (static_cast<int>(out.size()) >= cfg_.num_tree_roots) break;
       if (aborted()) throw AbortedDuringRoots{role, out};
       ++report.draws;
-      std::vector<Sample> candidates = s.sampler()->sample(rng_);
+      std::vector<Sample> candidates = sample_counted(s);
       if (candidates.empty()) {
         ++report.draws_empty;
         continue;
@@ -163,7 +191,7 @@ std::vector<Sample> Solve::roots(const StateSet& s, const std::string& role, Roo
         const bool repeats_seed = std::any_of(explicit_seeds.begin(), explicit_seeds.end(),
                                               [&c](const Sample& e) { return e.source == c.source; });
         if (repeats_seed) continue;  // an explicit seed drawn again; already a root or already rejected
-        if (auto why = Planner::why_inadmissible(p_, c.q)) {
+        if (auto why = why_inadmissible_counted(c.q)) {
           count_reason(*why);
         } else {
           out.push_back(std::move(c));
@@ -190,7 +218,7 @@ std::vector<Sample> Solve::roots(const StateSet& s, const std::string& role, Roo
 
 std::optional<Config> Solve::sample_admissible(const StateSet& s) {
   for (int draw = 0; draw < cfg_.sample_draws; ++draw) {
-    for (Sample& c : s.sampler()->sample(rng_)) {
+    for (Sample& c : sample_counted(s)) {
       if (admissible(c.q)) return std::move(c.q);
     }
   }
@@ -226,7 +254,7 @@ std::pair<int, bool> Solve::grow(Tree& tree, ConfigView target, std::optional<in
     if (!space.contains(q_new)) break;
 
     if (projector) {
-      std::optional<Config> projected = projector->project(q_current, q_new);
+      std::optional<Config> projected = project_counted(*projector, q_current, q_new);
       if (!projected) break;
       q_new = std::move(*projected);
       if (!space.contains(q_new)) break;  // a projector may move the point anywhere
@@ -247,7 +275,10 @@ std::pair<int, bool> Solve::extend_along_edge(Tree& tree, int start_idx, ConfigV
   if (space.distance(q_from, target) == 0.0) return {start_idx, true};
 
   const MotionValidator& validator = motion_validator();
+  const auto t_edge = Clock::now();
   LocalMotion motion = validator.validate(q_from, target);
+  ++stats_.edge_checks;
+  stats_.seconds_edge_checks += std::chrono::duration<double>(Clock::now() - t_edge).count();
 
   const Config target_c = to_config(target);
   if (motion.reached) {
@@ -339,6 +370,7 @@ std::vector<Config> Solve::smooth(const std::vector<Config>& path) {
 }
 
 PlanResult Solve::failure(Status status, std::string reason, int iterations) const {
+  if (stats_.seconds_search == 0.0 && tree_start_) stats_.seconds_search = std::chrono::duration<double>(Clock::now() - t0_).count();
   PlanResult r;
   r.status = status;
   r.reason = std::move(reason);
@@ -347,6 +379,7 @@ PlanResult Solve::failure(Status status, std::string reason, int iterations) con
   r.tree_sizes = {tree_start_ ? tree_start_->size() : 0, tree_goal_ ? tree_goal_->size() : 0};
   r.start_roots = start_report_;
   r.goal_roots = goal_report_;
+  r.stats = stats_;
   if (opt_.keep_trees) {
     r.tree_start = tree_start_;
     r.tree_goal = tree_goal_;
@@ -356,6 +389,7 @@ PlanResult Solve::failure(Status status, std::string reason, int iterations) con
 
 PlanResult Solve::run() {
   t0_ = Clock::now();
+  const auto t_roots = Clock::now();
   // Roots. Cancellation here is a search failure: Aborted, with what was gathered.
   std::vector<Sample> start_roots, goal_roots;
   auto make_tree = [](const std::vector<Sample>& roots) {
@@ -380,6 +414,7 @@ PlanResult Solve::run() {
   }
   tree_start_ = make_tree(start_roots);
   tree_goal_ = make_tree(goal_roots);
+  stats_.seconds_roots = std::chrono::duration<double>(Clock::now() - t_roots).count();
 
   t0_ = Clock::now();  // the deadline starts with the search, as in Python
   const auto deadline = t0_ + std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(cfg_.timeout_seconds));
@@ -416,8 +451,11 @@ PlanResult Solve::run() {
     const auto [connect_idx, connected] = grow(tree_b, q_reached, cfg_.connect_steps);
 
     if (connected) {
+      stats_.seconds_search = std::chrono::duration<double>(Clock::now() - t0_).count();
       std::vector<Config> path = extract_path(*tree_start_, *tree_goal_, a_is_start, grow_idx, connect_idx);
+      const auto t_smooth = Clock::now();
       if (cfg_.smooth_path) path = smooth(path);
+      stats_.seconds_smoothing = std::chrono::duration<double>(Clock::now() - t_smooth).count();
       path = space.unwrap_path(path);
 
       PlanResult r;
@@ -430,6 +468,7 @@ PlanResult Solve::run() {
       r.tree_sizes = {tree_start_->size(), tree_goal_->size()};
       r.start_roots = start_report_;
       r.goal_roots = goal_report_;
+      r.stats = stats_;
       if (opt_.keep_trees) {
         r.tree_start = tree_start_;
         r.tree_goal = tree_goal_;
@@ -437,6 +476,7 @@ PlanResult Solve::run() {
       return r;
     }
   }
+  stats_.seconds_search = std::chrono::duration<double>(Clock::now() - t0_).count();
   return failure(Status::MaxIterations,
                  "Max iterations (" + std::to_string(cfg_.max_iterations) + ") reached. Trees: start=" +
                      std::to_string(tree_start_->size()) + " nodes, goal=" + std::to_string(tree_goal_->size()) +
