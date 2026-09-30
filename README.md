@@ -21,6 +21,18 @@ every side grasp of every can: 18 regions. Each seed lets the planner choose a
 different can, grasp, and route around the red boxes, planned natively in
 0.01 to 0.18 s. `sscbirrt-demo pick --seed N` renders any of them.
 
+<table>
+<tr><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/transport_free.gif" alt="UR5e carried freely: the can tips" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/transport_upright.gif" alt="UR5e carried upright: a path constraint" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/door.gif" alt="UR5e opening a door: a TSR chain" width="100%"></td></tr>
+<tr><td align="center"><sub>carried freely: the can tips</sub></td><td align="center"><sub>carried upright: a path constraint</sub></td><td align="center"><sub>opening a door: a TSR chain</sub></td></tr>
+</table>
+
+The same carry twice, from the same grasp to the same place: without a
+constraint the can leans as the arm lifts it over the box; with a path
+constraint that keeps it upright, it stays level all the way. The door's
+constraint is a TSR chain, the hinge and then the grasp on the handle, so
+the gripper follows the handle's arc as the door swings open.
+`sscbirrt-demo transport door` renders both.
+
 ## Install
 
 ```bash
