@@ -1,7 +1,7 @@
 # Native design: the SSCBiRRT C++20 contract
 
 This document is the normative boundary for the native implementation of
-pycbirrt (#82). It translates the Python design in [design.md](design.md)
+sscbirrt (#82). It translates the Python design in [design.md](design.md)
 into C++20 types without changing its semantics. The two backends are one
 contract with two implementations; the only recorded difference is the
 random-number engine, see [Concept map](#concept-map). Where the Python
@@ -43,7 +43,7 @@ transitive dependency to resolve. Eigen may be adopted inside later targets
 (pose regions in v1.6.0) without touching the core.
 
 ```
-pycbirrt._native  (pybind11)   ──►  sscbirrt::core  ◄──  sscbirrt_tests, sscbirrt_consumer
+sscbirrt._native  (pybind11)   ──►  sscbirrt::core  ◄──  sscbirrt_tests, sscbirrt_consumer
                                           ▲
                         (v1.6.0) sscbirrt::tsr ─┘   (v1.7.0) sscbirrt::mujoco ─┘
 ```
@@ -327,7 +327,7 @@ class AcceptAll final : public StateValidator { /* true */ };
 
 class JointBoxObstacles final : public StateValidator {
   // Invalid inside any listed axis-aligned box in joint space. The native
-  // counterpart of pycbirrt.testing.Wall, so the artifact matrix runs natively.
+  // counterpart of sscbirrt.testing.Wall, so the artifact matrix runs natively.
 public:
   struct Box { std::vector<double> lo, hi; };   // open on both sides, as Wall is
   explicit JointBoxObstacles(std::vector<Box> boxes);
@@ -607,11 +607,11 @@ later only if it returns the same node as the linear scan, ties included.
 
 ## Python binding
 
-The extension module is `pycbirrt._native`, built with pybind11 as ssik's
+The extension module is `sscbirrt._native`, built with pybind11 as ssik's
 is. It exposes the types above under the same names and one function:
 
 ```python
-pycbirrt._native.Planner(config: _native.PlannerConfig).solve(
+sscbirrt._native.Planner(config: _native.PlannerConfig).solve(
     problem: _native.PlanningProblem, seed: int | None, cancel: _native.CancellationToken | None,
     keep_trees: bool = True) -> _native.PlanResult
 ```
@@ -621,7 +621,7 @@ solve touches no Python object; that is why every component must be a
 native object. The public Python surface in v1.5.0 is:
 
 ```python
-from pycbirrt.backends.native import lower, NativeUnsupported
+from sscbirrt.backends.native import lower, NativeUnsupported
 
 lowered = lower(problem, config)       # PlanningProblem + CBiRRTConfig -> native problem, or raises NativeUnsupported
 planner = CBiRRT(robot, ik, collision, config, backend="native")   # "python" | "native" | "auto" (default since 2.0; "python" in 1.x)
@@ -643,7 +643,7 @@ and both are correct.
 | `FiniteSet`, `EmptySet` | same | |
 | `AnyOf`, `AllOf` with `MostViolatedProjection` / `RejectionSampling` | same, children lowered recursively | |
 | `PredicateSet`, `TSRConfigurationSet`, any other set | | `NativeUnsupported("goal: TSRConfigurationSet has no native form in v1.5.0")` |
-| validator: `pycbirrt.testing.NoCollision`, `Wall` | `AcceptAll`, `JointBoxObstacles` | any other validator: `NativeUnsupported("validator: <type> is a Python object; native needs a sscbirrt.StateValidator")` |
+| validator: `sscbirrt.testing.NoCollision`, `Wall` | `AcceptAll`, `JointBoxObstacles` | any other validator: `NativeUnsupported("validator: <type> is a Python object; native needs a sscbirrt.StateValidator")` |
 | `motion_validator` None | default | any custom validator: `NativeUnsupported` |
 | `sampler` None | default (`space`) | any custom sampler: `NativeUnsupported("sampler: <type> is a Python object")` |
 | `CBiRRTConfig` | `PlannerConfig` (field map above), `abort_fn` wrapped in a token polled from a Python thread | |
@@ -664,7 +664,7 @@ Native results are converted to Python `PlanResult`s: `Status::Success` and
 the three search failures map to `success` and `failure_reason` with the
 same reason prefixes; `NoRoots` becomes the Python exception described
 above; `std::invalid_argument` becomes `ValueError`, `UnsupportedCapability`
-and `ContractError` their Python namesakes; trees are wrapped read-only. `pycbirrt` imports and works without
+and `ContractError` their Python namesakes; trees are wrapped read-only. `sscbirrt` imports and works without
 the extension present; `backend="native"` then raises `NativeUnsupported`
 naming the missing module.
 
@@ -675,7 +675,7 @@ cpp/
   CMakeLists.txt                 project(sscbirrt LANGUAGES CXX), C++20
   include/sscbirrt/*.hpp         public headers
   src/*.cpp                      core implementation
-  bindings/pycbirrt_native.cpp   pybind11 module (only target that sees Python)
+  bindings/sscbirrt_native.cpp   pybind11 module (only target that sees Python)
   tests/*.cpp                    ctest targets
   examples/consumer/             standalone find_package consumer, built against the installed package
 ```
@@ -685,7 +685,7 @@ cpp/
 | `sscbirrt::core` | static library (`BUILD_SHARED_LIBS` respected) | C++20 standard library | yes, with headers and `sscbirrtConfig.cmake` |
 | `sscbirrt_tests` | executables under ctest | `sscbirrt::core` | no |
 | `sscbirrt_consumer` | executable, `examples/consumer/` | `find_package(sscbirrt)` | no |
-| `pycbirrt_native` | pybind11 module `pycbirrt._native` | `sscbirrt::core`, pybind11, Python | into the wheel |
+| `sscbirrt_native` | pybind11 module `sscbirrt._native` | `sscbirrt::core`, pybind11, Python | into the wheel |
 
 Options: `SSCBIRRT_BUILD_TESTS` (default ON in-tree), `SSCBIRRT_BUILD_PYTHON`
 (default OFF; the wheel build turns it on), `SSCBIRRT_SANITIZE` (adds
@@ -763,7 +763,7 @@ identical; otherwise the difference and its reason are stated.
 | `AnyOf`, `AllOf`, strategies | same | same rules; strategy requirements checked at `AllOf` construction through `requires`, as in Python |
 | `is_finite`, `members`, `seeds` | virtual methods | same |
 | `CollisionChecker.is_valid` | `StateValidator::is_valid` | same; renamed because validity is not only collision |
-| `pycbirrt.testing.NoCollision`, `Wall` | `AcceptAll`, `JointBoxObstacles` | same predicates; `Wall`'s `extent` becomes a second box dimension |
+| `sscbirrt.testing.NoCollision`, `Wall` | `AcceptAll`, `JointBoxObstacles` | same predicates; `Wall`'s `extent` becomes a second box dimension |
 | `LocalMotion`, `MotionValidator`, `DiscreteMotionValidator`, `RestrictedMotionValidator` | same | same contracts |
 | `PlanningProblem` | `PlanningProblem` | same roles; `shared_ptr<const>` ownership |
 | `CBiRRTConfig` | `PlannerConfig` | same ranges and messages (#108); two fields renamed where the Python name was TSR-specific (`tsr_samples` → `sample_draws`, `max_ik_per_pose` → `max_per_draw`); set-owned tolerances live on the sets, which is where Python's lowering puts them |
@@ -781,7 +781,7 @@ identical; otherwise the difference and its reason are stated.
    story dependency-free. If v1.6.0 pose regions want Eigen in the core
    rather than in `sscbirrt::tsr`, that is a later, separate decision.
 2. **scikit-build-core versus a hatchling hook** for the wheel. Argued above;
-   the alternative keeps pycbirrt on one build tool with ssik.
+   the alternative keeps sscbirrt on one build tool with ssik.
 3. **Exposing trees.** Kept because Python exposes them and the artifact
    tooling inspects them. They cost a copy per solve; a flag on
    `SolveOptions` can suppress it.
@@ -810,7 +810,7 @@ rule the reference needed sharpened changed in Python first.
 - A native **`TSRConfigurationSet`** over those interfaces with all four
   capabilities, copied rule for rule from the Python set.
 - An **SSIK adapter** implementing the interfaces through ssik's header-only
-  C++ family solvers, for the families pycbirrt has verified. v1.6.0 verifies
+  C++ family solvers, for the families sscbirrt has verified. v1.6.0 verifies
   one: `ikgeo.three_parallel`, the UR family.
 - **Lowering** of a Python `TSRConfigurationSet` whose region is a `TSR` and
   whose IK is an `SSIKSolver` wrapping an `ssik.Manipulator` of a verified
@@ -824,7 +824,7 @@ TSRs as anything but what the Python expression says.
 ## Targets and dependency boundary
 
 ```
-pycbirrt._native ──► sscbirrt::ssik ──► sscbirrt::tsr ──► sscbirrt::core
+sscbirrt._native ──► sscbirrt::ssik ──► sscbirrt::tsr ──► sscbirrt::core
                           │
                           └──► ssik::ssik_cpp (header-only) ──► Eigen3
 ```
@@ -855,7 +855,7 @@ a dependency. ssik is a build requirement of the wheel, so the isolated
 build asks its interpreter for that directory (`SSCBIRRT_WITH_SSIK=AUTO`);
 a pure CMake build passes `SSCBIRRT_SSIK_CMAKE_DIR` or puts it on
 `CMAKE_PREFIX_PATH`. A build without ssik or Eigen disables the adapter
-and `pycbirrt._native.has_ssik()` is false with a reason. pycbirrt pins
+and `sscbirrt._native.has_ssik()` is false with a reason. sscbirrt pins
 `ssik>=7.0,<8` for the native SSIK support. The C++ interface used here,
 `three_parallel_artifact_solve(consts, limits, T, params)` with
 `JointConsts<6>`, `JointLimits<6>`, and `ArtifactParams<6>`, is fixed for
@@ -927,7 +927,7 @@ the text as well as against the differential corpus:
   `lo <= hi` on the three translations. These are sstsr 3.2.0's rules
   (personalrobotics/tsr#162), stated in its `docs/ARCHITECTURE.md` as
   conditions on the inputs so that a second implementation reproduces them;
-  pycbirrt pins `sstsr>=3.2,<4`. Rotational rows may have `hi < lo`: that
+  sscbirrt pins `sstsr>=3.2,<4`. Rotational rows may have `hi < lo`: that
   is an outer interval wrapping through $\pm\pi$, and its width is
   $2\pi + (hi - lo)$. Widths are clamped to $2\pi$. The continuous bounds
   wrap each rotational `lo` into $[-\pi, \pi)$ and set `hi = lo + width`.
@@ -1117,7 +1117,7 @@ artifact compares them: outcome, validation, provenance where unique.
 ## Decisions
 
 1. **Header source for ssik_cpp**: resolved. ssik 7.0 ships the headers and
-   `ssik.get_cmake_dir()` (personalrobotics/ssik#641); pycbirrt consumes
+   `ssik.get_cmake_dir()` (personalrobotics/ssik#641); sscbirrt consumes
    them through `find_package(ssik_cpp)` and does not vendor.
 2. **Eigen only in `sscbirrt::ssik`**, with a sixteen-double `Transform` in
    the core: adopted. The alternative, Eigen in the core, would make every
@@ -1128,7 +1128,7 @@ artifact compares them: outcome, validation, provenance where unique.
    evaluations.
 4. **Python `TSR` validation**: resolved upstream in sstsr 3.2.0
    (personalrobotics/tsr#162) with the tolerance exported as
-   `tsr.FRAME_ATOL`; pycbirrt pins `sstsr>=3.2,<4`.
+   `tsr.FRAME_ATOL`; sscbirrt pins `sstsr>=3.2,<4`.
 
 ---
 
@@ -1138,7 +1138,7 @@ This section extends the contract to collision checking in C++ against a
 MuJoCo world the planner owns (#93, #84, #89, #88). The reference for the
 semantics is `mj_manipulator`'s `CollisionChecker` in snapshot mode
 (`mj_manipulator/collision.py`) and its `GraspManager`'s attachment update,
-read at mj_manipulator commit `f3c1` of 2026-09; pycbirrt's own
+read at mj_manipulator commit `f3c1` of 2026-09; sscbirrt's own
 `MuJoCoCollisionChecker` is the degenerate case with no attachments. The
 principle is unchanged: one contract, two implementations, and the
 comparison corpus is the oracle.
@@ -1153,7 +1153,7 @@ comparison corpus is the oracle.
   and allowed-contact sets. Nothing else.
 - A native **state validator** over a scene and a snapshot implementing
   `StateValidator`, with mj_manipulator's attachment-aware contact policy.
-- **Packaging** that keeps `import pycbirrt` free of MuJoCo: the scene
+- **Packaging** that keeps `import sscbirrt` free of MuJoCo: the scene
   lives in its own extension module, built when a `mujoco` wheel is
   present at build time and imported only on demand.
 - **Lowering** of the Python `NativeCollisionChecker` (the Python face of
@@ -1166,27 +1166,27 @@ comparison corpus is the oracle.
 
 Not in v1.7.0: MuJoCo thread pools, parallel edge validation, continuous
 collision checking (edges remain discrete at `edge_resolution`), dynamics
-of any kind, and moving execution or simulator ownership into pycbirrt
+of any kind, and moving execution or simulator ownership into sscbirrt
 (mj_manipulator#175 keeps those).
 
 ## Targets and dependency boundary
 
 ```
-pycbirrt._native          ──► sscbirrt::ssik ──► sscbirrt::tsr ──► sscbirrt::core
-pycbirrt._native_mujoco   ──► sscbirrt::mujoco ──────────────────► sscbirrt::core
+sscbirrt._native          ──► sscbirrt::ssik ──► sscbirrt::tsr ──► sscbirrt::core
+sscbirrt._native_mujoco   ──► sscbirrt::mujoco ──────────────────► sscbirrt::core
                                      └──► libmujoco (the mujoco wheel's shared library and headers)
 ```
 
 | Target | Depends on | Contents |
 |---|---|---|
 | `sscbirrt::mujoco` | `sscbirrt::core`, MuJoCo headers and library | `Scene`, `Snapshot`, `SceneValidator` |
-| `pycbirrt._native_mujoco` | `sscbirrt::mujoco`, `pycbirrt._native` (for the `StateValidator` base type) | the binding |
+| `sscbirrt._native_mujoco` | `sscbirrt::mujoco`, `sscbirrt._native` (for the `StateValidator` base type) | the binding |
 
-The MuJoCo scene is a **separate extension module**. `pycbirrt._native`
-never references MuJoCo, so `import pycbirrt` and every v1.5 and v1.6
+The MuJoCo scene is a **separate extension module**. `sscbirrt._native`
+never references MuJoCo, so `import sscbirrt` and every v1.5 and v1.6
 feature work with no `mujoco` installed (#89's import criterion), and a
 missing or mismatched MuJoCo library fails at `import
-pycbirrt._native_mujoco`, which `pycbirrt.backends.native_mujoco` performs
+sscbirrt._native_mujoco`, which `sscbirrt.backends.native_mujoco` performs
 lazily and turns into a reason. The alternative, one module that loads
 `libmujoco` at runtime through `dlopen` and a hand-written function table,
 avoids a second module but reimplements the dynamic linker for a dozen
@@ -1207,7 +1207,7 @@ message and the reason "built without MuJoCo support".
 version-specific struct, so the module is bound to the MuJoCo it was built
 against: the build records `mjVERSION_HEADER`, and at import the module
 compares it with `mj_version()` of the library it loaded and
-`pycbirrt.backends.native_mujoco` compares both with `mujoco.__version__`.
+`sscbirrt.backends.native_mujoco` compares both with `mujoco.__version__`.
 Any difference refuses the scene with a reason naming the three versions.
 The `mujoco` extra pins the exact version the wheel was built against:
 **`mujoco==3.14.0`**, the latest release, which #93 names for the first
@@ -1368,11 +1368,11 @@ bounded by `step_size / edge_resolution` collision queries.
 ## Python surface
 
 ```python
-from pycbirrt.backends.native_mujoco import NativeScene, Snapshot, NativeCollisionChecker, plan_native
+from sscbirrt.backends.native_mujoco import NativeScene, Snapshot, NativeCollisionChecker, plan_native
 
 scene = NativeScene.from_model(model, joint_names, extra_arm_bodies=[...])     # exports MJB once; caches by signature
 snap = Snapshot.capture(scene, data, attachments={obj: (gripper_body, T)})    # on the MuJoCo owner thread
-checker = NativeCollisionChecker(scene, snap)                                 # a pycbirrt CollisionChecker
+checker = NativeCollisionChecker(scene, snap)                                 # a sscbirrt CollisionChecker
 ```
 
 `NativeCollisionChecker.is_valid(q)` calls the native validator, so the
@@ -1390,7 +1390,7 @@ the one-call path #88 asks for: build or reuse the scene, capture the
 snapshot, build the `SSIKRobotModel` and lowering, solve with
 `backend="native"`, and return a `PlanResult` whose new `provenance` field
 records `{"scene": signature, "mjb_sha256", "snapshot": sha256,
-"mujoco", "ssik", "sstsr", "pycbirrt", "solver_name"}`. The Python backend
+"mujoco", "ssik", "sstsr", "sscbirrt", "solver_name"}`. The Python backend
 fills `provenance` with the versions only.
 
 ## Integrations (#147)
@@ -1399,8 +1399,8 @@ MuJoCo is one implementation of `StateValidator`, SSIK one implementation
 of `ForwardKinematics` and `IKSolver`, TSRs one implementation of
 `StateSet`. The core knows none of them, and the target graph above is the
 shape every further integration takes. What made it reachable from Python
-without a patch to pycbirrt is that `lower` recognizes validators and IK
-solvers by two runtime-checkable protocols in `pycbirrt.backends.native`,
+without a patch to sscbirrt is that `lower` recognizes validators and IK
+solvers by two runtime-checkable protocols in `sscbirrt.backends.native`,
 never by type:
 
 | Protocol | Members | Shipped implementation |
@@ -1424,8 +1424,8 @@ Adding a simulator or an IK library:
    `IKSolver` has `dof()` and `solve(T, seed)` returning every solution.
 2. **Own extension module.** Bind with pybind11 in a module of your own,
    declaring `StateValidator` (or the kinematics bases) registered by
-   `pycbirrt._native` as the base class; pybind11 shares registered types
-   across modules built with the same pybind11. `pycbirrt._native` must not
+   `sscbirrt._native` as the base class; pybind11 shares registered types
+   across modules built with the same pybind11. `sscbirrt._native` must not
    learn to import your library: a missing library is a reason, not an
    import error.
 3. **Pin and verify the library version** at import, as the MuJoCo module
@@ -1509,7 +1509,7 @@ must hold without it. Beyond the rules above:
 - **Determinism.** Fixed seeds are repeatable across two solves and across
   the Python one-call path, on the release cases.
 - **Import safety.** A CI job installs the wheel into an environment
-  without `mujoco` and asserts `import pycbirrt` and a native finite
+  without `mujoco` and asserts `import sscbirrt` and a native finite
   problem work, and that the MuJoCo scene reports its reason.
 - **Version binding** is tested by building against 3.14.0 and importing
   with the pinned wheel only; a test monkeypatches the reported Python

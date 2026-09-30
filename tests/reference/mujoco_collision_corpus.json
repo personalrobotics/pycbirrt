@@ -1,6 +1,6 @@
 {
  "artifact": "decision parity between the native MuJoCo validator and mj_manipulator's CollisionChecker",
- "issue": "https://github.com/personalrobotics/pycbirrt/issues/84",
+ "issue": "https://github.com/personalrobotics/sscbirrt/issues/84",
  "scenarios": [
   {
    "attachments": {},
@@ -9,7 +9,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.1860505235346843,
       -0.21813308451330837,
@@ -20,7 +20,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.252818895736878,
       -1.7090335097856235,
@@ -45,7 +45,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.3545669080294642,
       0.5487623420376392,
@@ -64,7 +64,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.801383347286254,
       1.8701787883348957,
@@ -75,7 +75,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.09522983823791531,
       -1.9610425864052399,
@@ -102,7 +102,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.16984208548139912,
       0.8795020221136246,
@@ -113,7 +113,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.10515387501962059,
       -0.8354631648620808,
@@ -124,7 +124,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.2653355189932585,
       -0.050620038891967534,
@@ -135,7 +135,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.6146860907616385,
       -1.0619848514928554,
@@ -146,7 +146,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.340978264883205,
       0.246220098807034,
@@ -157,7 +157,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -2.2720500351944466,
       -2.013025557358952,
@@ -168,7 +168,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.9434315574972225,
       -2.118082510071433,
@@ -179,7 +179,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.424563696123464,
       -0.44325617107385584,
@@ -190,7 +190,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.14790807158108055,
       -1.6610465038906552,
@@ -201,7 +201,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.4280883516499434,
       -0.29791350872955036,
@@ -212,7 +212,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.37316653974996816,
       -0.6537825230881245,
@@ -223,7 +223,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.784051978260258,
       -2.4048786685377346,
@@ -248,7 +248,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.6840275553959505,
       0.21523777884214057,
@@ -275,7 +275,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.223805429360598,
       0.9818978017698898,
@@ -286,7 +286,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -2.4620463092207947,
       -1.799849613452652,
@@ -297,7 +297,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.4591116283601768,
       -1.2681175249189942,
@@ -324,7 +324,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.6979110363135232,
       1.2772514957806287,
@@ -335,7 +335,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.510488279569875,
       -0.9100292227260015,
@@ -346,7 +346,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.3992299262484897,
       -0.9285906818895995,
@@ -362,7 +362,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.1724585625940802,
       -0.7702445775843919,
@@ -373,7 +373,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.2797328569795303,
       -0.4766708777460449,
@@ -384,7 +384,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.44152907160600385,
       -1.1570242410471232,
@@ -395,7 +395,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.6959030487563145,
       -0.7097546769339386,
@@ -410,7 +410,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.7363278978358576,
       1.3426881095392385,
@@ -421,7 +421,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -2.0219221935912417,
       -0.7730586483959906,
@@ -432,7 +432,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.4221319301213182,
       2.3708769215104555,
@@ -446,7 +446,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.9986479331847797,
       2.0800878815598853,
@@ -457,7 +457,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.4124579808498363,
       -0.38266543452189883,
@@ -487,7 +487,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.0244949697757026,
       1.344550252577279,
@@ -498,7 +498,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.2146663434955114,
       -0.035765164567367336,
@@ -509,7 +509,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.0224062067855733,
       -2.486672513611527,
@@ -520,7 +520,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.44451395656243675,
       0.5819903794112563,
@@ -547,7 +547,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.0283876617516308,
       1.403241988051633,
@@ -561,7 +561,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.297133620100845,
       1.4226840288593938,
@@ -588,7 +588,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.8888656168623301,
       1.6865884397888182,
@@ -599,7 +599,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.012045571174476688,
       -1.2647104436775942,
@@ -610,7 +610,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -2.496154126908575,
       -2.391735504137637,
@@ -637,7 +637,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.7984631253919969,
       2.0761955329622426,
@@ -648,7 +648,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.115547797431832,
       -1.4177950438921822,
@@ -673,7 +673,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.956583497119588,
       0.3854768872391906,
@@ -684,7 +684,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.03427136624946825,
       -2.3615860109626414,
@@ -711,7 +711,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.426598790573121,
       1.1708146971522282,
@@ -722,7 +722,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.4563204308925475,
       -1.2526313180069986,
@@ -733,7 +733,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.5129013648470306,
       0.15078172557855823,
@@ -749,7 +749,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.5126820650453443,
       0.15133294526894478,
@@ -762,7 +762,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.0100478603229854,
       0.8235145504603323,
@@ -773,7 +773,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.0093406793694886,
       0.8225791936793899,
@@ -784,7 +784,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.059438593815102636,
       -0.3035959032118594,
@@ -797,7 +797,7 @@
       "arm/gripper/right_finger|can"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.059503308640229416,
       -0.3029024108757953,
@@ -810,7 +810,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.017103850583982165,
       -0.07302380805476648,
@@ -821,7 +821,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.01703671289831297,
       -0.07344250072736797,
@@ -832,7 +832,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.2127847920806474,
       -0.06110262771745563,
@@ -845,7 +845,7 @@
       "arm/gripper/left_finger|tetra"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.213875631810544,
       -0.06046295085041953,
@@ -859,7 +859,7 @@
       "arm/gripper/left_finger|can"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.11340040606952526,
       -0.4055802180786583,
@@ -870,7 +870,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.11454441284163985,
       -0.40625935563120286,
@@ -881,7 +881,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.5194228394663338,
       0.3270881089032548,
@@ -897,7 +897,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.5201935969528264,
       0.327709536886824,
@@ -910,7 +910,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.11737121109024715,
       0.09496645897064838,
@@ -921,7 +921,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.1186427929544765,
       0.09443245488898172,
@@ -932,7 +932,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.1272531008761442,
       -0.7730280051991318,
@@ -948,7 +948,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.1278809545111157,
       -0.7729893464822605,
@@ -964,7 +964,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.1532789087625175,
       -0.7639373301269274,
@@ -975,7 +975,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.1530609581507951,
       -0.7638656568603653,
@@ -986,7 +986,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.4956011068527522,
       -0.28132728864424955,
@@ -1002,7 +1002,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.495366835575672,
       -0.28082620397958324,
@@ -1018,7 +1018,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.6763559534480095,
       -0.204348399253733,
@@ -1029,7 +1029,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.6766698192428717,
       -0.20486493898955702,
@@ -1040,7 +1040,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.9753259665303118,
       2.332895442903631,
@@ -1053,7 +1053,7 @@
       "arm/gripper/right_finger|tetra"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.9744908151964968,
       2.332824449485674,
@@ -1066,7 +1066,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.25811781591614025,
       0.823458381899014,
@@ -1077,7 +1077,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.25728502638634665,
       0.8228571237652049,
@@ -1088,7 +1088,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.1416605568603468,
       0.8229277416051883,
@@ -1101,7 +1101,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.1415658393283463,
       0.8233494251225466,
@@ -1114,7 +1114,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.40133702432292984,
       0.7369553558214692,
@@ -1125,7 +1125,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.4021278351904277,
       0.7366183647528304,
@@ -1136,7 +1136,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.038474640764529555,
       0.7423910842238299,
@@ -1149,7 +1149,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.03907837651118826,
       0.7425915851048457,
@@ -1162,7 +1162,7 @@
       "arm/gripper/left_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.1540900570541726,
       -1.0413455379464938,
@@ -1173,7 +1173,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.15363184903520585,
       -1.0420660699004651,
@@ -1184,7 +1184,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.2445856589936115,
       -0.694445295708093,
@@ -1200,7 +1200,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.243781309078499,
       -0.6933544922322386,
@@ -1216,7 +1216,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.4817651097876634,
       0.2635173162103742,
@@ -1227,7 +1227,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.482086663662673,
       0.2626642911671969,
@@ -1238,7 +1238,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.6580322502089446,
       -0.25464942815754177,
@@ -1254,7 +1254,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.6582375811903134,
       -0.2542091762212304,
@@ -1270,7 +1270,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.3373044615738694,
       -0.19666437146178356,
@@ -1281,7 +1281,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.3365910064637934,
       -0.19733504111466488,
@@ -1292,7 +1292,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.9850119826471926,
       0.5369488474294671,
@@ -1308,7 +1308,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.985612781025323,
       0.5378112499460967,
@@ -1324,7 +1324,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.9753973498064274,
       0.6158360930947686,
@@ -1335,7 +1335,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.974916324816271,
       0.6152444314699739,
@@ -1381,7 +1381,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.186498039599322,
       0.1207989610520549,
@@ -1392,7 +1392,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.684697522063723,
       -0.3866313034252433,
@@ -1403,7 +1403,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.821883349684818,
       -1.7066651162272017,
@@ -1419,7 +1419,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.117815776763555,
       0.23377446455059847,
@@ -1430,7 +1430,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.9840888167102997,
       -0.5251540187193232,
@@ -1455,7 +1455,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.2689922522928523,
       0.6953622579443958,
@@ -1466,7 +1466,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.2538325937418975,
       0.7600680789398062,
@@ -1493,7 +1493,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.0089628806446664,
       1.1738343563188374,
@@ -1520,7 +1520,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.8803550257692905,
       2.0444739996521006,
@@ -1539,7 +1539,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.025191167432836892,
       -0.38654124755227115,
@@ -1550,7 +1550,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.6617281206342476,
       0.48866582088865684,
@@ -1561,7 +1561,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.9791064442103605,
       -2.276075567539892,
@@ -1572,7 +1572,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.0028075953729647,
       -2.431768778269772,
@@ -1583,7 +1583,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.5694753992296535,
       -0.45113091109725556,
@@ -1594,7 +1594,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.328644908876803,
       -1.5799870846061848,
@@ -1605,7 +1605,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.2379879246931431,
       -0.7679664925261248,
@@ -1624,7 +1624,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.3723664737874308,
       2.0561528357311056,
@@ -1649,7 +1649,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.1463457067143377,
       -0.018216747757436313,
@@ -1660,7 +1660,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.2786697030564298,
       -0.9122679060891642,
@@ -1678,7 +1678,7 @@
       "arm/base|arm/link2"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.567878391565491,
       0.5159480542617828,
@@ -1689,7 +1689,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.760482351864168,
       -1.3975124505886645,
@@ -1714,7 +1714,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.19461797249249546,
       0.7206318305729242,
@@ -1725,7 +1725,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.42470317530791113,
       -1.038269122523292,
@@ -1736,7 +1736,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.252947329162214,
       -2.292525288568194,
@@ -1750,7 +1750,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.269741849405487,
       2.1293842044300346,
@@ -1761,7 +1761,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.184894058624286,
       -0.22504545524900277,
@@ -1782,7 +1782,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.5580899098463385,
       0.010820103694550443,
@@ -1809,7 +1809,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.2038938874115583,
       0.8647816959735083,
@@ -1820,7 +1820,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.6420627357193001,
       -1.9027851847518673,
@@ -1831,7 +1831,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.5628625444603135,
       -0.7836238641876864,
@@ -1842,7 +1842,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.769724109081177,
       -0.7688398043835643,
@@ -1853,7 +1853,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.6665166100144708,
       -1.3174618349712146,
@@ -1864,7 +1864,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.579378707136706,
       -1.7797262230318074,
@@ -1875,7 +1875,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.1066508009645113,
       -0.26610492436802635,
@@ -1886,7 +1886,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.79964455271352,
       -1.0020307320057409,
@@ -1897,7 +1897,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.3762067240007743,
       -1.9824902668580502,
@@ -1908,7 +1908,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.2696837263314016,
       -0.9479768375467612,
@@ -1934,7 +1934,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.3392440094071545,
       0.8781806371349038,
@@ -1945,7 +1945,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.7005615624420494,
       -0.6575231771947482,
@@ -1956,7 +1956,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.6804358208928403,
       -0.5494201610937544,
@@ -1967,7 +1967,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.2804515987588505,
       -2.257978995226159,
@@ -1978,7 +1978,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.7297218555178233,
       -2.3218264390011454,
@@ -1989,7 +1989,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.0623498689265418,
       -2.0108410474689546,
@@ -2014,7 +2014,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.3820665837526178,
       2.4225144404067374,
@@ -2025,7 +2025,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.4039496182630222,
       -0.5087211450975115,
@@ -2036,7 +2036,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.5304262708737264,
       -1.3339266297818302,
@@ -2047,7 +2047,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.9734249773597965,
       -1.5584532475137813,
@@ -2072,7 +2072,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.7002049167090103,
       0.7719874614727107,
@@ -2083,7 +2083,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.119190908741917,
       0.22998454349439185,
@@ -2099,7 +2099,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.1190190172446217,
       0.23045828362641768,
@@ -2112,7 +2112,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.017378311521920604,
       -0.04396816152889679,
@@ -2123,7 +2123,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.018135612448061684,
       -0.044153446803132615,
@@ -2134,7 +2134,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.2120254764769074,
       0.4513185981329735,
@@ -2150,7 +2150,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.212095032979735,
       0.45161657573958086,
@@ -2166,7 +2166,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.261479042610616,
       0.7274308166896798,
@@ -2177,7 +2177,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.261475341522103,
       0.7274466140092588,
@@ -2188,7 +2188,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.2164684407424424,
       0.8232038024168311,
@@ -2201,7 +2201,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.2164086580976434,
       0.8233048195743944,
@@ -2215,7 +2215,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.4213456233639552,
       0.07691679235211675,
@@ -2226,7 +2226,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.4219893091435454,
       0.07713046595281034,
@@ -2237,7 +2237,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.3309841167598706,
       0.8226690763921931,
@@ -2250,7 +2250,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.3305909638305541,
       0.8233585586500685,
@@ -2264,7 +2264,7 @@
       "arm/gripper/left_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.2037851758296303,
       -0.40630829060748813,
@@ -2275,7 +2275,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.2038174814927998,
       -0.4065265648160652,
@@ -2286,7 +2286,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.7638362255031501,
       -0.5140690226124109,
@@ -2300,7 +2300,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.7633854080972367,
       -0.5137203370752159,
@@ -2316,7 +2316,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.098377516483506,
       -0.33520551991729797,
@@ -2327,7 +2327,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.0986686795597507,
       -0.335672673360865,
@@ -2338,7 +2338,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.7662260101564216,
       -0.32034093260536634,
@@ -2352,7 +2352,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.7657486907412954,
       -0.31982380753672335,
@@ -2368,7 +2368,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.17900081564588458,
       -0.34046295827003237,
@@ -2379,7 +2379,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.17915201709798428,
       -0.34089237744803436,
@@ -2390,7 +2390,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.0003906782560652342,
       -0.09560492278416202,
@@ -2403,7 +2403,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.0010065691688014894,
       -0.094525355036848,
@@ -2416,7 +2416,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.2226778404565395,
       0.8234115025768186,
@@ -2427,7 +2427,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.2226571256638683,
       0.8228366906481861,
@@ -2438,7 +2438,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.4602110268114261,
       -0.1269792816941026,
@@ -2451,7 +2451,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.45978549361599874,
       -0.12692169732912614,
@@ -2467,7 +2467,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.8127138144568042,
       0.48437638497536706,
@@ -2478,7 +2478,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.8120190008281103,
       0.4837007094673775,
@@ -2489,7 +2489,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.3224992732956573,
       0.43858315909874135,
@@ -2502,7 +2502,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.3225162557866426,
       0.43902899832595854,
@@ -2515,7 +2515,7 @@
       "arm/link2|ball"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.041708346730014,
       -0.16149384458778293,
@@ -2526,7 +2526,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.0422063461372038,
       -0.16186877227682828,
@@ -2537,7 +2537,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.222520449693902,
       0.21016614518751997,
@@ -2553,7 +2553,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.2225985055324826,
       0.21124850736717712,
@@ -2566,7 +2566,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.7387338356528426,
       0.19116860163665728,
@@ -2577,7 +2577,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.7394140153896628,
       0.19045296794879002,
@@ -2588,7 +2588,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.247279356038906,
       0.484665059607921,
@@ -2602,7 +2602,7 @@
       "arm/gripper/left_finger|tetra"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.2481762383372628,
       0.4852340148591384,
@@ -2652,7 +2652,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.2249798489761607,
       2.1020504145227314,
@@ -2663,7 +2663,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.7966719606057513,
       -2.199614140756993,
@@ -2674,7 +2674,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.9809807101642911,
       -1.334797477876799,
@@ -2685,7 +2685,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.7665315196480176,
       0.10471942119312683,
@@ -2696,7 +2696,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.7736967870381275,
       -1.144865109019867,
@@ -2707,7 +2707,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.3424888844937275,
       -1.0289335628021394,
@@ -2722,7 +2722,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.2407173475151838,
       1.4940232848731916,
@@ -2733,7 +2733,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.3079142553498777,
       -2.199337684571087,
@@ -2744,7 +2744,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.2717978890750956,
       -0.974938511801175,
@@ -2769,7 +2769,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.6741557672944523,
       2.4562570052857384,
@@ -2796,7 +2796,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.00578039583218426,
       0.9070932617374972,
@@ -2810,7 +2810,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.837121864973768,
       2.1527574430526326,
@@ -2821,7 +2821,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.3745336221374096,
       -1.534827361236497,
@@ -2835,7 +2835,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.7050267161001353,
       2.264107472819705,
@@ -2849,7 +2849,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.18305766682176,
       2.10010314173058,
@@ -2876,7 +2876,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.943858859856773,
       1.5425731275619359,
@@ -2887,7 +2887,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.544754823138834,
       -0.3475892926003288,
@@ -2912,7 +2912,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.2629359925328254,
       2.3815372105278483,
@@ -2923,7 +2923,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.41014758584478805,
       0.6314114775884422,
@@ -2950,7 +2950,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.5169325159407294,
       2.2199462266678194,
@@ -2977,7 +2977,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.217313078961407,
       1.2185085487057767,
@@ -2988,7 +2988,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.5272169440854737,
       -1.0475314208326663,
@@ -2999,7 +2999,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -2.077747109605956,
       0.6594439655575496,
@@ -3024,7 +3024,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.024145310056001845,
       2.4935127336654843,
@@ -3035,7 +3035,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.0399069170415103,
       -0.35338364488537777,
@@ -3046,7 +3046,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.962888167293966,
       -0.42499767992337956,
@@ -3071,7 +3071,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.2092214269577957,
       0.493505425767925,
@@ -3082,7 +3082,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.8917489542752026,
       0.006756303306261757,
@@ -3107,7 +3107,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.3670044693960413,
       2.348107387502438,
@@ -3118,7 +3118,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.3457452448424405,
       0.1973075041098371,
@@ -3132,7 +3132,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.4789221439865976,
       1.8566167190636467,
@@ -3157,7 +3157,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.6840197054590231,
       0.2548883333942964,
@@ -3176,7 +3176,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.6554391823287613,
       2.4869783346107472,
@@ -3187,7 +3187,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.3325549153845877,
       0.20111470746699167,
@@ -3204,7 +3204,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -2.6423891674923317,
       1.5663577148556747,
@@ -3215,7 +3215,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.1847451963299727,
       -0.8253937467969291,
@@ -3242,7 +3242,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.349960934727376,
       1.9783689931692146,
@@ -3253,7 +3253,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.5526491186339126,
       0.3291139771850804,
@@ -3267,7 +3267,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.5305141339698585,
       1.9679170594881974,
@@ -3278,7 +3278,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.9978282541116168,
       -2.376101664761163,
@@ -3303,7 +3303,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.5169360276366701,
       0.6149768243574999,
@@ -3326,7 +3326,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.6057510424593175,
       0.10010509834037062,
@@ -3353,7 +3353,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.37220088786144534,
       2.2186119406060536,
@@ -3380,7 +3380,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.980784485908875,
       1.0982009349896427,
@@ -3405,7 +3405,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.1313067514628794,
       0.5184096740051297,
@@ -3416,7 +3416,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.025787719211700866,
       -2.461380487230207,
@@ -3429,7 +3429,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.4358623156683583,
       2.3086650145335508,
@@ -3440,7 +3440,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.11227588568437463,
       -0.8660937741221153,
@@ -3453,7 +3453,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.6919596585106365,
       0.8239435386009968,
@@ -3464,7 +3464,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.6923433724050772,
       0.8228933275279304,
@@ -3475,7 +3475,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.18344558343075046,
       -0.3409104185508346,
@@ -3488,7 +3488,7 @@
       "arm/link2|ball"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.1833031990967639,
       -0.3402944622891951,
@@ -3504,7 +3504,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.5233901889570548,
       -0.3283113145523179,
@@ -3515,7 +3515,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.523768272844473,
       -0.3292130140077486,
@@ -3526,7 +3526,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.3817193894968387,
       -0.03755868181576093,
@@ -3539,7 +3539,7 @@
       "arm/gripper/right_finger|tetra"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.381817621400701,
       -0.036720987597722125,
@@ -3553,7 +3553,7 @@
       "arm/base|arm/gripper/base"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.134593482497171,
       0.2405430572347343,
@@ -3564,7 +3564,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.133321105669263,
       0.23964276797587464,
@@ -3575,7 +3575,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.4841869704517032,
       -0.2743897539409945,
@@ -3591,7 +3591,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.4842676572422215,
       -0.2734622796162738,
@@ -3604,7 +3604,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.17242231464033,
       0.8236099804396682,
@@ -3615,7 +3615,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.1725690177563655,
       0.8231485150050583,
@@ -3626,7 +3626,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.6209742452858436,
       0.7444610830410487,
@@ -3639,7 +3639,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.6198004926452987,
       0.7451273736912265,
@@ -3652,7 +3652,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.6132486587458936,
       0.8232587564189582,
@@ -3663,7 +3663,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.6127963178262921,
       0.8228314796286897,
@@ -3674,7 +3674,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.271356416404669,
       0.745820108198407,
@@ -3687,7 +3687,7 @@
       "arm/gripper/left_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.270885937864194,
       0.7462079340648815,
@@ -3703,7 +3703,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.3962492706162943,
       -0.08988611144032131,
@@ -3714,7 +3714,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.3963249307396157,
       -0.09043934385475941,
@@ -3725,7 +3725,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -1.8947479258081696,
       0.8228802693562304,
@@ -3738,7 +3738,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -1.8942465581813264,
       0.8233280400515692,
@@ -3754,7 +3754,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.0100324038295438,
       -0.27345369285086873,
@@ -3765,7 +3765,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.0102921822053001,
       -0.27414873591203837,
@@ -3776,7 +3776,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.2425041085314598,
       -0.04624969517908918,
@@ -3789,7 +3789,7 @@
       "arm/link2|ball"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.24148552708755067,
       -0.04602545125680126,
@@ -3802,7 +3802,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.6949443272012258,
       0.21638165780391166,
@@ -3813,7 +3813,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.6961896812982065,
       0.21626282256893567,
@@ -3824,7 +3824,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       2.3601729961679165,
       0.823028116839499,
@@ -3837,7 +3837,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       2.359800744096413,
       0.823599735756539,
@@ -3850,7 +3850,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.24538881627377945,
       0.3233309347773723,
@@ -3861,7 +3861,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.2458069680594822,
       0.3228058371495909,
@@ -3872,7 +3872,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.3145383490249354,
       0.2600987463749349,
@@ -3885,7 +3885,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.31433701421320953,
       0.260503851163742,
@@ -3898,7 +3898,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.5191727330236544,
       0.8233651821411341,
@@ -3909,7 +3909,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.5199022237701665,
       0.8228071099665385,
@@ -3920,7 +3920,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.724443107345271,
       0.6424188436443883,
@@ -3934,7 +3934,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.7232285213875373,
       0.642752154925489,
@@ -3947,7 +3947,7 @@
       "arm/link1|ball"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.21674929766788592,
       -0.22044879702346779,
@@ -3958,7 +3958,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.21768365664342848,
       -0.22103272072016034,
@@ -3969,7 +3969,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.4668504338529512,
       0.4861319880114525,
@@ -3982,7 +3982,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.46647574973892353,
       0.4868165003991396,
@@ -3995,7 +3995,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.31862278155635193,
       0.7567284368958105,
@@ -4006,7 +4006,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.31884314533891084,
       0.7563257867454237,
@@ -4017,7 +4017,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.3003910685139247,
       0.5275627879327234,
@@ -4030,7 +4030,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.299882483735457,
       0.5279628863414888,
@@ -4046,7 +4046,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.42230622583988386,
       -0.4363530693871199,
@@ -4057,7 +4057,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.42316763755572406,
       -0.4374136208334698,
@@ -4068,7 +4068,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.037577233268006396,
       -0.6439634381524059,
@@ -4081,7 +4081,7 @@
       "arm/gripper/left_finger|can"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.0384353300164801,
       -0.6432331943806484,
@@ -4094,7 +4094,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       -0.8727405324939759,
       -0.17852366936973668,
@@ -4105,7 +4105,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       -0.8724706303864926,
       -0.17925115720206952,
@@ -4116,7 +4116,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       1.1353225999748895,
       -0.21144691559749704,
@@ -4132,7 +4132,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       1.1359235887529362,
       -0.210282353707418,
@@ -4148,7 +4148,7 @@
       "arm/gripper/right_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": false,
+     "sscbirrt_valid": false,
      "q": [
       0.9722751600632125,
       0.3089390197260268,
@@ -4159,7 +4159,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": true,
+     "sscbirrt_valid": true,
      "q": [
       0.9717078782199546,
       0.30816393213114013,
@@ -4235,7 +4235,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.7399935011732441,
       -0.8243257787910196,
@@ -4246,7 +4246,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.4783180197641874,
       0.26035860959672585,
@@ -4257,7 +4257,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.9670262095661954,
       -2.0255872564406903,
@@ -4272,7 +4272,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.5870211573541393,
       1.1621031788707277,
@@ -4283,7 +4283,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.1462609618218202,
       -2.1582270703720314,
@@ -4306,7 +4306,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.27058947432398206,
       0.2155226613472444,
@@ -4317,7 +4317,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.516438545217161,
       -2.2336681245704444,
@@ -4347,7 +4347,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.2826776026265043,
       0.116101616520774,
@@ -4378,7 +4378,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.2068876224105305,
       2.155738604753468,
@@ -4393,7 +4393,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.2849471569006092,
       1.1077977894151714,
@@ -4422,7 +4422,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.0872035570930476,
       0.7232159614188621,
@@ -4436,7 +4436,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.7931125046522145,
       1.0264867311743076,
@@ -4447,7 +4447,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.7750332853341988,
       -1.0418838548482379,
@@ -4461,7 +4461,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.7688081770162567,
       0.8557669725010986,
@@ -4472,7 +4472,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.533807276496657,
       0.5229221511712406,
@@ -4499,7 +4499,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.4548086621600691,
       0.22359581629833924,
@@ -4530,7 +4530,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.726558651260686,
       1.7104904446880143,
@@ -4541,7 +4541,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.27521537389312756,
       -1.6749701375082564,
@@ -4552,7 +4552,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.171227211243679,
       -0.8559579160752151,
@@ -4563,7 +4563,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.0589417049939915,
       -1.4039375304710922,
@@ -4593,7 +4593,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.8823265694044475,
       1.9421951936735993,
@@ -4604,7 +4604,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.9301794297417025,
       -1.8606598312277955,
@@ -4615,7 +4615,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.0906977621270615,
       -2.1512184768984435,
@@ -4626,7 +4626,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.3275302089432532,
       -0.24949116836454177,
@@ -4640,7 +4640,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.624903805580931,
       1.0122011910474034,
@@ -4671,7 +4671,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.8162551047600743,
       2.213477210823208,
@@ -4682,7 +4682,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.5191543496168951,
       -2.1587926248069196,
@@ -4693,7 +4693,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.195267717740693,
       -2.4492116688680583,
@@ -4704,7 +4704,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.0345601635444988,
       -0.5601167942939905,
@@ -4715,7 +4715,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.14259688606057397,
       -2.228845091680261,
@@ -4749,7 +4749,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.09257020450218,
       2.0062744429204153,
@@ -4760,7 +4760,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.0735271258106047,
       -2.3168985295803535,
@@ -4771,7 +4771,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.8694165283384885,
       -0.18126599000649113,
@@ -4801,7 +4801,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.84424628801062,
       0.9499784773103398,
@@ -4812,7 +4812,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.0756235057879262,
       -0.0020466880457092884,
@@ -4823,7 +4823,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.5234621116062517,
       -0.5831165828981416,
@@ -4847,7 +4847,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.5665952049227714,
       -0.03082480887622141,
@@ -4861,7 +4861,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.5815235373284666,
       1.304883365345746,
@@ -4872,7 +4872,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.213177403431413,
       -1.025584211076228,
@@ -4883,7 +4883,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.1458744483065595,
       -0.7061098052962927,
@@ -4912,7 +4912,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.938932991699047,
       0.20222109487944173,
@@ -4923,7 +4923,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.6960950160512978,
       -0.6846210555870946,
@@ -4934,7 +4934,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.1338235894094029,
       -2.1389025038622456,
@@ -4945,7 +4945,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.127341843851169,
       0.31474149748258795,
@@ -4956,7 +4956,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.3295818573045746,
       -0.8459083916771531,
@@ -4985,7 +4985,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.8947405984971206,
       0.1918441356836159,
@@ -4996,7 +4996,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.4830338566070678,
       0.5190080365848637,
@@ -5025,7 +5025,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.8672772612446806,
       0.4850559288163431,
@@ -5036,7 +5036,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.4715218489221629,
       -1.0091996322911023,
@@ -5049,7 +5049,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.47114244282672335,
       -1.008421387555919,
@@ -5062,7 +5062,7 @@
       "arm/base|can"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.6775222058876682,
       -0.3740359379054024,
@@ -5073,7 +5073,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.6781895110925452,
       -0.3748465654076589,
@@ -5084,7 +5084,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.32536241544829825,
       -0.3698013691792371,
@@ -5097,7 +5097,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.3247723640722861,
       -0.3692218404361416,
@@ -5110,7 +5110,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.5817475796764533,
       -0.3961770881629596,
@@ -5121,7 +5121,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.5820517420472768,
       -0.39677503513217777,
@@ -5132,7 +5132,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.5641719904014709,
       -0.9899423436413033,
@@ -5145,7 +5145,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.5637327530606888,
       -0.9893686693881072,
@@ -5158,7 +5158,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.442918508662337,
       0.8234874695578369,
@@ -5169,7 +5169,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.4420473793190784,
       0.8229824962702338,
@@ -5180,7 +5180,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.7420472532303968,
       0.8228731227106193,
@@ -5193,7 +5193,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.7424241676499159,
       0.8233364163696402,
@@ -5206,7 +5206,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.6415996366341362,
       0.8232625954181048,
@@ -5217,7 +5217,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.6412816152831808,
       0.8231813344753973,
@@ -5228,7 +5228,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.5154076968879887,
       0.4532060077462533,
@@ -5241,7 +5241,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.5153884101169104,
       0.45313293002777844,
@@ -5254,7 +5254,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.8148870479180728,
       0.6822890373998891,
@@ -5265,7 +5265,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.814154192931463,
       0.6814625089374389,
@@ -5276,7 +5276,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.182086239395256,
       0.6571691255389314,
@@ -5289,7 +5289,7 @@
       "can|tetra"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.1825314017156687,
       0.6579860524735369,
@@ -5302,7 +5302,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.17234860822986,
       0.8234353535841997,
@@ -5313,7 +5313,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.1709295393824122,
       0.8225069221816359,
@@ -5324,7 +5324,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.430424462725576,
       0.8230705492800854,
@@ -5337,7 +5337,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.430741204326318,
       0.8233785796412699,
@@ -5350,7 +5350,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.0860731752687607,
       0.8236590160013264,
@@ -5361,7 +5361,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.085512359654712,
       0.822591567310987,
@@ -5372,7 +5372,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.2742098201269063,
       0.2288890718318991,
@@ -5385,7 +5385,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.2746858878316039,
       0.22992303656202623,
@@ -5398,7 +5398,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.5303052245600512,
       -0.3790700194457315,
@@ -5409,7 +5409,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.5300564347459176,
       -0.3801254815972209,
@@ -5420,7 +5420,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.6990564003533706,
       0.09961184770376694,
@@ -5433,7 +5433,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.6979056037673478,
       0.09988803043504546,
@@ -5446,7 +5446,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.6411457503229507,
       0.10347563252842311,
@@ -5457,7 +5457,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.6421027497843272,
       0.10324320450953736,
@@ -5468,7 +5468,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.561761686897312,
       -0.0927149271076817,
@@ -5481,7 +5481,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.5617722174376725,
       -0.09258009024878963,
@@ -5494,7 +5494,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.7119872020557843,
       0.823541673535934,
@@ -5505,7 +5505,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.7121414144254383,
       0.8229727117252841,
@@ -5516,7 +5516,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.1722419213232022,
       -0.56750950924897,
@@ -5529,7 +5529,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.17275090751460984,
       -0.5672877487752943,
@@ -5542,7 +5542,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.126190103678742,
       -0.01710778657138867,
@@ -5553,7 +5553,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.1263749576885935,
       -0.017324300768279913,
@@ -5564,7 +5564,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.1084455433163107,
       -0.318164613724887,
@@ -5577,7 +5577,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.10833938089961,
       -0.31791125617426186,
@@ -5590,7 +5590,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.143357695613409,
       0.3301060283740602,
@@ -5601,7 +5601,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.1435013218971273,
       0.3301859023733037,
@@ -5612,7 +5612,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.7248505644614492,
       0.5078509230456967,
@@ -5626,7 +5626,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.7235443361611924,
       0.507842633956886,
@@ -5722,7 +5722,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.2211170928931745,
       0.8984192242701339,
@@ -5751,7 +5751,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.7021831123937732,
       0.23628122679730912,
@@ -5762,7 +5762,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.734623385363651,
       -0.8589153862184817,
@@ -5773,7 +5773,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.487697739338264,
       -2.2970765944373666,
@@ -5784,7 +5784,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.5456080070180755,
       -1.7811599182482796,
@@ -5795,7 +5795,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.0951164298295735,
       -1.5133363363315828,
@@ -5809,7 +5809,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.467403775387872,
       2.0765091938785822,
@@ -5840,7 +5840,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.7578956448037624,
       1.6338811914951257,
@@ -5851,7 +5851,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.09052138279863042,
       -1.1423740001725435,
@@ -5882,7 +5882,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.2266996209047778,
       1.9949564934589477,
@@ -5893,7 +5893,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.4661785828117468,
       -1.46963225095738,
@@ -5922,7 +5922,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.9612280311093324,
       0.7327907620583307,
@@ -5943,7 +5943,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.510127286075402,
       2.49649279255972,
@@ -5954,7 +5954,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.18768072201707064,
       -1.1100088663768277,
@@ -5965,7 +5965,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.3648146341152221,
       -1.61002842831943,
@@ -5994,7 +5994,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.1622036208034685,
       0.46766019651571733,
@@ -6013,7 +6013,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.058732297251759,
       0.17641221787470407,
@@ -6024,7 +6024,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.583807275814447,
       0.46940552688961135,
@@ -6035,7 +6035,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.6473819761358979,
       -1.0740367878975554,
@@ -6050,7 +6050,7 @@
       "arm/base|can"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.8750072337476364,
       -0.3788781965867788,
@@ -6061,7 +6061,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.323697553015908,
       2.3458294434663483,
@@ -6072,7 +6072,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.6399298476271706,
       -1.5165172986237647,
@@ -6085,7 +6085,7 @@
       "arm/base|can"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.8356334437729149,
       -0.39283390087586023,
@@ -6096,7 +6096,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.9217529011511365,
       0.6383218877454855,
@@ -6126,7 +6126,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.02440188477227423,
       -0.234317845473056,
@@ -6140,7 +6140,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.593276024804134,
       2.1681394417159567,
@@ -6154,7 +6154,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.7474518133717447,
       2.2571116575115466,
@@ -6185,7 +6185,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.2121137361440617,
       1.0809058637855673,
@@ -6196,7 +6196,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.505590266742593,
       -0.38713271818494543,
@@ -6207,7 +6207,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.8602404347004329,
       0.009364337751653906,
@@ -6238,7 +6238,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.8666025385706781,
       1.9787369711764096,
@@ -6249,7 +6249,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.27390799766408946,
       -1.4574856999522112,
@@ -6260,7 +6260,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.5366854960988152,
       -2.1883113806286945,
@@ -6271,7 +6271,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.4797604542347225,
       -1.0903899339815832,
@@ -6282,7 +6282,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.590888932996431,
       -0.13896775454920074,
@@ -6293,7 +6293,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.0400323226878283,
       -1.6741027377104651,
@@ -6322,7 +6322,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.7326045898847475,
       0.42918398668485847,
@@ -6333,7 +6333,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.94686389630301,
       0.20234710623468266,
@@ -6347,7 +6347,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.6420837066405529,
       1.5436321736012437,
@@ -6361,7 +6361,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.0445470558014653,
       1.2787594018893034,
@@ -6372,7 +6372,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.882821456574317,
       -2.005871747811101,
@@ -6401,7 +6401,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.931202635282017,
       0.7690592002861285,
@@ -6412,7 +6412,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.13555992685227491,
       -1.0606683355606812,
@@ -6443,7 +6443,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.43749624138886145,
       2.230440176966341,
@@ -6454,7 +6454,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.4797248588907133,
       -1.1837809153127825,
@@ -6465,7 +6465,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.4830045368316582,
       2.3499797798505466,
@@ -6481,7 +6481,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.39973250521683146,
       2.3122471324850786,
@@ -6518,7 +6518,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.2183720599021226,
       0.22609024862450144,
@@ -6531,7 +6531,7 @@
       "arm/link2|ball"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.9338564063642631,
       -0.49901923360147626,
@@ -6542,7 +6542,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.9344513298256296,
       -0.4992866155870759,
@@ -6553,7 +6553,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.6438973556168035,
       -0.07774869510007638,
@@ -6566,7 +6566,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.6442323867070276,
       -0.07687226796867741,
@@ -6579,7 +6579,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.5778951167878201,
       0.40571361158745556,
@@ -6590,7 +6590,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.5772439023683853,
       0.40503581490980234,
@@ -6601,7 +6601,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.008687627392791924,
       -0.16119227108515577,
@@ -6614,7 +6614,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.008765073926899201,
       -0.16042632125760903,
@@ -6627,7 +6627,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.6458105491863091,
       0.8234585903787196,
@@ -6638,7 +6638,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.6461131563547433,
       0.8226127435172899,
@@ -6649,7 +6649,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.1197647521760572,
       0.04130736490544887,
@@ -6662,7 +6662,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.1196414732327704,
       0.04184506583636091,
@@ -6679,7 +6679,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.32211014669962207,
       -0.4285068439117672,
@@ -6690,7 +6690,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.3214515021663964,
       -0.42938733748084346,
@@ -6701,7 +6701,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.21983102082988282,
       -0.12328395581166215,
@@ -6714,7 +6714,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.219781555250461,
       -0.12277670761223951,
@@ -6727,7 +6727,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.9993002315766584,
       0.40459792484676327,
@@ -6738,7 +6738,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.999945382839614,
       0.404669456416347,
@@ -6749,7 +6749,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.819260578983041,
       -0.41044545683673106,
@@ -6762,7 +6762,7 @@
       "arm/base|can"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.8195602921807,
       -0.41027574038377435,
@@ -6775,7 +6775,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.3293506307968483,
       2.317890546766585,
@@ -6786,7 +6786,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.329216033706826,
       2.31855575859277,
@@ -6797,7 +6797,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.0876006173580306,
       -0.5497545316160461,
@@ -6810,7 +6810,7 @@
       "arm/base|can"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.0871601153063084,
       -0.5494801948490178,
@@ -6824,7 +6824,7 @@
       "arm/gripper/base|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.7524218266557561,
       0.20103731625249782,
@@ -6835,7 +6835,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.7530950166813724,
       0.2012890632712042,
@@ -6846,7 +6846,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.0351501593217702,
       0.24077654053215586,
@@ -6859,7 +6859,7 @@
       "arm/gripper/base|ball"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.0346750238759883,
       0.24056349372228805,
@@ -6872,7 +6872,7 @@
       "arm/gripper/right_finger|tetra"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.4125175096020923,
       0.07843908796244131,
@@ -6883,7 +6883,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.4125891591456954,
       0.07808068010551492,
@@ -6894,7 +6894,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.7763052022636912,
       0.17572247524310053,
@@ -6907,7 +6907,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.7760626148867065,
       0.17620327910868275,
@@ -6920,7 +6920,7 @@
       "arm/link2|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.5065869092309339,
       -0.10849984663804563,
@@ -6931,7 +6931,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.5064422084152829,
       -0.10933876818861414,
@@ -6942,7 +6942,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.094584184476534,
       -0.36365651684697253,
@@ -6955,7 +6955,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       2.094997410127705,
       -0.36314301911152447,
@@ -6968,7 +6968,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.1911728989953128,
       0.2325292595172378,
@@ -6979,7 +6979,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.1925594879811983,
       0.23247387941947165,
@@ -6990,7 +6990,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.4240145472024457,
       0.7714763657764511,
@@ -7004,7 +7004,7 @@
       "arm/gripper/left_finger|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -1.4231383392915706,
       0.771803827951101,
@@ -7017,7 +7017,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.022120263721138,
       0.8232734416769427,
@@ -7028,7 +7028,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -2.0220807799322644,
       0.8224715297751604,
@@ -7039,7 +7039,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.368783067049296,
       0.35986528118194727,
@@ -7052,7 +7052,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.3697142252748469,
       0.3605427545579476,
@@ -7065,7 +7065,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.712007968725652,
       0.5457037881954534,
@@ -7076,7 +7076,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.7115695793925392,
       0.545257077371272,
@@ -7087,7 +7087,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.30834770060075123,
       0.8227199343034154,
@@ -7100,7 +7100,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       0.3084214155212924,
       0.8235234275926067,
@@ -7113,7 +7113,7 @@
       "arm/link1|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.7647179229841665,
       0.8234076565153741,
@@ -7124,7 +7124,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       -0.765430135166852,
       0.8225741064440169,
@@ -7135,7 +7135,7 @@
      "forward_vs_kinematics_agree": true,
      "invalid_contacts_mjm": [],
      "mj_manipulator_valid": true,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.3949357901207848,
       2.34691215983768,
@@ -7148,7 +7148,7 @@
       "can|world"
      ],
      "mj_manipulator_valid": false,
-     "pycbirrt_valid": null,
+     "sscbirrt_valid": null,
      "q": [
       1.3946713194099414,
       2.346902947765569,

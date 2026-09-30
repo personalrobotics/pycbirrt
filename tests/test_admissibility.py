@@ -13,7 +13,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pycbirrt import (
+from sscbirrt import (
     AllGoalConfigurationsInvalid,
     AllStartConfigurationsInCollision,
     AllStartConfigurationsInvalid,
@@ -21,9 +21,9 @@ from pycbirrt import (
     CBiRRTConfig,
     PlanningProblem,
 )
-from pycbirrt.sets import FiniteSet, Sample
-from pycbirrt.space import JointSpace
-from pycbirrt.tree import RRTree
+from sscbirrt.sets import FiniteSet, Sample
+from sscbirrt.space import JointSpace
+from sscbirrt.tree import RRTree
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 
@@ -172,7 +172,7 @@ class TestRootsOutsideSpace:
 
     def test_only_collisions_still_reports_collision(self, planner):
         """Sampled goal candidates all in collision (and in space) keep the collision exception."""
-        from pycbirrt import AllGoalConfigurationsInCollision
+        from sscbirrt import AllGoalConfigurationsInCollision
 
         class BlockRight:
             def is_valid(self, q):
@@ -190,7 +190,7 @@ class TestRootsOutsideSpace:
 
     def test_mixed_collision_and_out_of_space_is_invalid(self, planner):
         """If any rejection was for being outside the space, the exception is Invalid, not InCollision."""
-        from pycbirrt import AllGoalConfigurationsInCollision
+        from sscbirrt import AllGoalConfigurationsInCollision
 
         class BlockRight:
             def is_valid(self, q):

@@ -3,7 +3,7 @@
 
 """SSIK backend: enumerative analytical inverse kinematics.
 
-SSIK (``pip install "pycbirrt[ssik]"``) solves 6R and 7R manipulators in
+SSIK (``pip install "sscbirrt[ssik]"``) solves 6R and 7R manipulators in
 closed form, accepts a seed, and, from version 6, returns every in-limit
 winding of each geometric branch for joints whose range exceeds one turn.
 That is exactly what ``TSRConfigurationSet`` needs to represent the complete
@@ -11,14 +11,14 @@ TSR-induced configuration set on robots like the UR5e (#36, #63).
 
 This adapter is deliberately thin. It wraps any SSIK solver object, an
 ``ssik.Manipulator`` or a prebuilt artifact module such as
-``ssik.prebuilt.ur5e_ik``, and exposes pycbirrt's ``IKSolver.solve``. It does
+``ssik.prebuilt.ur5e_ik``, and exposes sscbirrt's ``IKSolver.solve``. It does
 no collision checking and applies no solution cap. Diagnostics, refinement,
 tolerance policies, and robot construction stay on the SSIK object; configure
 it before wrapping.
 
 Frame and joint-order contract
 ------------------------------
-The wrapped SSIK model and pycbirrt's ``RobotModel`` must agree on joint
+The wrapped SSIK model and sscbirrt's ``RobotModel`` must agree on joint
 order and sign, on the base frame, on the end-effector frame, and on which
 joints are finite versus continuous. The adapter does not guess. If the SSIK
 model's frames differ from the robot model's by fixed transforms, pass them
@@ -30,7 +30,7 @@ equality in a test before planning; ``tests/test_ur5e_integration.py`` does.
 
 For a MuJoCo model, ``ssik.Manipulator.from_mjcf(xml, base="world", ee=<body>)``
 with ``T_ee`` set to the end-effector site's offset within that body (see
-``pycbirrt.backends.mujoco.site_offset_in_body``) reproduces MuJoCo's forward
+``sscbirrt.backends.mujoco.site_offset_in_body``) reproduces MuJoCo's forward
 kinematics to machine precision. Prebuilt SSIK artifacts use the vendor's
 nominal geometry and may differ from a simulator model by a millimeter; check
 before relying on tight membership tolerances.
@@ -46,7 +46,7 @@ try:
     import ssik  # noqa: F401
 except ImportError as e:  # pragma: no cover - exercised only without the extra
     raise ImportError(
-        'The SSIK backend requires the optional dependency ssik>=6.0.1. Install it with: pip install "pycbirrt[ssik]"'
+        'The SSIK backend requires the optional dependency ssik>=6.0.1. Install it with: pip install "sscbirrt[ssik]"'
     ) from e
 
 
@@ -56,7 +56,7 @@ class _SSIKLike(Protocol):
 
 
 class SSIKSolver:
-    """Adapt an SSIK solver to pycbirrt's ``IKSolver`` protocol.
+    """Adapt an SSIK solver to sscbirrt's ``IKSolver`` protocol.
 
     Args:
         solver: An ``ssik.Manipulator`` or a prebuilt artifact module, anything
@@ -83,13 +83,13 @@ class SSIKSolver:
         self._T_ee_inv = None if self.T_ee is None else np.linalg.inv(self.T_ee)
 
     def native_kinematics(self):
-        """The native SSIK arm for this solver (``pycbirrt.backends.native.KinematicsIntegration``).
+        """The native SSIK arm for this solver (``sscbirrt.backends.native.KinematicsIntegration``).
 
         Raises ``NativeUnsupported`` when the wrapped solver is not an ``ssik.Manipulator`` of a verified
         family or the extension was built without SSIK.
         """
-        from pycbirrt.backends import native_ssik
-        from pycbirrt.backends.native import NativeUnsupported
+        from sscbirrt.backends import native_ssik
+        from sscbirrt.backends.native import NativeUnsupported
 
         if not hasattr(self.solver, "solver_name"):
             raise NativeUnsupported([f"SSIKSolver wraps {type(self.solver).__name__}, not an ssik.Manipulator"])

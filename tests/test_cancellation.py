@@ -6,8 +6,8 @@
 import numpy as np
 from tsr import TSR
 
-from pycbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem, TSRConfigurationSet
-from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK
+from sscbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem, TSRConfigurationSet
+from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK
 
 
 def _planner(**kw):

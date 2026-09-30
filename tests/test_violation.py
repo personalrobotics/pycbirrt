@@ -9,10 +9,10 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 from tsr import TSR
 
-from pycbirrt.exceptions import UnsupportedCapability
-from pycbirrt.sets import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PredicateSet, SetViolation, supports
-from pycbirrt.space import JointSpace
-from pycbirrt.tsr_set import TSRConfigurationSet
+from sscbirrt.exceptions import UnsupportedCapability
+from sscbirrt.sets import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PredicateSet, SetViolation, supports
+from sscbirrt.space import JointSpace
+from sscbirrt.tsr_set import TSRConfigurationSet
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 
@@ -145,8 +145,8 @@ class TestViolationContract:
 class TestLegacyHomogeneousIntersection:
     def test_two_tsr_constraints_still_project(self):
         """Homogeneous TSR intersections keep working through the lowering."""
-        from pycbirrt import CBiRRT, CBiRRTConfig
-        from pycbirrt.legacy import legacy_problem
+        from sscbirrt import CBiRRT, CBiRRTConfig
+        from sscbirrt.legacy import legacy_problem
 
         robot = MockRobotModel()
         collision = MockCollisionChecker()

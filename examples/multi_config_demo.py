@@ -17,7 +17,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent))
 from planar_arm import CircleObstacleChecker, PlanarArmIK, PlanarArmRobot
 
-from pycbirrt import CBiRRT, CBiRRTConfig
+from sscbirrt import CBiRRT, CBiRRTConfig
 
 
 def main():

@@ -11,13 +11,13 @@ import numpy as np
 import pytest
 
 mujoco = pytest.importorskip("mujoco")
-from pycbirrt.backends import native_mujoco as nm  # noqa: E402
-from pycbirrt.backends.native import NativeUnsupported  # noqa: E402
+from sscbirrt.backends import native_mujoco as nm  # noqa: E402
+from sscbirrt.backends.native import NativeUnsupported  # noqa: E402
 
 if not nm.available():
     pytest.skip(nm.unavailable_reason(), allow_module_level=True)
 
-from pycbirrt import CBiRRTConfig  # noqa: E402
+from sscbirrt import CBiRRTConfig  # noqa: E402
 
 XML = """
 <mujoco><compiler angle="radian"/><worldbody>
@@ -52,8 +52,8 @@ def test_plan_native_finite_problem_on_a_small_world():
     assert r.provenance["snapshot_sha256"] and r.provenance["scene_mjb_sha256"] and r.provenance["mujoco"] == "3.14.0"
     assert r.stats["state_checks"] > 0
     # A Python validator in the loop is refused with a reason naming it.
-    from pycbirrt import CBiRRT
-    from pycbirrt.backends.mujoco import MuJoCoRobotModel
+    from sscbirrt import CBiRRT
+    from sscbirrt.backends.mujoco import MuJoCoRobotModel
 
     class PythonChecker:
         def is_valid(self, q):
@@ -78,8 +78,8 @@ class TestUR5eReleaseCases:
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "examples"))
         from ur5e_mujoco import create_grasp_tsr, create_scene
 
-        from pycbirrt.backends.mujoco import site_offset_in_body
-        from pycbirrt.backends.ssik import SSIKSolver
+        from sscbirrt.backends.mujoco import site_offset_in_body
+        from sscbirrt.backends.ssik import SSIKSolver
 
         menagerie = Path(os.environ["MUJOCO_MENAGERIE_PATH"])
         model = create_scene(menagerie, free_cylinder=True)

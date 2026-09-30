@@ -3,6 +3,6 @@
 
 """Small deterministic robots for tests, examples, and the reference artifact."""
 
-from pycbirrt.testing.planar import NoCollision, PlanarArm, PlanarIK, Wall
+from sscbirrt.testing.planar import NoCollision, PlanarArm, PlanarIK, Wall
 
 __all__ = ["PlanarArm", "PlanarIK", "NoCollision", "Wall"]

@@ -6,7 +6,7 @@
 import numpy as np
 import pytest
 
-from pycbirrt.space import JointSpace
+from sscbirrt.space import JointSpace
 
 
 @pytest.fixture

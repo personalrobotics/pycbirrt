@@ -1,4 +1,4 @@
-# pycbirrt
+# sscbirrt
 
 A planner over sets of configurations. A planning problem names a start set,
 a goal set, a set the whole path must stay inside, and a validity predicate;
@@ -80,13 +80,13 @@ $\{q : \mathrm{FK}(q) \in \mathrm{TSR}\}$ with all four capabilities.
 
 Three roles, three kinds of set: a finite start, a goal induced by a pose
 region, and a path constraint written for this problem that only implements
-membership. Run against the two-link reference arm in `pycbirrt.testing`.
+membership. Run against the two-link reference arm in `sscbirrt.testing`.
 
 ```python
 import numpy as np
 from tsr import TSR
-from pycbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem, TSRConfigurationSet
-from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK
+from sscbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem, TSRConfigurationSet
+from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK
 
 robot, ik, collision = PlanarArm(), PlanarIK(), NoCollision()
 planner = CBiRRT(robot, ik, collision, CBiRRTConfig(step_size=0.1, timeout=10.0))
@@ -273,7 +273,7 @@ The right panel is configuration space; red regions are in collision.
 ## Configuration
 
 ```python
-from pycbirrt import CBiRRTConfig
+from sscbirrt import CBiRRTConfig
 
 config = CBiRRTConfig(
     # Termination
@@ -389,17 +389,17 @@ scikit-build-core, pybind11, ninja, ssik, and mujoco itself).
 
 ## Backends
 
-pycbirrt ships three integrations. Each implements one interface the core
+sscbirrt ships three integrations. Each implements one interface the core
 defines and each lives in its own module, so none is required by the others:
 
 | Integration | Implements | C++ target | Python |
 |---|---|---|---|
-| Task Space Regions (`sstsr`) | `StateSet` | `sscbirrt::tsr` | `pycbirrt.tsr_set` |
-| SSIK | `ForwardKinematics`, `IKSolver` | `sscbirrt::ssik` (the only target that uses Eigen) | `pycbirrt.backends.ssik`, `native_ssik` |
-| MuJoCo | `StateValidator` | `sscbirrt::mujoco`, module `pycbirrt._native_mujoco` | `pycbirrt.backends.mujoco`, `native_mujoco` |
+| Task Space Regions (`sstsr`) | `StateSet` | `sscbirrt::tsr` | `sscbirrt.tsr_set` |
+| SSIK | `ForwardKinematics`, `IKSolver` | `sscbirrt::ssik` (the only target that uses Eigen) | `sscbirrt.backends.ssik`, `native_ssik` |
+| MuJoCo | `StateValidator` | `sscbirrt::mujoco`, module `sscbirrt._native_mujoco` | `sscbirrt.backends.mujoco`, `native_mujoco` |
 
 `sscbirrt::core` depends on none of them and on nothing but the C++ standard
-library. `import pycbirrt` and the native planner work with no simulator and
+library. `import sscbirrt` and the native planner work with no simulator and
 no IK library installed; a missing one is reported as a reason, never an
 import error. Another simulator or IK library is a fourth module of the same
 shape ([Adding an integration](#adding-an-integration)).
@@ -407,7 +407,7 @@ shape ([Adding an integration](#adding-an-integration)).
 ### MuJoCo
 
 ```python
-from pycbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoIKSolver, MuJoCoRobotModel
+from sscbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoIKSolver, MuJoCoRobotModel
 
 robot = MuJoCoRobotModel(model, data, ee_site="end_effector")
 collision = MuJoCoCollisionChecker(model, data)
@@ -420,12 +420,12 @@ configuration, tries a few random restarts within each joint's limits. Pass
 
 ### Native MuJoCo scene (collision checking in C++)
 
-With `pycbirrt[mujoco]` (pinned to `mujoco==3.14.0`, the version the extension
+With `sscbirrt[mujoco]` (pinned to `mujoco==3.14.0`, the version the extension
 is built against), collision checking can run natively against a MuJoCo world
 the planner owns:
 
 ```python
-from pycbirrt.backends.native_mujoco import NativeScene, Snapshot, NativeCollisionChecker
+from sscbirrt.backends.native_mujoco import NativeScene, Snapshot, NativeCollisionChecker
 
 scene = NativeScene.from_model(model, joint_names)              # an owned mjModel from the compiled model's MJB bytes
 snap = Snapshot.capture(scene, data, attachments={"can": ("robot/gripper/base", T_gripper_can)})
@@ -435,7 +435,7 @@ checker = NativeCollisionChecker(scene, snap)                   # a CollisionChe
 One call does all of it from a live world, with SSIK for the pose regions:
 
 ```python
-from pycbirrt.backends.native_mujoco import plan_native
+from sscbirrt.backends.native_mujoco import plan_native
 
 result = plan_native(model, data, joint_names, ik=ssik_solver, start=q_now, goal_tsrs=[grasp_tsr],
                      attachments={"can": ("robot/gripper/base", T_gripper_can)}, seed=0)
@@ -454,7 +454,7 @@ cost down by component on both backends.
 ### SSIK (analytical IK, recommended)
 
 ```bash
-uv pip install "pycbirrt[ssik]"   # ssik >= 7.0
+uv pip install "sscbirrt[ssik]"   # ssik >= 7.0
 ```
 
 `SSIKRobotModel(ik)` is a `RobotModel` whose forward kinematics and limits
@@ -473,8 +473,8 @@ by `JointSpace` and collision by the planner's validator.
 
 ```python
 import ssik
-from pycbirrt.backends.mujoco import site_offset_in_body
-from pycbirrt.backends.ssik import SSIKSolver
+from sscbirrt.backends.mujoco import site_offset_in_body
+from sscbirrt.backends.ssik import SSIKSolver
 
 # From the same MJCF as the MuJoCo model, so the frames agree to machine precision
 arm = ssik.Manipulator.from_mjcf("ur5e.xml", base="world", ee="wrist_3_link")
@@ -497,7 +497,7 @@ tolerance.
 
 The C++20 core in `cpp/` implements the same contract as the Python planner
 ([docs/native-design.md](docs/native-design.md)). It is built into the wheel
-as `pycbirrt._native`, and since 2.0 the planner selects it by default:
+as `sscbirrt._native`, and since 2.0 the planner selects it by default:
 
 ```python
 planner = CBiRRT(robot, ik, collision, config)                    # backend="auto": native where it can, else Python
@@ -512,7 +512,7 @@ Selection is decided by the problem's components, never by which optional
 packages happen to import: a missing extension or adapter is itself one of
 the stated reasons. The native core plans problems whose components all have
 a native form: finite sets, `AnyOf`/`AllOf` with the named strategies,
-`EmptySet`, the validators in `pycbirrt.testing`, any validator or IK solver
+`EmptySet`, the validators in `sscbirrt.testing`, any validator or IK solver
 that implements the integration protocols below (the MuJoCo scene and SSIK
 do), and `TSRConfigurationSet`s whose region is a single `TSR` and whose IK
 has a native form (SSIK around an `ssik.Manipulator` of a verified family,
@@ -532,12 +532,12 @@ runs the behavior artifact through each selection.
 
 ### Adding an integration
 
-The native lowering (`pycbirrt.backends.native`) recognizes validators and IK
+The native lowering (`sscbirrt.backends.native`) recognizes validators and IK
 solvers by two protocols, never by type, so a new collision or IK backend
-plugs in without a change to pycbirrt:
+plugs in without a change to sscbirrt:
 
 ```python
-from pycbirrt.backends.native import ValidatorIntegration, KinematicsIntegration
+from sscbirrt.backends.native import ValidatorIntegration, KinematicsIntegration
 
 class MyChecker:                       # a CollisionChecker for the Python backend ...
     def is_valid(self, q) -> bool: ...
@@ -557,7 +557,7 @@ class MyIK:                            # an IKSolver ...
 On the C++ side, subclass `sscbirrt::StateValidator` (one virtual, `is_valid`)
 or `sscbirrt::ForwardKinematics` and `sscbirrt::IKSolver` in a target that
 links `sscbirrt::core`, and bind it with pybind11 in your own extension
-module, declaring the base registered by `pycbirrt._native` so a native
+module, declaring the base registered by `sscbirrt._native` so a native
 `PlanningProblem` accepts your object. `NativeCollisionChecker` and
 `SSIKSolver` are the two shipped implementations of these protocols and are
 the templates to copy. The rules that made them trustworthy apply to a new

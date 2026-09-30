@@ -40,7 +40,7 @@ from typing import Protocol, runtime_checkable
 
 import numpy as np
 
-from pycbirrt.space import JointSpace
+from sscbirrt.space import JointSpace
 
 
 @dataclass

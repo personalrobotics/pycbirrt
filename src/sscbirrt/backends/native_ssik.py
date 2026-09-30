@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pycbirrt import _native
+from sscbirrt import _native
 
 VERIFIED_FAMILIES = ("ikgeo.three_parallel",)
 

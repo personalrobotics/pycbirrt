@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Siddhartha Srinivasa
 
-from pycbirrt.config import CBiRRTConfig
-from pycbirrt.exceptions import (
+from sscbirrt.config import CBiRRTConfig
+from sscbirrt.exceptions import (
     AllGoalConfigurationsInCollision,
     AllGoalConfigurationsInvalid,
     AllStartConfigurationsInCollision,
@@ -11,10 +11,10 @@ from pycbirrt.exceptions import (
     PlanningError,
     UnsupportedCapability,
 )
-from pycbirrt.motion import DiscreteMotionValidator, LocalMotion, MotionValidator, RestrictedMotionValidator
-from pycbirrt.planner import CBiRRT, PlanResult
-from pycbirrt.problem import PlanningProblem
-from pycbirrt.sets import (
+from sscbirrt.motion import DiscreteMotionValidator, LocalMotion, MotionValidator, RestrictedMotionValidator
+from sscbirrt.planner import CBiRRT, PlanResult
+from sscbirrt.problem import PlanningProblem
+from sscbirrt.sets import (
     AllOf,
     AnyOf,
     EmptySet,
@@ -33,8 +33,8 @@ from pycbirrt.sets import (
     seeds,
     supports,
 )
-from pycbirrt.space import JointSpace, SpaceSampler
-from pycbirrt.tsr_set import PoseRegion, TSRConfigurationSet, region_volume, tsr_weights
+from sscbirrt.space import JointSpace, SpaceSampler
+from sscbirrt.tsr_set import PoseRegion, TSRConfigurationSet, region_volume, tsr_weights
 
 __all__ = [
     "CBiRRT",

@@ -35,8 +35,8 @@ from tsr import TSR
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ur5e_mujoco import build_ik_solver, create_grasp_tsr, create_scene, get_menagerie_path  # noqa: E402
 
-from pycbirrt import CBiRRT, CBiRRTConfig  # noqa: E402
-from pycbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoRobotModel  # noqa: E402
+from sscbirrt import CBiRRT, CBiRRTConfig  # noqa: E402
+from sscbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoRobotModel  # noqa: E402
 
 UR5E_JOINTS = [
     "shoulder_pan_joint",

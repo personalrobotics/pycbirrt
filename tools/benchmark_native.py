@@ -43,7 +43,7 @@ def _median_of(dicts: list[dict[str, float]]) -> dict[str, float]:
 
 
 def run(seeds: int) -> dict[str, Any]:
-    from pycbirrt.backends import native
+    from sscbirrt.backends import native
 
     tool = _artifact_tool()
     rows = []
@@ -86,7 +86,7 @@ def run(seeds: int) -> dict[str, Any]:
         )
     return {
         "artifact": "Python versus native backend timings with the native cost breakdown",
-        "issue": "https://github.com/personalrobotics/pycbirrt/issues/89",
+        "issue": "https://github.com/personalrobotics/sscbirrt/issues/89",
         "machine": {
             "platform": platform.platform(),
             "machine": platform.machine(),

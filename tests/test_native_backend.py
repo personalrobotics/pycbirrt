@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 from tsr import TSR
 
-from pycbirrt import (
+from sscbirrt import (
     AllStartConfigurationsInCollision,
     CBiRRT,
     CBiRRTConfig,
@@ -21,11 +21,11 @@ from pycbirrt import (
     PredicateSet,
     TSRConfigurationSet,
 )
-from pycbirrt.backends import native
-from pycbirrt.sets import seeds
-from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall
+from sscbirrt.backends import native
+from sscbirrt.sets import seeds
+from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall
 
-pytest.importorskip("pycbirrt._native")
+pytest.importorskip("sscbirrt._native")
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -125,7 +125,7 @@ class TestLowering:
             validator=planner.collision,
             path_constraint=PredicateSet(lambda q: True, name="p"),
         )
-        with caplog.at_level("INFO", logger="pycbirrt.planner"):
+        with caplog.at_level("INFO", logger="sscbirrt.planner"):
             result = planner.solve(problem, seed=0)
         assert result.backend == "python" and result.backend_reasons[0].startswith("path_constraint: PredicateSet")
         assert any("planning in Python" in r.message and "PredicateSet" in r.message for r in caplog.records)
@@ -231,7 +231,7 @@ class TestTSRLowering:
         ssik = pytest.importorskip("ssik")
         if not native._native.has_ssik():
             pytest.skip(native._native.ssik_unavailable_reason())
-        from pycbirrt.backends.ssik import SSIKRobotModel, SSIKSolver
+        from sscbirrt.backends.ssik import SSIKRobotModel, SSIKSolver
 
         ik = SSIKSolver(ssik.Manipulator.from_prebuilt("ur5e"))
         robot = SSIKRobotModel(ik)
@@ -333,7 +333,7 @@ class TestIntegrations:
     """
 
     def test_validator_integration_lowers_and_its_provenance_reaches_the_result(self):
-        class BoxWall:  # a CollisionChecker with a native form, defined outside pycbirrt
+        class BoxWall:  # a CollisionChecker with a native form, defined outside sscbirrt
             def __init__(self):
                 self.fresh_calls = 0
 
@@ -416,8 +416,8 @@ class TestIntegrations:
         ssik = pytest.importorskip("ssik")
         if not native._native.has_ssik():
             pytest.skip(native._native.ssik_unavailable_reason())
-        from pycbirrt.backends import native_ssik
-        from pycbirrt.backends.ssik import SSIKRobotModel, SSIKSolver
+        from sscbirrt.backends import native_ssik
+        from sscbirrt.backends.ssik import SSIKRobotModel, SSIKSolver
 
         manipulator = ssik.Manipulator.from_prebuilt("ur5e")
         reference = SSIKSolver(manipulator)

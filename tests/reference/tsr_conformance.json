@@ -1,6 +1,6 @@
 {
  "artifact": "sstsr conformance corpus for the native TSR runtime",
- "issue": "https://github.com/personalrobotics/pycbirrt/issues/87",
+ "issue": "https://github.com/personalrobotics/sscbirrt/issues/87",
  "regions": [
   {
    "Bw": [

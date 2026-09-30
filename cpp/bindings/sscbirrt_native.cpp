@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Siddhartha Srinivasa
 //
-// pycbirrt._native: the only target that sees Python. Exposes the native types and one solve;
+// sscbirrt._native: the only target that sees Python. Exposes the native types and one solve;
 // the GIL is released for the duration of solve and no Python object is touched after entry.
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -47,7 +47,7 @@ std::vector<JointBoxObstacles::Box> to_boxes(const std::vector<std::pair<std::ve
 }  // namespace
 
 PYBIND11_MODULE(_native, m) {
-  m.doc() = "sscbirrt: the native C++20 core of pycbirrt (see docs/native-design.md)";
+  m.doc() = "sscbirrt: the native C++20 core of sscbirrt (see docs/native-design.md)";
 
   // ----- exceptions ---------------------------------------------------------------------------
   static py::exception<UnsupportedCapability> exc_unsupported(m, "UnsupportedCapability", PyExc_TypeError);
@@ -337,7 +337,7 @@ PYBIND11_MODULE(_native, m) {
 #else
   m.def("has_ssik", [] { return false; });
   m.def("ssik_unavailable_reason", [] {
-    return std::string("pycbirrt._native was built without SSIK support (ssik_cpp or Eigen3 not found at build time)");
+    return std::string("sscbirrt._native was built without SSIK support (ssik_cpp or Eigen3 not found at build time)");
   });
 #endif
 

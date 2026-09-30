@@ -42,7 +42,7 @@ def stored():
 
 def test_artifact_is_checked_in(stored):
     assert stored["cases"], "artifact has no cases"
-    assert {"pycbirrt", "sstsr", "numpy", "python"} <= set(stored["versions"])
+    assert {"sscbirrt", "sstsr", "numpy", "python"} <= set(stored["versions"])
 
 
 def test_semantics_match_the_stored_artifact(tool, fresh, stored):
@@ -98,7 +98,7 @@ def test_check_mode_passes(tool, capsys):
 
 
 def test_native_backend_matches_the_artifact(tool):
-    pytest.importorskip("pycbirrt._native")
+    pytest.importorskip("sscbirrt._native")
     native = tool.generate("native")
     supported = [c["name"] for c in native["cases"] if c["status"] != "unsupported"]
     assert {"fixed_to_fixed", "multiple_roots", "wrapped_seam", "timeout", "cancellation", "unreachable"} <= set(
@@ -112,7 +112,7 @@ def test_native_backend_matches_the_artifact(tool):
     assert by_name["projected_constraint"]["unsupported_reasons"][0].startswith(
         "path_constraint: IK PlanarIK is a Python object"
     )
-    if "ur5e_tsr_goal_union_with_path_tsr" in by_name and pytest.importorskip("pycbirrt._native").has_ssik():
+    if "ur5e_tsr_goal_union_with_path_tsr" in by_name and pytest.importorskip("sscbirrt._native").has_ssik():
         ur5e = by_name["ur5e_tsr_goal_union_with_path_tsr"]
         assert ur5e["status"] == "success" and ur5e["native_python_calls"] == 0  # the no-callback proof (#91)
     for name in ("ur5e_mujoco_tsr_goal_among_obstacles", "ur5e_mujoco_held_object"):  # the v1.7.0 release cases (#88)
@@ -125,7 +125,7 @@ def test_native_backend_matches_the_artifact(tool):
 
 def test_default_selection_matches_the_artifact_and_explains_every_python_choice(tool):
     """Under the default backend, native runs wherever it can and Python only with a stated reason (#86)."""
-    pytest.importorskip("pycbirrt._native")
+    pytest.importorskip("sscbirrt._native")
     auto = tool.generate("auto")
     ran = {c["name"]: c for c in auto["cases"] if c["status"] != "skipped"}
     assert ran["fixed_to_fixed"]["backend"] == "native" and ran["fixed_to_fixed"]["backend_reasons"] == []

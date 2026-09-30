@@ -14,7 +14,7 @@ from tsr import TSR
 
 ROOT = Path(__file__).resolve().parent.parent
 ARTIFACT = ROOT / "tests" / "reference" / "tsr_conformance.json"
-_native = pytest.importorskip("pycbirrt._native")
+_native = pytest.importorskip("sscbirrt._native")
 
 
 @pytest.fixture(scope="module")

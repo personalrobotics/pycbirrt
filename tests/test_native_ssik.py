@@ -15,12 +15,12 @@ import numpy as np
 import pytest
 
 ssik = pytest.importorskip("ssik")
-_native = pytest.importorskip("pycbirrt._native")
+_native = pytest.importorskip("sscbirrt._native")
 if not _native.has_ssik():
     pytest.skip(_native.ssik_unavailable_reason(), allow_module_level=True)
 
-from pycbirrt.backends.native_ssik import arm_from_manipulator  # noqa: E402
-from pycbirrt.backends.ssik import SSIKSolver  # noqa: E402
+from sscbirrt.backends.native_ssik import arm_from_manipulator  # noqa: E402
+from sscbirrt.backends.ssik import SSIKSolver  # noqa: E402
 
 
 def _sorted(sols):
@@ -88,7 +88,7 @@ class TestPrebuiltUR5e:
 class TestMenagerieUR5e:
     def test_mjcf_arm_agrees_with_mujoco_fk_and_python(self):
         mujoco = pytest.importorskip("mujoco")
-        from pycbirrt.backends.mujoco import MuJoCoRobotModel, site_offset_in_body
+        from sscbirrt.backends.mujoco import MuJoCoRobotModel, site_offset_in_body
 
         xml = Path(os.environ["MUJOCO_MENAGERIE_PATH"]) / "universal_robots_ur5e" / "ur5e.xml"
         model = mujoco.MjModel.from_xml_path(str(xml))

@@ -14,7 +14,7 @@ showcasing both grasp approaches in an impressive looping video.
 
 Prerequisites:
     export MUJOCO_MENAGERIE_PATH=/path/to/mujoco_menagerie
-    uv pip install pycbirrt[mujoco] mediapy
+    uv pip install sscbirrt[mujoco] mediapy
 
 Usage:
     python examples/tsr_union_demo.py                    # Render to video
@@ -31,19 +31,19 @@ import mujoco
 import numpy as np
 from tsr import TSR
 
-from pycbirrt import CBiRRT, CBiRRTConfig
-from pycbirrt.backends.mujoco import (
+from sscbirrt import CBiRRT, CBiRRTConfig
+from sscbirrt.backends.mujoco import (
     MuJoCoCollisionChecker,
     MuJoCoIKSolver,
     MuJoCoRobotModel,
 )
 
-# Optional SSIK for faster planning (pip install "pycbirrt[ssik]")
+# Optional SSIK for faster planning (pip install "sscbirrt[ssik]")
 try:
     import ssik
 
-    from pycbirrt.backends.mujoco import site_offset_in_body
-    from pycbirrt.backends.ssik import SSIKSolver
+    from sscbirrt.backends.mujoco import site_offset_in_body
+    from sscbirrt.backends.ssik import SSIKSolver
 
     SSIK_AVAILABLE = True
 except ImportError:
@@ -62,7 +62,7 @@ def build_ik_solver(
     if backend not in ("auto", "ssik", "mujoco"):
         raise ValueError(f"backend must be 'auto', 'ssik', or 'mujoco', got {backend!r}")
     if backend == "ssik" and not SSIK_AVAILABLE:
-        raise RuntimeError('SSIK backend requested but ssik is not installed: pip install "pycbirrt[ssik]"')
+        raise RuntimeError('SSIK backend requested but ssik is not installed: pip install "sscbirrt[ssik]"')
     if backend in ("auto", "ssik") and SSIK_AVAILABLE:
         arm = ssik.Manipulator.from_mjcf(
             menagerie_path / "universal_robots_ur5e" / "ur5e.xml", base="world", ee="wrist_3_link"

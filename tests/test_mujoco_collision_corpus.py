@@ -14,7 +14,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 mujoco = pytest.importorskip("mujoco")
-from pycbirrt.backends import native_mujoco  # noqa: E402
+from sscbirrt.backends import native_mujoco  # noqa: E402
 
 if not native_mujoco.available():
     pytest.skip(native_mujoco.unavailable_reason(), allow_module_level=True)
@@ -62,10 +62,10 @@ def test_native_decisions_equal_mj_manipulators(corpus):
                 f"{scenario['name']}[{i}] native={got} mj_manipulator={rec['mj_manipulator_valid']} "
                 f"contacts={checker.invalid_contacts(np.array(rec['q']))} mjm={rec['invalid_contacts_mjm']}"
             )
-            if rec["pycbirrt_valid"]:
+            if rec["sscbirrt_valid"]:
                 # The legacy checker counts environment-environment contacts too, so it is stricter; it may reject
                 # what the policy accepts, never the reverse.
-                assert got, f"{scenario['name']}[{i}] native rejects a configuration pycbirrt's legacy checker accepts"
+                assert got, f"{scenario['name']}[{i}] native rejects a configuration sscbirrt's legacy checker accepts"
             total += 1
     assert total > 200
 

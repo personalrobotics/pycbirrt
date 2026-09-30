@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Siddhartha Srinivasa
 //
-// pycbirrt._native_mujoco: the owned MuJoCo scene. A separate module from _native so that importing
-// pycbirrt never loads MuJoCo; this module imports _native first so the shared base types exist.
+// sscbirrt._native_mujoco: the owned MuJoCo scene. A separate module from _native so that importing
+// sscbirrt never loads MuJoCo; this module imports _native first so the shared base types exist.
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -37,7 +37,7 @@ Rows4 to_rows(const Transform& T) {
 }  // namespace
 
 PYBIND11_MODULE(_native_mujoco, m) {
-  py::module_::import("pycbirrt._native");
+  py::module_::import("sscbirrt._native");
   m.doc() = "sscbirrt::mujoco: an owned MuJoCo scene and immutable snapshots (docs/native-design.md, v1.7.0)";
 
   m.def("compiled_mujoco_version", &mujoco::compiled_mujoco_version_string, "The MuJoCo this module was built against, e.g. '3.14.0'.");
@@ -124,7 +124,7 @@ PYBIND11_MODULE(_native_mujoco, m) {
         return std::string(c.kind == InvalidContact::Kind::SelfCollision ? "self_collision" : "robot_environment");
       });
 
-  // Derives from the StateValidator registered by pycbirrt._native, so a native PlanningProblem accepts it.
+  // Derives from the StateValidator registered by sscbirrt._native, so a native PlanningProblem accepts it.
   py::class_<SceneValidator, StateValidator, std::shared_ptr<SceneValidator>>(m, "SceneValidator")
       .def(py::init([](std::shared_ptr<const Scene> scene, const Snapshot& snapshot) { return std::make_shared<SceneValidator>(std::move(scene), snapshot); }),
            py::arg("scene"), py::arg("snapshot"), "One private mjData per validator; use one validator per solve.")

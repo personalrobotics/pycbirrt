@@ -9,11 +9,11 @@ import time
 import numpy as np
 import pytest
 
-from pycbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem
-from pycbirrt.backends import native
-from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall
+from sscbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem
+from sscbirrt.backends import native
+from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall
 
-pytest.importorskip("pycbirrt._native")
+pytest.importorskip("sscbirrt._native")
 
 
 def _planner(backend="native", collision=None, **kw):
@@ -37,14 +37,14 @@ class TestProvenanceAndStats:
             )
             r = planner.solve(problem, seed=0)
             assert r.success and r.provenance["backend"] == backend
-            assert "pycbirrt" in r.provenance and "sstsr" in r.provenance
+            assert "sscbirrt" in r.provenance and "sstsr" in r.provenance
             assert r.stats["state_checks"] > 0 and r.stats["edge_checks"] > 0
         native_result = _planner("native").solve(problem, seed=0)
         assert native_result.stats["seconds_search"] >= 0.0 and "seconds_edge_checks" in native_result.stats
 
 
 @pytest.mark.skipif(
-    not native.available() or not __import__("pycbirrt.backends.native_mujoco", fromlist=["x"]).available(),
+    not native.available() or not __import__("sscbirrt.backends.native_mujoco", fromlist=["x"]).available(),
     reason="native MuJoCo scene",
 )
 class TestMuJoCoIsolation:
@@ -64,7 +64,7 @@ class TestMuJoCoIsolation:
     def _problem(self, backend):
         import mujoco
 
-        from pycbirrt.backends import native_mujoco as nm
+        from sscbirrt.backends import native_mujoco as nm
 
         model = mujoco.MjModel.from_xml_string(self.XML)
         data = mujoco.MjData(model)
@@ -78,7 +78,7 @@ class TestMuJoCoIsolation:
             backend=backend,
         )
         # planar arm limits ±pi cover the scene's ±3, ±2 ranges only partly; use a space from the scene limits
-        from pycbirrt import JointSpace
+        from sscbirrt import JointSpace
 
         space = JointSpace(*scene.joint_limits)
         start = FiniteSet([np.array([0.0, -1.2])], tolerance=1e-3, metric=space.distance)

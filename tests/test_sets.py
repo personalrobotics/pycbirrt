@@ -6,8 +6,8 @@
 import numpy as np
 import pytest
 
-from pycbirrt.exceptions import UnsupportedCapability
-from pycbirrt.sets import (
+from sscbirrt.exceptions import UnsupportedCapability
+from sscbirrt.sets import (
     AllOf,
     AnyOf,
     FiniteSet,

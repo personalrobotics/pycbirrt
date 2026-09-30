@@ -3,7 +3,7 @@
 
 """The owned MuJoCo scene and immutable snapshots (docs/native-design.md, v1.7.0 addendum).
 
-``import pycbirrt`` never imports MuJoCo. This module imports ``pycbirrt._native_mujoco`` lazily and
+``import sscbirrt`` never imports MuJoCo. This module imports ``sscbirrt._native_mujoco`` lazily and
 turns a missing module or a version mismatch into ``NativeUnsupported`` with a reason.
 """
 
@@ -14,7 +14,7 @@ from typing import Any
 
 import numpy as np
 
-from pycbirrt.backends.native import NativeUnsupported
+from sscbirrt.backends.native import NativeUnsupported
 
 _module: Any = None
 
@@ -27,14 +27,14 @@ def _load():
     try:
         import mujoco
     except ImportError:
-        raise NativeUnsupported(["mujoco is not installed; install pycbirrt[mujoco] (mujoco==3.14.0)"]) from None
+        raise NativeUnsupported(["mujoco is not installed; install sscbirrt[mujoco] (mujoco==3.14.0)"]) from None
     try:
         import importlib
 
-        _native_mujoco = importlib.import_module("pycbirrt._native_mujoco")
+        _native_mujoco = importlib.import_module("sscbirrt._native_mujoco")
     except ImportError as e:
         raise NativeUnsupported(
-            [f"pycbirrt._native_mujoco is not available: built without MuJoCo support, or it failed to load ({e})"]
+            [f"sscbirrt._native_mujoco is not available: built without MuJoCo support, or it failed to load ({e})"]
         ) from None
     compiled, loaded, installed = (
         _native_mujoco.compiled_mujoco_version(),
@@ -44,7 +44,7 @@ def _load():
     if not (compiled == loaded == installed):
         raise NativeUnsupported(
             [
-                f"MuJoCo version mismatch: pycbirrt._native_mujoco was built against {compiled}, loaded library "
+                f"MuJoCo version mismatch: sscbirrt._native_mujoco was built against {compiled}, loaded library "
                 f"{loaded}, installed mujoco package {installed}; install mujoco=={compiled}"
             ]
         )
@@ -179,10 +179,10 @@ class Snapshot:
 
 
 class NativeCollisionChecker:
-    """A pycbirrt ``CollisionChecker`` over a scene and a snapshot, with mj_manipulator's contact policy.
+    """A sscbirrt ``CollisionChecker`` over a scene and a snapshot, with mj_manipulator's contact policy.
 
     ``is_valid`` calls the native validator, so the Python backend exercises the same implementation the
-    native backend lowers to. It is a ``pycbirrt.backends.native.ValidatorIntegration``: ``fresh()`` returns a
+    native backend lowers to. It is a ``sscbirrt.backends.native.ValidatorIntegration``: ``fresh()`` returns a
     new validator on the same scene and snapshot with its own ``mjData``, and lowering calls it so that every
     solve owns its validator.
     """
@@ -263,8 +263,8 @@ def plan_native(
     ``ee_site``, and lowering checks its forward kinematics against SSIK's at the start configurations.
     ``attachments`` is mj_manipulator's ``{object_body: (gripper_body, T_gripper_object)}``.
     """
-    from pycbirrt import CBiRRT, CBiRRTConfig
-    from pycbirrt.backends.mujoco import MuJoCoRobotModel
+    from sscbirrt import CBiRRT, CBiRRTConfig
+    from sscbirrt.backends.mujoco import MuJoCoRobotModel
 
     scene = NativeScene.from_model(model, joint_names, extra_arm_bodies)
     snapshot = Snapshot.capture(scene, data, attachments)

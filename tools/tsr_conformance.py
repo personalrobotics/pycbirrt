@@ -130,7 +130,7 @@ def generate() -> dict[str, Any]:
     rng = np.random.default_rng(SEED)
     return {
         "artifact": "sstsr conformance corpus for the native TSR runtime",
-        "issue": "https://github.com/personalrobotics/pycbirrt/issues/87",
+        "issue": "https://github.com/personalrobotics/sscbirrt/issues/87",
         "seed": SEED,
         "versions": {"sstsr": importlib.metadata.version("sstsr"), "numpy": np.__version__},
         "regions": [record(name, t, rng) for name, t in regions()],

@@ -13,12 +13,12 @@ import numpy as np
 import pytest
 from tsr import TSR, TSRChain
 
-from pycbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
-from pycbirrt.exceptions import UnsupportedCapability
-from pycbirrt.legacy import legacy_problem
-from pycbirrt.sets import AllOf, AnyOf, FiniteSet, SetDistance, SetProjector, SetSampler, SetViolation, supports
-from pycbirrt.space import JointSpace
-from pycbirrt.tsr_set import PoseRegion, TSRConfigurationSet, region_volume, tsr_weights
+from sscbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
+from sscbirrt.exceptions import UnsupportedCapability
+from sscbirrt.legacy import legacy_problem
+from sscbirrt.sets import AllOf, AnyOf, FiniteSet, SetDistance, SetProjector, SetSampler, SetViolation, supports
+from sscbirrt.space import JointSpace
+from sscbirrt.tsr_set import PoseRegion, TSRConfigurationSet, region_volume, tsr_weights
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 HINGE = np.array([1.0, 0.5])

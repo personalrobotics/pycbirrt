@@ -152,7 +152,7 @@
    "speedup": 23.725041542233953
   }
  ],
- "issue": "https://github.com/personalrobotics/pycbirrt/issues/89",
+ "issue": "https://github.com/personalrobotics/sscbirrt/issues/89",
  "machine": {
   "machine": "arm64",
   "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
@@ -160,7 +160,7 @@
  },
  "versions": {
   "numpy": "2.4.6",
-  "pycbirrt": "1.5.0",
+  "sscbirrt": "1.5.0",
   "python": "3.13.3",
   "sstsr": "3.2.0"
  }

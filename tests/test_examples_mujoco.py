@@ -26,8 +26,8 @@ sys.path.insert(0, str(EXAMPLES))
 import tsr_union_demo  # noqa: E402
 import ur5e_mujoco  # noqa: E402
 
-from pycbirrt import CBiRRT, CBiRRTConfig  # noqa: E402
-from pycbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoIKSolver, MuJoCoRobotModel  # noqa: E402
+from sscbirrt import CBiRRT, CBiRRTConfig  # noqa: E402
+from sscbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoIKSolver, MuJoCoRobotModel  # noqa: E402
 
 JOINTS = [
     "shoulder_pan_joint",
@@ -56,7 +56,7 @@ class TestUr5eMujocoExample:
 
     def test_auto_prefers_ssik_when_installed(self):
         pytest.importorskip("ssik")
-        from pycbirrt.backends.ssik import SSIKSolver
+        from sscbirrt.backends.ssik import SSIKSolver
 
         model = ur5e_mujoco.create_scene(Path(MENAGERIE))
         data = mujoco.MjData(model)

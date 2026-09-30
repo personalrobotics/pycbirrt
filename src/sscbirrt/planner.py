@@ -8,8 +8,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from pycbirrt.config import CBiRRTConfig
-from pycbirrt.exceptions import (
+from sscbirrt.config import CBiRRTConfig
+from sscbirrt.exceptions import (
     AllGoalConfigurationsInCollision,
     AllGoalConfigurationsInvalid,
     AllStartConfigurationsInCollision,
@@ -17,13 +17,13 @@ from pycbirrt.exceptions import (
     MotionContractError,
     UnsupportedCapability,
 )
-from pycbirrt.interfaces import CollisionChecker, IKSolver, RobotModel
-from pycbirrt.legacy import legacy_index, legacy_problem
-from pycbirrt.motion import DiscreteMotionValidator, MotionValidator
-from pycbirrt.problem import PlanningProblem
-from pycbirrt.sets import Sample, SetProjector, SetSampler, StateSet, is_finite, seeds, supports
-from pycbirrt.space import JointSpace
-from pycbirrt.tree import RRTree
+from sscbirrt.interfaces import CollisionChecker, IKSolver, RobotModel
+from sscbirrt.legacy import legacy_index, legacy_problem
+from sscbirrt.motion import DiscreteMotionValidator, MotionValidator
+from sscbirrt.problem import PlanningProblem
+from sscbirrt.sets import Sample, SetProjector, SetSampler, StateSet, is_finite, seeds, supports
+from sscbirrt.space import JointSpace
+from sscbirrt.tree import RRTree
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def _versions_cached() -> dict[str, str]:
     import importlib.metadata as md
 
     out = {}
-    for name in ("pycbirrt", "sstsr", "ssik", "mujoco"):
+    for name in ("sscbirrt", "sstsr", "ssik", "mujoco"):
         try:
             out[name] = md.version(name)
         except md.PackageNotFoundError:
@@ -42,7 +42,7 @@ def _versions_cached() -> dict[str, str]:
 
 
 def versions() -> dict[str, str]:
-    """Installed versions of pycbirrt and its geometric dependencies, for result provenance (cached; a copy)."""
+    """Installed versions of sscbirrt and its geometric dependencies, for result provenance (cached; a copy)."""
     return dict(_versions_cached())
 
 
@@ -231,7 +231,7 @@ class CBiRRT:
         """Solve a planning problem with the configured backend (see ``backend`` on the constructor)."""
         reasons: tuple[str, ...] = ()
         if self.backend != "python":
-            from pycbirrt.backends import native
+            from sscbirrt.backends import native
 
             try:
                 lowered = native.lower(problem, self.config)
@@ -661,7 +661,7 @@ class CBiRRT:
         replaces the default and owns the motion's interior; the planner only
         guarantees that every stored configuration is admissible (it re-checks
         a custom validator's configurations) and that the ``LocalMotion``
-        contract holds. See ``pycbirrt.motion`` for the full contract.
+        contract holds. See ``sscbirrt.motion`` for the full contract.
 
         ``reached_target`` is True only if the motion was valid all the way
         and the tree now contains the exact target. With angular joints the

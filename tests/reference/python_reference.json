@@ -1,5 +1,5 @@
 {
- "artifact": "pycbirrt python behavior on the reference matrix",
+ "artifact": "sscbirrt python behavior on the reference matrix",
  "backend": "python",
  "cases": [
   {
@@ -3594,11 +3594,11 @@
    }
   }
  ],
- "issue": "https://github.com/personalrobotics/pycbirrt/issues/94",
+ "issue": "https://github.com/personalrobotics/sscbirrt/issues/94",
  "versions": {
-  "numpy": "2.4.6",
-  "pycbirrt": "2.0.0",
-  "python": "3.13.3",
+  "numpy": "2.5.3",
+  "python": "3.14.7",
+  "sscbirrt": "2.0.0",
   "sstsr": "3.2.0"
  }
 }

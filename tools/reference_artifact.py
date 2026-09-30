@@ -41,10 +41,10 @@ from typing import Any
 import numpy as np
 from tsr import TSR, TSRChain
 
-from pycbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
-from pycbirrt.sets import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PredicateSet, seeds
-from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall  # noqa: F401
-from pycbirrt.tsr_set import TSRConfigurationSet, tsr_weights
+from sscbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
+from sscbirrt.sets import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PredicateSet, seeds
+from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall  # noqa: F401
+from sscbirrt.tsr_set import TSRConfigurationSet, tsr_weights
 
 ARTIFACT = Path(__file__).resolve().parent.parent / "tests" / "reference" / "python_reference.json"
 SEMANTIC_KEYS = ("status", "failure_category", "start_source", "goal_source", "validation")
@@ -348,9 +348,9 @@ def ur5e_mujoco_cases(base: dict[str, Any]) -> list[dict[str, Any]]:
         import mujoco  # noqa: F401
         import ssik
 
-        from pycbirrt.backends import native_mujoco
-        from pycbirrt.backends.mujoco import MuJoCoRobotModel, site_offset_in_body
-        from pycbirrt.backends.ssik import SSIKSolver
+        from sscbirrt.backends import native_mujoco
+        from sscbirrt.backends.mujoco import MuJoCoRobotModel, site_offset_in_body
+        from sscbirrt.backends.ssik import SSIKSolver
     except ImportError as e:
         reason = reason or f"missing dependency: {e}"
     if reason is None and not native_mujoco.available():
@@ -461,7 +461,7 @@ def ur5e_cases(base: dict[str, Any]) -> list[dict[str, Any]]:
     try:
         import ssik
 
-        from pycbirrt.backends.ssik import SSIKRobotModel, SSIKSolver
+        from sscbirrt.backends.ssik import SSIKRobotModel, SSIKSolver
     except ImportError:
         print("note: ssik is not installed; the UR5e cases are omitted from this run", file=sys.stderr)
         return []
@@ -576,7 +576,7 @@ def versions() -> dict[str, str]:
             return "unknown"
 
     return {
-        "pycbirrt": v("pycbirrt"),
+        "sscbirrt": v("sscbirrt"),
         "sstsr": v("sstsr"),
         "numpy": np.__version__,
         "python": platform.python_version(),
@@ -603,7 +603,7 @@ def run_case(case: dict[str, Any], backend: str = "python") -> dict[str, Any]:
     planner: CBiRRT = case["planner"]
     planner.backend = "python" if backend == "native" else backend  # the native branch below drives the core itself
     if backend == "native":
-        from pycbirrt.backends import native
+        from sscbirrt.backends import native
 
         try:
             lowered = native.lower(case["problem"], case["config"])
@@ -652,7 +652,7 @@ def _native_solve_counting_python_calls(lowered, case):
 
     abort_fn cases use the wrapper (the token is polled from Python by design) and record no count.
     """
-    from pycbirrt.backends import native
+    from sscbirrt.backends import native
 
     if case["config"].abort_fn is not None:
         return native.solve(lowered, case["seed"], case["config"].abort_fn), None
@@ -673,8 +673,8 @@ def _native_solve_counting_python_calls(lowered, case):
 
 def generate(backend: str = "python") -> dict[str, Any]:
     return {
-        "artifact": f"pycbirrt {backend} behavior on the reference matrix",
-        "issue": "https://github.com/personalrobotics/pycbirrt/issues/94",
+        "artifact": f"sscbirrt {backend} behavior on the reference matrix",
+        "issue": "https://github.com/personalrobotics/sscbirrt/issues/94",
         "backend": backend,
         "versions": versions(),
         "cases": [run_case(c, backend) for c in cases()],

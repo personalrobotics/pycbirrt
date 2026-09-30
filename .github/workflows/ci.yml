@@ -33,8 +33,8 @@ jobs:
       - name: Install dependencies (builds the extension; ssik is a build requirement, so the SSIK adapter is detected)
         run: |
           uv sync --all-extras --dev
-          uv run python -c "import pycbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason(); print('native SSIK adapter built')"
-          uv run python -c "from pycbirrt.backends import native_mujoco as m; assert m.available(), m.unavailable_reason(); print('native MuJoCo scene built')"
+          uv run python -c "import sscbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason(); print('native SSIK adapter built')"
+          uv run python -c "from sscbirrt.backends import native_mujoco as m; assert m.available(), m.unavailable_reason(); print('native MuJoCo scene built')"
 
       - name: Ruff lint
         run: uv run ruff check .
@@ -98,21 +98,21 @@ jobs:
           uv venv --python 3.12 "$RUNNER_TEMP/wheel-env"
           uv pip install --python "$RUNNER_TEMP/wheel-env/bin/python" dist/*.whl
           "$RUNNER_TEMP/wheel-env/bin/python" -c "
-          import pycbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason()
+          import sscbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason()
           import numpy as np
-          from pycbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem
-          from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK
+          from sscbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem
+          from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK
           p = CBiRRT(PlanarArm(), PlanarIK(), NoCollision(), CBiRRTConfig(step_size=0.2), backend='native')
           f = lambda qs: FiniteSet(qs, tolerance=1e-3, metric=p.space.distance)
           r = p.solve(PlanningProblem(space=p.space, start=f([np.zeros(2)]), goal=f([np.array([1.0, 0.5])]), validator=p.collision), seed=0)
           assert r.success and r.backend == 'native', r
           print('wheel ok:', len(r.path), 'waypoints natively')
           "
-      - name: Without mujoco installed, pycbirrt imports and the MuJoCo scene reports its reason
+      - name: Without mujoco installed, sscbirrt imports and the MuJoCo scene reports its reason
         run: |
           "$RUNNER_TEMP/wheel-env/bin/python" -c "
-          import pycbirrt
-          from pycbirrt.backends import native_mujoco as m
+          import sscbirrt
+          from sscbirrt.backends import native_mujoco as m
           assert not m.available() and 'mujoco is not installed' in m.unavailable_reason(), m.unavailable_reason()
           print('no-mujoco import ok:', m.unavailable_reason())
           "
@@ -121,7 +121,7 @@ jobs:
           uv pip install --python "$RUNNER_TEMP/wheel-env/bin/python" "$(ls dist/*.whl)[mujoco]"
           "$RUNNER_TEMP/wheel-env/bin/python" -c "
           import mujoco
-          from pycbirrt.backends import native_mujoco as m
+          from sscbirrt.backends import native_mujoco as m
           assert m.available(), m.unavailable_reason()
           model = mujoco.MjModel.from_xml_string('<mujoco><worldbody><body><joint name=\"j\" type=\"hinge\"/><geom size=\"0.1\"/></body></worldbody></mujoco>')
           s = m.NativeScene.from_model(model, ['j']); print('scene ok:', s.provenance)
@@ -130,7 +130,7 @@ jobs:
         run: |
           uv venv --python 3.12 "$RUNNER_TEMP/sdist-env"
           uv pip install --python "$RUNNER_TEMP/sdist-env/bin/python" dist/*.tar.gz
-          "$RUNNER_TEMP/sdist-env/bin/python" -c "import pycbirrt._native as n; print('sdist ok; ssik adapter:', n.has_ssik())"
+          "$RUNNER_TEMP/sdist-env/bin/python" -c "import sscbirrt._native as n; print('sdist ok; ssik adapter:', n.has_ssik())"
 
   package-macos:
     name: Wheel on macOS (arm64)
@@ -150,8 +150,8 @@ jobs:
           uv pip install --python "$RUNNER_TEMP/mac-env/bin/python" "$(ls dist/*.whl)[ssik,mujoco]"
           "$RUNNER_TEMP/mac-env/bin/python" -c "
           import mujoco, numpy as np
-          import pycbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason()
-          from pycbirrt.backends import native_mujoco as m; assert m.available(), m.unavailable_reason()
+          import sscbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason()
+          from sscbirrt.backends import native_mujoco as m; assert m.available(), m.unavailable_reason()
           model = mujoco.MjModel.from_xml_string('<mujoco><worldbody><body><joint name=\"j\" type=\"hinge\"/><geom size=\"0.1\"/></body></worldbody></mujoco>')
           s = m.NativeScene.from_model(model, ['j']); print('macOS wheel: ssik and mujoco native modules ok', s.provenance['mujoco'])
           "
