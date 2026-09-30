@@ -67,11 +67,10 @@ follows [Semantic Versioning](https://semver.org/).
   loads MuJoCo) is built against that version and refuses another with a
   message naming the compiled, loaded, and installed versions (#137). The
   workspace lock moves to 3.14.0.
-- The `ssik` extra requires `ssik>=7.0.0rc1,<8`: 7.0 ships the `ssik_cpp`
+- The `ssik` extra requires `ssik>=7.0,<8`: 7.0 ships the `ssik_cpp`
   headers and `ssik.cpp.joint_data`, which the native SSIK adapter is built
-  on (#129; personalrobotics/ssik#641). Until 7.0.0 reaches PyPI the release
-  candidate is resolved from TestPyPI through an explicit index in
-  `pyproject.toml`. The Python `SSIKSolver` adapter is unchanged.
+  on, and ssik is a build requirement of the extension (#129;
+  personalrobotics/ssik#641). The Python `SSIKSolver` adapter is unchanged.
 - Depends on `sstsr>=3.2,<4`: a `TSR` now rejects a malformed region at
   construction (non-finite or non-rigid frames, non-finite bounds) with the
   tolerance exported as `tsr.FRAME_ATOL`. This is the shared construction

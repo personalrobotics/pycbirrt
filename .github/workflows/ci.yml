@@ -62,7 +62,7 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y libeigen3-dev
           uv venv "$RUNNER_TEMP/ssik-env"
-          uv pip install --python "$RUNNER_TEMP/ssik-env/bin/python" --prerelease=allow --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ --index-strategy unsafe-best-match "ssik>=7.0.0rc1,<8"
+          uv pip install --python "$RUNNER_TEMP/ssik-env/bin/python" "ssik>=7.0,<8"
           echo "SSIK_CMAKE_DIR=$("$RUNNER_TEMP/ssik-env/bin/python" -c 'import ssik; print(ssik.get_cmake_dir())')" >> "$GITHUB_ENV"
           uv pip install --python "$RUNNER_TEMP/ssik-env/bin/python" "mujoco==3.14.0"
           echo "MUJOCO_DIR=$("$RUNNER_TEMP/ssik-env/bin/python" -c 'import mujoco, os; print(os.path.dirname(mujoco.__file__))')" >> "$GITHUB_ENV"
@@ -147,7 +147,7 @@ jobs:
       - name: Install into a fresh environment with every extra and exercise every native module
         run: |
           uv venv --python 3.12 "$RUNNER_TEMP/mac-env"
-          uv pip install --python "$RUNNER_TEMP/mac-env/bin/python" --prerelease=allow --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ --index-strategy unsafe-best-match "$(ls dist/*.whl)[ssik,mujoco]"
+          uv pip install --python "$RUNNER_TEMP/mac-env/bin/python" "$(ls dist/*.whl)[ssik,mujoco]"
           "$RUNNER_TEMP/mac-env/bin/python" -c "
           import mujoco, numpy as np
           import pycbirrt._native as n; assert n.has_ssik(), n.ssik_unavailable_reason()
