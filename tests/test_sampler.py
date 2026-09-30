@@ -5,8 +5,8 @@
 
 import numpy as np
 
-from pycbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem, SpaceSampler
-from pycbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall
+from sscbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem, SpaceSampler
+from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK, Wall
 
 START, GOAL = np.array([-0.5, 0.5]), np.array([0.5, 0.5])
 

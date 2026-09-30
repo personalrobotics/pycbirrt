@@ -30,7 +30,7 @@ from typing import Protocol, runtime_checkable
 
 import numpy as np
 
-from pycbirrt.exceptions import UnsupportedCapability
+from sscbirrt.exceptions import UnsupportedCapability
 
 Metric = Callable[[np.ndarray, np.ndarray], float]
 

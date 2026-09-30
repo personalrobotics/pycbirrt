@@ -5,7 +5,7 @@
 
 import pytest
 
-from pycbirrt import CBiRRTConfig
+from sscbirrt import CBiRRTConfig
 
 
 def test_defaults_construct():

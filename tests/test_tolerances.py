@@ -7,10 +7,10 @@ import numpy as np
 import pytest
 from tsr import TSR
 
-from pycbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
-from pycbirrt.legacy import legacy_problem
-from pycbirrt.sets import AllOf, FiniteSet
-from pycbirrt.tree import RRTree
+from sscbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
+from sscbirrt.legacy import legacy_problem
+from sscbirrt.sets import AllOf, FiniteSet
+from sscbirrt.tree import RRTree
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 BOX = np.array([[-0.05, 0.05], [-0.05, 0.05], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]])

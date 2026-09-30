@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from pycbirrt.interfaces import CollisionChecker
-from pycbirrt.motion import MotionValidator
-from pycbirrt.sets import StateSet
-from pycbirrt.space import JointSpace, SpaceSampler
+from sscbirrt.interfaces import CollisionChecker
+from sscbirrt.motion import MotionValidator
+from sscbirrt.sets import StateSet
+from sscbirrt.space import JointSpace, SpaceSampler
 
 
 @dataclass
@@ -43,12 +43,12 @@ class PlanningProblem:
             default checks, wrap ``CBiRRT.default_motion_validator(problem)``
             in a ``RestrictedMotionValidator``. Bidirectional search validates
             goal-tree edges in the reverse of execution direction, so motion
-            validity should not depend on direction. See ``pycbirrt.motion``.
+            validity should not depend on direction. See ``sscbirrt.motion``.
         sampler: Proposes the free-space targets the trees grow toward, or
             None for the default, ``space`` itself (uniform). Start and goal
             bias are the planner's and mix the role sets' samplers with this
             one; a custom sampler is not consulted for roots or bias draws.
-            See ``pycbirrt.space.SpaceSampler`` for the contract.
+            See ``sscbirrt.space.SpaceSampler`` for the contract.
     """
 
     space: JointSpace

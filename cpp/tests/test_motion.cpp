@@ -14,7 +14,7 @@ auto space2() { return std::make_shared<JointSpace>(std::vector<double>{-3.0, -3
 
 TEST(box_obstacles_are_open_and_may_be_unbounded) {
   const double inf = std::numeric_limits<double>::infinity();
-  JointBoxObstacles wall({{{0.45, -inf}, {0.55, inf}}});  // pycbirrt.testing.Wall(axis=0, lo=0.45, hi=0.55)
+  JointBoxObstacles wall({{{0.45, -inf}, {0.55, inf}}});  // sscbirrt.testing.Wall(axis=0, lo=0.45, hi=0.55)
   CHECK(!wall.is_valid(Config{0.5, 2.0}));
   CHECK(wall.is_valid(Config{0.45, 0.0}));  // boundary is outside (open box)
   CHECK(wall.is_valid(Config{0.6, 0.0}));

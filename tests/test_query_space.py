@@ -8,10 +8,10 @@ import inspect
 import numpy as np
 import pytest
 
-from pycbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
-from pycbirrt.sets import FiniteSet
-from pycbirrt.space import JointSpace
-from pycbirrt.tree import RRTree
+from sscbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
+from sscbirrt.sets import FiniteSet
+from sscbirrt.space import JointSpace
+from sscbirrt.tree import RRTree
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 LIMITS = (np.array([-np.pi, -np.pi]), np.array([np.pi, np.pi]))

@@ -12,7 +12,7 @@ import numpy as np
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pycbirrt.sets import (
+from sscbirrt.sets import (
     AllOf,
     AnyOf,
     FiniteSet,

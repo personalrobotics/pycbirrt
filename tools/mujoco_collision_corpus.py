@@ -8,7 +8,7 @@ gripper-object contact, mocap bodies, contact margins, cylinders, box-box, and p
 scenario it records configurations near and across contact with:
 
 - mj_manipulator's ``CollisionChecker`` decision, the policy the native validator reproduces;
-- pycbirrt's legacy ``MuJoCoCollisionChecker`` decision where it applies (no attachments). That checker
+- sscbirrt's legacy ``MuJoCoCollisionChecker`` decision where it applies (no attachments). That checker
   counts every contact in the world, environment against environment included, so it rejects any world
   with resting contacts; it is a one-sided check (it never accepts what the policy rejects);
 - whether ``mj_kinematics`` followed by ``mj_collision`` yields the same contact geom pairs as ``mj_forward``.
@@ -166,7 +166,7 @@ def generate() -> dict[str, Any]:
     except ImportError:
         print("mj_manipulator is not installed; it is needed to regenerate the corpus", file=sys.stderr)
         raise
-    from pycbirrt.backends.mujoco import MuJoCoCollisionChecker
+    from sscbirrt.backends.mujoco import MuJoCoCollisionChecker
 
     rng = np.random.default_rng(SEED)
     out = []
@@ -192,7 +192,7 @@ def generate() -> dict[str, Any]:
                 {
                     "q": q,
                     "mj_manipulator_valid": bool(mjm.is_valid(np.asarray(q))),
-                    "pycbirrt_valid": None if pyc is None else bool(pyc.is_valid(np.asarray(q))),
+                    "sscbirrt_valid": None if pyc is None else bool(pyc.is_valid(np.asarray(q))),
                     "forward_vs_kinematics_agree": _forward_vs_kinematics_agree(model, data, q, adrs),
                     "invalid_contacts_mjm": sorted(f"{a}|{b}" for a, b, _ in mjm.get_contacts(np.asarray(q))),
                 }
@@ -211,7 +211,7 @@ def generate() -> dict[str, Any]:
         )
     return {
         "artifact": "decision parity between the native MuJoCo validator and mj_manipulator's CollisionChecker",
-        "issue": "https://github.com/personalrobotics/pycbirrt/issues/84",
+        "issue": "https://github.com/personalrobotics/sscbirrt/issues/84",
         "seed": SEED,
         "versions": {
             "mujoco": mujoco.__version__,

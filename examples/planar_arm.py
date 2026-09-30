@@ -21,8 +21,8 @@ import numpy as np
 from matplotlib.patches import Circle, Rectangle
 from tsr import TSR
 
-from pycbirrt import CBiRRT, CBiRRTConfig
-from pycbirrt.tree import RRTree
+from sscbirrt import CBiRRT, CBiRRTConfig
+from sscbirrt.tree import RRTree
 
 
 class PlanarArmRobot:

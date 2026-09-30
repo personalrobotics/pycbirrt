@@ -11,8 +11,8 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 mujoco = pytest.importorskip("mujoco")
-from pycbirrt.backends import native_mujoco  # noqa: E402
-from pycbirrt.backends.native import NativeUnsupported  # noqa: E402
+from sscbirrt.backends import native_mujoco  # noqa: E402
+from sscbirrt.backends.native import NativeUnsupported  # noqa: E402
 
 if not native_mujoco.available():
     pytest.skip(native_mujoco.unavailable_reason(), allow_module_level=True)
@@ -141,7 +141,7 @@ def test_unavailable_reason_is_a_string_when_the_module_is_missing(monkeypatch):
     real = importlib.import_module
 
     def fake(name, *a, **k):
-        if name == "pycbirrt._native_mujoco":
+        if name == "sscbirrt._native_mujoco":
             raise ImportError("simulated missing module")
         return real(name, *a, **k)
 

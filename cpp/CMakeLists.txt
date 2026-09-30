@@ -1,4 +1,4 @@
-# sscbirrt: the native C++20 core of pycbirrt. See docs/native-design.md.
+# sscbirrt: the native C++20 core of sscbirrt. See docs/native-design.md.
 cmake_minimum_required(VERSION 3.16)
 project(sscbirrt VERSION 2.0.0 LANGUAGES CXX)
 
@@ -10,7 +10,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 option(SSCBIRRT_BUILD_TESTS "Build the ctest targets" ON)
-option(SSCBIRRT_BUILD_PYTHON "Build the pycbirrt._native pybind11 module (the wheel build turns this on)" OFF)
+option(SSCBIRRT_BUILD_PYTHON "Build the sscbirrt._native pybind11 module (the wheel build turns this on)" OFF)
 option(SSCBIRRT_SANITIZE "Build core and tests with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 
 # The core depends on the C++20 standard library and nothing else (design: dependency boundary).
@@ -75,8 +75,8 @@ if(NOT SSCBIRRT_WITH_SSIK STREQUAL "OFF")
   endif()
 endif()
 
-# The MuJoCo scene: a separate library and, for Python, a separate module, so pycbirrt._native and
-# `import pycbirrt` never touch MuJoCo. AUTO: build when a mujoco package (headers + library) is found,
+# The MuJoCo scene: a separate library and, for Python, a separate module, so sscbirrt._native and
+# `import sscbirrt` never touch MuJoCo. AUTO: build when a mujoco package (headers + library) is found,
 # through -DSSCBIRRT_MUJOCO_DIR=<site-packages/mujoco> or the build interpreter.
 set(SSCBIRRT_WITH_MUJOCO AUTO CACHE STRING "Build sscbirrt::mujoco (ON, OFF, or AUTO)")
 set(SSCBIRRT_MUJOCO_DIR "" CACHE PATH "The installed mujoco Python package directory (holds include/ and libmujoco)")
@@ -196,24 +196,24 @@ endif()
 if(SSCBIRRT_BUILD_PYTHON)
   find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
   find_package(pybind11 CONFIG REQUIRED)
-  pybind11_add_module(_native MODULE bindings/pycbirrt_native.cpp)
+  pybind11_add_module(_native MODULE bindings/sscbirrt_native.cpp)
   target_link_libraries(_native PRIVATE sscbirrt::core sscbirrt::tsr)
   if(SSCBIRRT_HAS_SSIK)
     target_link_libraries(_native PRIVATE sscbirrt::ssik)
     target_compile_definitions(_native PRIVATE SSCBIRRT_HAS_SSIK=1)
   endif()
   target_compile_options(_native PRIVATE -Wall -Wextra)
-  install(TARGETS _native DESTINATION pycbirrt)
+  install(TARGETS _native DESTINATION sscbirrt)
 
   if(SSCBIRRT_HAS_MUJOCO)
-    pybind11_add_module(_native_mujoco MODULE bindings/pycbirrt_native_mujoco.cpp)
+    pybind11_add_module(_native_mujoco MODULE bindings/sscbirrt_native_mujoco.cpp)
     target_link_libraries(_native_mujoco PRIVATE sscbirrt::mujoco)
     target_compile_options(_native_mujoco PRIVATE -Wall -Wextra)
     target_compile_definitions(_native_mujoco PRIVATE SSCBIRRT_MUJOCO_LIBNAME="${SSCBIRRT_MUJOCO_LIBNAME}")
-    # The module lives in site-packages/pycbirrt and the library in site-packages/mujoco.
+    # The module lives in site-packages/sscbirrt and the library in site-packages/mujoco.
     set_target_properties(_native_mujoco PROPERTIES BUILD_WITH_INSTALL_RPATH ON
       INSTALL_RPATH "$<IF:$<PLATFORM_ID:Darwin>,@loader_path/../mujoco,$ORIGIN/../mujoco>")
     sscbirrt_link_mujoco_wheel(_native_mujoco)
-    install(TARGETS _native_mujoco DESTINATION pycbirrt)
+    install(TARGETS _native_mujoco DESTINATION sscbirrt)
   endif()
 endif()

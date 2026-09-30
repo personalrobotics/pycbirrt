@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Siddhartha Srinivasa
 
-"""The native backend: lower a Python ``PlanningProblem`` to ``pycbirrt._native`` and solve there.
+"""The native backend: lower a Python ``PlanningProblem`` to ``sscbirrt._native`` and solve there.
 
 Every component must have a native form, because the native solve releases the
 GIL and calls no Python after entry. ``lower`` walks the problem and raises
@@ -20,8 +20,8 @@ from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 
-from pycbirrt.config import CBiRRTConfig
-from pycbirrt.exceptions import (
+from sscbirrt.config import CBiRRTConfig
+from sscbirrt.exceptions import (
     AllGoalConfigurationsInCollision,
     AllGoalConfigurationsInvalid,
     AllStartConfigurationsInCollision,
@@ -29,18 +29,18 @@ from pycbirrt.exceptions import (
     MotionContractError,
     UnsupportedCapability,
 )
-from pycbirrt.legacy import legacy_index
-from pycbirrt.problem import PlanningProblem
-from pycbirrt.sets import AllOf, AnyOf, EmptySet, FiniteSet, MostViolatedProjection, RejectionSampling, euclidean
-from pycbirrt.space import JointSpace
-from pycbirrt.testing import NoCollision, Wall
-from pycbirrt.tree import RRTree
-from pycbirrt.tsr_set import TSRConfigurationSet
+from sscbirrt.legacy import legacy_index
+from sscbirrt.problem import PlanningProblem
+from sscbirrt.sets import AllOf, AnyOf, EmptySet, FiniteSet, MostViolatedProjection, RejectionSampling, euclidean
+from sscbirrt.space import JointSpace
+from sscbirrt.testing import NoCollision, Wall
+from sscbirrt.tree import RRTree
+from sscbirrt.tsr_set import TSRConfigurationSet
 
 FK_AGREEMENT_ATOL = 1e-6  # the robot model's FK must match the SSIK adapter's on the problem's explicit configurations
 
 try:
-    from pycbirrt import _native
+    from sscbirrt import _native
 except ImportError:  # pragma: no cover - exercised only in builds without the extension
     _native = None
 
@@ -137,7 +137,7 @@ class _Lowering:
         if not isinstance(ik, KinematicsIntegration):
             return (
                 f"{where}: IK {type(ik).__name__} is a Python object; native needs an IK solver with a native form "
-                "(pycbirrt.backends.native.KinematicsIntegration)"
+                "(sscbirrt.backends.native.KinematicsIntegration)"
             )
         try:
             arm = ik.native_kinematics()
@@ -149,7 +149,7 @@ class _Lowering:
                 "not a sscbirrt ForwardKinematics and IKSolver"
             )
         # The native set uses the integration's FK where the Python set used the robot model's: they must agree.
-        from pycbirrt.sets import seeds
+        from sscbirrt.sets import seeds
 
         for smp in seeds(self.problem.start) + seeds(self.problem.goal):
             q = np.asarray(smp.q, dtype=float)
@@ -258,7 +258,7 @@ def _lower_validator(v, dof: int, reasons: list[str]):
         return _native.JointBoxObstacles([(lo, hi)])
     reasons.append(
         f"validator: {type(v).__name__} is a Python object; native needs a validator with a native form "
-        "(pycbirrt.backends.native.ValidatorIntegration)"
+        "(sscbirrt.backends.native.ValidatorIntegration)"
     )
     return None
 
@@ -287,7 +287,7 @@ def _lower_config(config: CBiRRTConfig):
 def lower(problem: PlanningProblem, config: CBiRRTConfig) -> Lowered:
     """Map a Python problem and config to their native forms, or raise ``NativeUnsupported`` with every blocker."""
     if _native is None:
-        raise NativeUnsupported(["pycbirrt._native is not built; install pycbirrt from a wheel with the extension"])
+        raise NativeUnsupported(["sscbirrt._native is not built; install sscbirrt from a wheel with the extension"])
     reasons: list[str] = []
     nspace = _lower_space(problem.space)
     ctx = _Lowering(problem, nspace)
@@ -381,7 +381,7 @@ def solve(lowered: Lowered, seed: int | None, abort_fn: Callable[[], bool] | Non
 
 def convert(r, provenance: dict | None = None):
     """A native PlanResult as the Python PlanResult."""
-    from pycbirrt.planner import PlanResult, versions
+    from sscbirrt.planner import PlanResult, versions
 
     s = r.stats
     stats = {

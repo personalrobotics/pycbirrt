@@ -7,9 +7,9 @@ import numpy as np
 import pytest
 from tsr import TSR
 
-from pycbirrt.sets import AllOf, AnyOf, SetDistance, SetProjector, SetSampler, StateSet, supports
-from pycbirrt.space import JointSpace
-from pycbirrt.tsr_set import TSRConfigurationSet, tsr_weights
+from sscbirrt.sets import AllOf, AnyOf, SetDistance, SetProjector, SetSampler, StateSet, supports
+from sscbirrt.space import JointSpace
+from sscbirrt.tsr_set import TSRConfigurationSet, tsr_weights
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 BOX = np.array([[-0.05, 0.05], [-0.05, 0.05], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]])

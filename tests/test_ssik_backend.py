@@ -18,7 +18,7 @@ import types
 import numpy as np
 import pytest
 
-from pycbirrt.space import JointSpace
+from sscbirrt.space import JointSpace
 
 try:
     import ssik  # noqa: F401
@@ -30,7 +30,7 @@ except ImportError:
     SSIK_AVAILABLE = False
     sys.modules.setdefault("ssik", types.ModuleType("ssik"))
 
-import pycbirrt.backends.ssik as adapter  # noqa: E402
+import sscbirrt.backends.ssik as adapter  # noqa: E402
 
 
 class FakeSolution:
@@ -166,9 +166,9 @@ class TestImportWithoutSSIK:
 
     def test_core_import_does_not_pull_in_ssik(self):
         code = (
-            "import sys, pycbirrt; "
+            "import sys, sscbirrt; "
             "assert 'ssik' not in sys.modules, 'ssik imported'; "
-            "assert 'pycbirrt.backends.ssik' not in sys.modules, 'backend imported'"
+            "assert 'sscbirrt.backends.ssik' not in sys.modules, 'backend imported'"
         )
         proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
         assert proc.returncode == 0, proc.stderr
@@ -177,7 +177,7 @@ class TestImportWithoutSSIK:
         code = (
             "import sys; sys.modules['ssik'] = None\n"  # makes `import ssik` raise ImportError
             "try:\n"
-            "    import pycbirrt.backends.ssik\n"
+            "    import sscbirrt.backends.ssik\n"
             "except ImportError as e:\n"
             "    print(e)\n"
             "else:\n"
@@ -185,11 +185,11 @@ class TestImportWithoutSSIK:
         )
         proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
         assert proc.returncode == 0, proc.stderr
-        assert 'pip install "pycbirrt[ssik]"' in proc.stdout
+        assert 'pip install "sscbirrt[ssik]"' in proc.stdout
 
     def test_class_identity_is_stable_across_modules(self):
         """The adapter is never reloaded, so the class other modules cached is this one (#70)."""
-        import pycbirrt.backends.ssik as again
+        import sscbirrt.backends.ssik as again
 
         assert again.SSIKSolver is adapter.SSIKSolver
 
@@ -206,7 +206,7 @@ needs_ssik = pytest.mark.skipif(not SSIK_AVAILABLE, reason="ssik not installed")
 def ur5e():
     from ssik.prebuilt import ur5e_ik
 
-    from pycbirrt.backends.ssik import SSIKSolver
+    from sscbirrt.backends.ssik import SSIKSolver
 
     return SSIKSolver(ur5e_ik), ur5e_ik
 
@@ -257,7 +257,7 @@ class TestSSIKIntegration:
 
     def test_continuous_joints_do_not_enumerate_windings(self):
         """A model with no limits treats every joint as continuous: one representative per branch."""
-        from pycbirrt.backends.ssik import SSIKSolver
+        from sscbirrt.backends.ssik import SSIKSolver
 
         dh_alpha = np.array([np.pi / 2, 0, 0, np.pi / 2, -np.pi / 2, 0])
         dh_a = np.array([0, -0.425, -0.3922, 0, 0, 0])

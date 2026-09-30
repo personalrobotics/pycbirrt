@@ -7,10 +7,10 @@ import numpy as np
 import pytest
 from tsr import TSR
 
-from pycbirrt import AllStartConfigurationsInCollision, CBiRRT, CBiRRTConfig, PlanningProblem
-from pycbirrt.legacy import legacy_problem
-from pycbirrt.sets import AllOf, FiniteSet, MostViolatedProjection
-from pycbirrt.tree import RRTree
+from sscbirrt import AllStartConfigurationsInCollision, CBiRRT, CBiRRTConfig, PlanningProblem
+from sscbirrt.legacy import legacy_problem
+from sscbirrt.sets import AllOf, FiniteSet, MostViolatedProjection
+from sscbirrt.tree import RRTree
 
 
 class MockRobotModel:
@@ -588,7 +588,7 @@ class TestConfigValidation:
 
     def test_all_goals_in_collision_raises(self):
         """Test that all goals in collision raises AllGoalConfigurationsInCollision."""
-        from pycbirrt import AllGoalConfigurationsInCollision
+        from sscbirrt import AllGoalConfigurationsInCollision
 
         class GoalBlockingChecker:
             """Start is valid, goals are not."""

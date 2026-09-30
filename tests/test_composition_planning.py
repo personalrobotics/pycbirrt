@@ -7,9 +7,9 @@ import numpy as np
 import pytest
 from tsr import TSR
 
-from pycbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
-from pycbirrt.sets import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PredicateSet, RejectionSampling
-from pycbirrt.tsr_set import TSRConfigurationSet, tsr_weights
+from sscbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
+from sscbirrt.sets import AllOf, AnyOf, FiniteSet, MostViolatedProjection, PredicateSet, RejectionSampling
+from sscbirrt.tsr_set import TSRConfigurationSet, tsr_weights
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 BOX = np.array([[-0.05, 0.05], [-0.05, 0.05], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]])
@@ -126,7 +126,7 @@ class TestAllOfPathConstraint:
             assert constraint.contains(q)
 
     def test_unsatisfiable_intersection_reports_invalid_roots(self, arm):
-        from pycbirrt import AllStartConfigurationsInvalid
+        from sscbirrt import AllStartConfigurationsInvalid
 
         never = PredicateSet(lambda q: False)
         constraint = AllOf([tsr_set(arm, 1.5, 0.0), never])

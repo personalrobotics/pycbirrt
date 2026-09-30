@@ -9,9 +9,9 @@ checked at ``edge_resolution`` by the same routine used for ordinary growth.
 
 import numpy as np
 
-from pycbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
-from pycbirrt.sets import FiniteSet
-from pycbirrt.tree import RRTree
+from sscbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
+from sscbirrt.sets import FiniteSet
+from sscbirrt.tree import RRTree
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 

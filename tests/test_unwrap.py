@@ -13,9 +13,9 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pycbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
-from pycbirrt.sets import FiniteSet
-from pycbirrt.space import JointSpace
+from sscbirrt import CBiRRT, CBiRRTConfig, PlanningProblem
+from sscbirrt.sets import FiniteSet
+from sscbirrt.space import JointSpace
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 LIMITS = (np.array([-np.pi, -np.pi]), np.array([np.pi, np.pi]))

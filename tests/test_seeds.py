@@ -16,9 +16,9 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 from tsr import TSR
 
-from pycbirrt import AllStartConfigurationsInvalid, CBiRRT, CBiRRTConfig, PlanningProblem
-from pycbirrt.legacy import legacy_problem
-from pycbirrt.sets import AllOf, AnyOf, EmptySet, FiniteSet, PredicateSet, Sample, is_finite, members, seeds
+from sscbirrt import AllStartConfigurationsInvalid, CBiRRT, CBiRRTConfig, PlanningProblem
+from sscbirrt.legacy import legacy_problem
+from sscbirrt.sets import AllOf, AnyOf, EmptySet, FiniteSet, PredicateSet, Sample, is_finite, members, seeds
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 BOX = np.array([[-0.05, 0.05], [-0.05, 0.05], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]])

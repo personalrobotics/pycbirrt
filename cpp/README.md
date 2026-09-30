@@ -1,6 +1,6 @@
 # sscbirrt: the native core
 
-The C++20 implementation of pycbirrt's planner. The contract it implements,
+The C++20 implementation of sscbirrt's planner. The contract it implements,
 and every type here, is specified in [docs/native-design.md](../docs/native-design.md);
 the Python package is the reference and `tests/reference/python_reference.json`
 is the oracle. `sscbirrt::core` depends on the C++20 standard library only.

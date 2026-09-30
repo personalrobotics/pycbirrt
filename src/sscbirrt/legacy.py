@@ -3,7 +3,7 @@
 
 """Lower the legacy ``plan(...)`` arguments into a ``PlanningProblem``.
 
-This is the only module besides ``pycbirrt.tsr_set`` that imports from the
+This is the only module besides ``sscbirrt.tsr_set`` that imports from the
 ``tsr`` package. It reproduces the legacy composition semantics exactly:
 
 - multiple start or goal TSRs are a union, sampled in proportion to volume;
@@ -19,12 +19,12 @@ from collections.abc import Sequence
 import numpy as np
 from tsr import TSR, TSRChain
 
-from pycbirrt.config import CBiRRTConfig
-from pycbirrt.interfaces import CollisionChecker, IKSolver, RobotModel
-from pycbirrt.problem import PlanningProblem
-from pycbirrt.sets import AllOf, AnyOf, EmptySet, FiniteSet, MostViolatedProjection, StateSet
-from pycbirrt.space import JointSpace
-from pycbirrt.tsr_set import TSRConfigurationSet, tsr_weights
+from sscbirrt.config import CBiRRTConfig
+from sscbirrt.interfaces import CollisionChecker, IKSolver, RobotModel
+from sscbirrt.problem import PlanningProblem
+from sscbirrt.sets import AllOf, AnyOf, EmptySet, FiniteSet, MostViolatedProjection, StateSet
+from sscbirrt.space import JointSpace
+from sscbirrt.tsr_set import TSRConfigurationSet, tsr_weights
 
 
 def legacy_index(source: tuple[int, ...]) -> int:

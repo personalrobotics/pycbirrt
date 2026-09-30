@@ -14,7 +14,7 @@ import pytest
 
 mujoco = pytest.importorskip("mujoco")
 
-from pycbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoIKSolver  # noqa: E402
+from sscbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoIKSolver  # noqa: E402
 
 # A 3-DOF chain: limited hinge, unlimited hinge, limited slide; plus an unlimited slide on a fourth link.
 XML = """
@@ -157,7 +157,7 @@ class TestRobotModelLimits:
     """MuJoCo stores an unlimited joint's range as (0, 0); the model must report it as unbounded (#107)."""
 
     def test_unlimited_joints_report_infinite_limits(self, model_data):
-        from pycbirrt.backends.mujoco import MuJoCoRobotModel
+        from sscbirrt.backends.mujoco import MuJoCoRobotModel
 
         model, data = model_data
         lo, hi = MuJoCoRobotModel(model, data, "attachment_site", JOINTS).joint_limits
@@ -167,8 +167,8 @@ class TestRobotModelLimits:
         assert lo[3] == -np.inf and hi[3] == np.inf
 
     def test_planner_requires_a_declaration_for_unlimited_joints(self, model_data):
-        from pycbirrt import CBiRRT, CBiRRTConfig
-        from pycbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoRobotModel
+        from sscbirrt import CBiRRT, CBiRRTConfig
+        from sscbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoRobotModel
 
         model, data = model_data
         robot = MuJoCoRobotModel(model, data, "attachment_site", JOINTS)

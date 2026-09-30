@@ -27,11 +27,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "examples"))
 from tsr import TSR  # noqa: E402
 from ur5e_mujoco import create_grasp_tsr, create_scene  # noqa: E402
 
-from pycbirrt import CBiRRT, CBiRRTConfig  # noqa: E402
-from pycbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoRobotModel, site_offset_in_body  # noqa: E402
-from pycbirrt.backends.ssik import SSIKSolver  # noqa: E402
-from pycbirrt.space import JointSpace  # noqa: E402
-from pycbirrt.tsr_set import TSRConfigurationSet  # noqa: E402
+from sscbirrt import CBiRRT, CBiRRTConfig  # noqa: E402
+from sscbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoRobotModel, site_offset_in_body  # noqa: E402
+from sscbirrt.backends.ssik import SSIKSolver  # noqa: E402
+from sscbirrt.space import JointSpace  # noqa: E402
+from sscbirrt.tsr_set import TSRConfigurationSet  # noqa: E402
 
 JOINTS = [
     "shoulder_pan_joint",
@@ -126,7 +126,7 @@ def test_planner_keeps_a_collision_free_branch_when_others_collide(ur5e):
         if any(valid) and not all(valid):
             mixed_draws += 1
     assert mixed_draws > 0  # the region really is adversarial: colliding and free candidates share a pose
-    from pycbirrt import FiniteSet, PlanningProblem
+    from sscbirrt import FiniteSet, PlanningProblem
 
     prob = PlanningProblem(space=planner.space, start=s, goal=FiniteSet([np.zeros(6)]), validator=collision)
     roots = planner._roots(prob, s, "Start")

@@ -14,7 +14,7 @@
 
 namespace sscbirrt::tsr {
 
-// {q : FK(q) in TSR}: pycbirrt's TSRConfigurationSet (tsr_set.py), rule for rule.
+// {q : FK(q) in TSR}: sscbirrt's TSRConfigurationSet (tsr_set.py), rule for rule.
 //   contains:  region distance of FK(q) within tolerance
 //   distance:  the region distance of FK(q); violation: max(0, distance - tolerance)
 //   sample:    one pose from the region, every IK solution within the space's limits (provenance empty);

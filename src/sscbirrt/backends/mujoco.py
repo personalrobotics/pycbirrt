@@ -5,7 +5,7 @@
 
 import numpy as np
 
-from pycbirrt.interfaces.collision_checker import CollisionChecker
+from sscbirrt.interfaces.collision_checker import CollisionChecker
 
 try:
     import mujoco

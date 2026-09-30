@@ -6,7 +6,7 @@
 import numpy as np
 import pytest
 
-from pycbirrt import (
+from sscbirrt import (
     AllGoalConfigurationsInvalid,
     AllStartConfigurationsInCollision,
     CBiRRT,
@@ -14,7 +14,7 @@ from pycbirrt import (
     PlanningProblem,
     UnsupportedCapability,
 )
-from pycbirrt.sets import AllOf, AnyOf, EmptySet, FiniteSet, PredicateSet, is_finite, members
+from sscbirrt.sets import AllOf, AnyOf, EmptySet, FiniteSet, PredicateSet, is_finite, members
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 
@@ -129,7 +129,7 @@ class TestRootSampling:
         """
         from tsr import TSR
 
-        from pycbirrt.tsr_set import TSRConfigurationSet
+        from sscbirrt.tsr_set import TSRConfigurationSet
 
         robot, ik = planner.robot, planner.ik
         first_branch = []

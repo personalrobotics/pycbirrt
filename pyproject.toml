@@ -1,5 +1,5 @@
 [project]
-name = "pycbirrt"
+name = "sscbirrt"
 version = "2.0.0"
 description = "CBiRRT motion planner with TSR constraints"
 readme = "README.md"
@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-mujoco = ["mujoco==3.14.0"]  # exact: pycbirrt._native_mujoco is built against this MuJoCo and refuses another (docs/native-design.md, v1.7.0)
+mujoco = ["mujoco==3.14.0"]  # exact: sscbirrt._native_mujoco is built against this MuJoCo and refuses another (docs/native-design.md, v1.7.0)
 ssik = ["ssik>=7.0,<8"]  # 7.0 ships the ssik_cpp headers and ssik.cpp.joint_data for the native SSIK adapter (ssik#641)
 examples = [
     "matplotlib",
@@ -29,7 +29,7 @@ dev = [
     "ruff>=0.15,<0.16",  # formatter style only changes in minor releases; bump deliberately
     "hypothesis>=6.100",
 ]
-all = ["pycbirrt[mujoco,ssik,examples,dev]"]
+all = ["sscbirrt[mujoco,ssik,examples,dev]"]
 
 [build-system]
 # ssik is a build requirement so the isolated build can ask it for the ssik_cpp CMake package
@@ -38,20 +38,20 @@ requires = ["scikit-build-core>=0.10", "pybind11>=2.12", "ssik>=7.0,<8", "mujoco
 build-backend = "scikit_build_core.build"
 
 # The C++ core under cpp/ is the primary build; the wheel reuses it with the Python
-# target switched on. `pycbirrt` imports without the extension; backend="native" then
+# target switched on. `sscbirrt` imports without the extension; backend="native" then
 # reports it missing.
 [tool.scikit-build]
 minimum-version = "build-system.requires"
 cmake.source-dir = "cpp"
 cmake.build-type = "Release"
 cmake.define = { SSCBIRRT_BUILD_PYTHON = "ON", SSCBIRRT_BUILD_TESTS = "OFF", SSCBIRRT_INSTALL = "OFF" }
-wheel.packages = ["src/pycbirrt"]
+wheel.packages = ["src/sscbirrt"]
 sdist.include = ["cpp/", "src/", "tests/", "tools/", "docs/"]
 
 [project.urls]
-Homepage = "https://github.com/personalrobotics/pycbirrt"
-Repository = "https://github.com/personalrobotics/pycbirrt"
-Issues = "https://github.com/personalrobotics/pycbirrt/issues"
+Homepage = "https://github.com/personalrobotics/sscbirrt"
+Repository = "https://github.com/personalrobotics/sscbirrt"
+Issues = "https://github.com/personalrobotics/sscbirrt/issues"
 
 [tool.ruff]
 line-length = 120
@@ -62,5 +62,5 @@ extend-exclude = ["*.md"]
 select = ["F", "E", "W", "I"]
 
 [tool.ruff.lint.per-file-ignores]
-"src/pycbirrt/__init__.py" = ["F401"]
-"src/pycbirrt/**/__init__.py" = ["F401"]
+"src/sscbirrt/__init__.py" = ["F401"]
+"src/sscbirrt/**/__init__.py" = ["F401"]

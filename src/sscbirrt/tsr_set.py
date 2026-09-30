@@ -7,7 +7,7 @@ A TSR is a set of end-effector poses; a TSR chain is one too, built by
 serially composing a pose from each link of the chain (a door handle whose
 door swings on a hinge). Either kind of pose region induces a set of
 configurations through forward kinematics, ``{q : FK(q) in region}``. This
-module adapts such a region to the state-set protocols in ``pycbirrt.sets``
+module adapts such a region to the state-set protocols in ``sscbirrt.sets``
 so the planner can treat it like any other set. It is the only planner
 module that imports from the ``tsr`` package besides the legacy lowering.
 
@@ -27,9 +27,9 @@ import numpy as np
 from tsr import TSR, TSRChain
 from tsr.sampling import _interval_sum, weights_from_tsrs
 
-from pycbirrt.interfaces import IKSolver, RobotModel
-from pycbirrt.sets import Sample
-from pycbirrt.space import JointSpace
+from sscbirrt.interfaces import IKSolver, RobotModel
+from sscbirrt.sets import Sample
+from sscbirrt.space import JointSpace
 
 
 @runtime_checkable

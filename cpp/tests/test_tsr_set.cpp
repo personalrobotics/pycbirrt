@@ -17,7 +17,7 @@ constexpr double kPi = std::numbers::pi;
 
 namespace {
 
-// pycbirrt.testing.PlanarArm / PlanarIK: links 1 and 1, tip pose with identity rotation, both elbow branches.
+// sscbirrt.testing.PlanarArm / PlanarIK: links 1 and 1, tip pose with identity rotation, both elbow branches.
 class PlanarArm final : public ForwardKinematics, public IKSolver {
  public:
   int dof() const override { return 2; }

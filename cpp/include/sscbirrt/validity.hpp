@@ -22,7 +22,7 @@ class AcceptAll final : public StateValidator {
 };
 
 // Invalid strictly inside any listed axis-aligned box in joint space (open on every side, as
-// pycbirrt.testing.Wall is). Infinite bounds are allowed, so a Wall(axis, lo, hi) is a box that
+// sscbirrt.testing.Wall is). Infinite bounds are allowed, so a Wall(axis, lo, hi) is a box that
 // is unbounded on the other axes.
 class JointBoxObstacles final : public StateValidator {
  public:

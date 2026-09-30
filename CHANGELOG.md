@@ -6,6 +6,13 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **Renamed to `sscbirrt`.** The distribution is `sscbirrt`, the import path is
+  `import sscbirrt`, the extension modules are `sscbirrt._native` and
+  `sscbirrt._native_mujoco`, and the repository is `personalrobotics/sscbirrt`
+  (old URLs redirect). The C++ core, targets, and CMake package were already
+  `sscbirrt`. Entries below this one keep the old name as they were written (#152).
+
 ## [2.0.0] - 2026-09-30
 
 The native core becomes the default. A `CBiRRT` built without a `backend`

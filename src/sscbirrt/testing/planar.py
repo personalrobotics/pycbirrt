@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Siddhartha Srinivasa
 
-"""A two-link planar arm with closed-form IK: the reference robot for pycbirrt.
+"""A two-link planar arm with closed-form IK: the reference robot for sscbirrt.
 
 Link lengths 1 and 1, revolute joints limited to [-pi, pi], end effector at
 the tip with identity orientation. Every operation is analytic and

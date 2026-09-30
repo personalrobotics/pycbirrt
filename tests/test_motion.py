@@ -11,10 +11,10 @@ discretized behavior; a custom validator may be stricter but never looser.
 import numpy as np
 import pytest
 
-from pycbirrt import CBiRRT, CBiRRTConfig, DiscreteMotionValidator, LocalMotion, MotionContractError, PlanningProblem
-from pycbirrt.sets import FiniteSet, PredicateSet
-from pycbirrt.space import JointSpace
-from pycbirrt.tree import RRTree
+from sscbirrt import CBiRRT, CBiRRTConfig, DiscreteMotionValidator, LocalMotion, MotionContractError, PlanningProblem
+from sscbirrt.sets import FiniteSet, PredicateSet
+from sscbirrt.space import JointSpace
+from sscbirrt.tree import RRTree
 from tests.test_planner import MockCollisionChecker, MockIKSolver, MockRobotModel
 
 
@@ -404,7 +404,7 @@ class TestReplacementVsComposition:
         assert not reached
 
     def test_restricted_keeps_default_checks_and_adds_a_restriction(self):
-        from pycbirrt import RestrictedMotionValidator
+        from sscbirrt import RestrictedMotionValidator
 
         planner, _ = self.make()
         q0 = np.zeros(2)

@@ -1,6 +1,6 @@
 # Design: planning between sets
 
-pycbirrt plans between sets. This document defines the objects the planner
+sscbirrt plans between sets. This document defines the objects the planner
 works with, what each one means, and what each one is allowed to do. It is
 the reference for the `PlanningProblem` API and for anyone adding a new kind
 of set. The TSR-specific entry point, `plan(...)`, is one instantiation of
@@ -78,7 +78,7 @@ That is the whole definition. Fixed configurations, finite collections,
 predicates, and TSR-induced sets are all state sets. The planner never
 branches on a set's concrete type.
 
-Leaves provided by `pycbirrt.sets`:
+Leaves provided by `sscbirrt.sets`:
 
 | Set | Members | Capabilities |
 |---|---|---|
@@ -281,7 +281,7 @@ $[0, 1]$. The native `PlannerConfig` applies the same ranges.
 ## The reference artifact
 
 `tools/reference_artifact.py` runs a fixed matrix of problems on the planar
-reference arm (`pycbirrt.testing`) with fixed seeds and writes
+reference arm (`sscbirrt.testing`) with fixed seeds and writes
 `tests/reference/python_reference.json`: per case, the problem as data, the
 seed, the implementation versions, the result (status, failure category,
 provenance, iterations, path), and an **independent** validation report
@@ -311,7 +311,7 @@ core wherever it can and Python only with a stated reason.
 ## The TSR instantiation
 
 `plan(start, goal, goal_tsrs, start_tsrs, constraint_tsrs)` lowers its
-arguments into a `PlanningProblem` (`pycbirrt.legacy`) and reproduces the
+arguments into a `PlanningProblem` (`sscbirrt.legacy`) and reproduces the
 semantics the arguments always had:
 
 - fixed configurations become a `FiniteSet` whose members are always roots
