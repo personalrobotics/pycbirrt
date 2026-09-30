@@ -43,6 +43,14 @@ follows [Semantic Versioning](https://semver.org/).
   validator with its own `mjData`. Decisions are checked against
   mj_manipulator's checker on a checked-in corpus
   (`tools/mujoco_collision_corpus.py`) (#93, #84, #137, #138).
+- `plan_native(model, data, joint_names, ik=..., start=..., goal_tsrs=..., attachments=...)`:
+  one call from a live MuJoCo world to a native solve (scene, snapshot,
+  native collision, SSIK), with `fallback=True` for the Python planner on
+  unsupported input. The reference artifact gains two Menagerie-gated UR5e
+  cases in the example scene, a TSR goal among obstacles and a held object
+  with the grasp contact allowed, recorded as skipped where the Menagerie is
+  absent; `docs/migration-mj-manipulator.md` describes the boundary for
+  mj_manipulator (#88, #140).
 - `PlanResult.provenance` (dependency versions, backend, and for a native
   MuJoCo solve the scene's model signature, MJB hash, and snapshot hash;
   the SSIK family when SSIK lifted a set) and `PlanResult.stats` (counts

@@ -140,7 +140,7 @@ def create_grasp_tsr(target_pos: np.ndarray) -> TSR:
 # =============================================================================
 
 
-def create_scene(menagerie_path: Path) -> "mujoco.MjModel":
+def create_scene(menagerie_path: Path, free_cylinder: bool = False) -> "mujoco.MjModel":
     """Create a MuJoCo model with UR5e, Robotiq gripper, table, and cylinder.
 
     Uses MuJoCo's attach mechanism to connect the gripper to the robot arm.
@@ -227,6 +227,8 @@ def create_scene(menagerie_path: Path) -> "mujoco.MjModel":
     cylinder_body = world.add_body()
     cylinder_body.name = "cylinder"
     cylinder_body.pos = [0.45, 0.15, 0.47]  # On table surface + half height
+    if free_cylinder:
+        cylinder_body.add_freejoint()  # a movable object, so it can be grasped and carried (native scene attachments)
 
     cylinder_geom = cylinder_body.add_geom()
     cylinder_geom.name = "cylinder_geom"

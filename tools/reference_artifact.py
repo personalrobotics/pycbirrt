@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import importlib.metadata
 import json
+import os
 import platform
 import sys
 from pathlib import Path
@@ -314,6 +315,143 @@ def cases() -> list[dict[str, Any]]:
     )
 
     out.extend(ur5e_cases(base))
+    out.extend(ur5e_mujoco_cases(base))
+    return out
+
+
+def _skipped(name: str, description: str, seed: int, reason: str) -> dict[str, Any]:
+    return {"name": name, "description": description, "seed": seed, "skipped": reason}
+
+
+def ur5e_mujoco_cases(base: dict[str, Any]) -> list[dict[str, Any]]:
+    """The v1.7.0 release cases (#88): the UR5e with the Robotiq gripper in the example's MuJoCo scene, a
+    TSR-goal query among the table obstacles and a held-object query, both from a snapshot with native
+    collision checking and SSIK. Recorded as skipped when the Menagerie, mujoco, ssik, or the native scene
+    is unavailable, so the artifact keeps every case name in every environment."""
+    names = [
+        (
+            "ur5e_mujoco_tsr_goal_among_obstacles",
+            "UR5e + Robotiq in MuJoCo: finite start, top-down grasp TSR above the cylinder on the table",
+            20,
+        ),
+        (
+            "ur5e_mujoco_held_object",
+            "UR5e + Robotiq holding the cylinder: finite start, place TSR over the table, gripper contact allowed",
+            21,
+        ),
+    ]
+    reason = None
+    menagerie = os.environ.get("MUJOCO_MENAGERIE_PATH")
+    if not menagerie:
+        reason = "MUJOCO_MENAGERIE_PATH is not set"
+    try:
+        import mujoco  # noqa: F401
+        import ssik
+
+        from pycbirrt.backends import native_mujoco
+        from pycbirrt.backends.mujoco import MuJoCoRobotModel, site_offset_in_body
+        from pycbirrt.backends.ssik import SSIKSolver
+    except ImportError as e:
+        reason = reason or f"missing dependency: {e}"
+    if reason is None and not native_mujoco.available():
+        reason = native_mujoco.unavailable_reason()
+    if reason is not None:
+        print(f"note: UR5e MuJoCo cases skipped: {reason}", file=sys.stderr)
+        return [_skipped(n, d, s, reason) for n, d, s in names]
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "examples"))
+    from ur5e_mujoco import create_grasp_tsr, create_scene  # noqa: E402
+
+    joints = [
+        "shoulder_pan_joint",
+        "shoulder_lift_joint",
+        "elbow_joint",
+        "wrist_1_joint",
+        "wrist_2_joint",
+        "wrist_3_joint",
+    ]
+    model = create_scene(Path(menagerie), free_cylinder=True)
+    data = mujoco.MjData(model)
+    mujoco.mj_forward(model, data)
+    arm = ssik.Manipulator.from_mjcf(
+        str(Path(menagerie) / "universal_robots_ur5e" / "ur5e.xml"), base="world", ee="wrist_3_link"
+    )
+    ik = SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site"))
+    robot = MuJoCoRobotModel(model, data, "attachment_site", joints)
+    scene = native_mujoco.NativeScene.from_model(model, joints)
+    cfg = CBiRRTConfig(**{**base, "num_tree_roots": 20, "timeout": 60.0})
+    home = np.array([0.0, -1.57, 1.57, -1.57, -1.57, 0.0])
+    cylinder_pos = model.body("cylinder").pos.copy()
+    out: list[dict[str, Any]] = []
+
+    # A. grasp TSR above the resting cylinder, everything else an obstacle
+    snap_a = native_mujoco.Snapshot.capture(scene, data)
+    checker_a = native_mujoco.NativeCollisionChecker(scene, snap_a)
+    planner_a = CBiRRT(robot, ik, checker_a, cfg)
+    out.append(
+        {
+            "name": names[0][0],
+            "description": names[0][1],
+            "seed": names[0][2],
+            "config": cfg,
+            "problem": PlanningProblem(
+                space=planner_a.space,
+                start=_finite(planner_a, [home]),
+                goal=_tsr_set(planner_a, create_grasp_tsr(cylinder_pos)),
+                validator=checker_a,
+            ),
+            "spec": {
+                "robot": "menagerie ur5e + robotiq_2f85",
+                "ssik": importlib.metadata.version("ssik"),
+                "mujoco": mujoco.__version__,
+                "solver_name": arm.solver_name,
+                "scene_mjb_sha256": scene.provenance["mjb_sha256"],
+                "snapshot_sha256": snap_a.sha256,
+                "start": [home.tolist()],
+                "goal": "grasp TSR above the cylinder",
+            },
+            "planner": planner_a,
+        }
+    )
+
+    # B. holding the cylinder: attach it in the gripper, plan to a place TSR over the other side of the table
+    q_hold = home.copy()
+    for i, a in enumerate(model.jnt_qposadr[[model.joint(j).id for j in joints]]):
+        data.qpos[a] = q_hold[i]
+    mujoco.mj_forward(model, data)
+    T_go = np.eye(4)
+    T_go[:3, 3] = [0.0, 0.0, 0.16]  # along the gripper's approach axis, between the pads and past the wrist
+    attachments = {"cylinder": ("gripper_base_mount", T_go)}
+    snap_b = native_mujoco.Snapshot.capture(scene, data, attachments=attachments)
+    checker_b = native_mujoco.NativeCollisionChecker(scene, snap_b)
+    planner_b = CBiRRT(robot, ik, checker_b, cfg)
+    place = create_grasp_tsr(np.array([0.5, -0.25, 0.47]))
+    out.append(
+        {
+            "name": names[1][0],
+            "description": names[1][1],
+            "seed": names[1][2],
+            "config": cfg,
+            "problem": PlanningProblem(
+                space=planner_b.space,
+                start=_finite(planner_b, [q_hold]),
+                goal=_tsr_set(planner_b, place),
+                validator=checker_b,
+            ),
+            "spec": {
+                "robot": "menagerie ur5e + robotiq_2f85",
+                "ssik": importlib.metadata.version("ssik"),
+                "mujoco": mujoco.__version__,
+                "solver_name": arm.solver_name,
+                "scene_mjb_sha256": scene.provenance["mjb_sha256"],
+                "snapshot_sha256": snap_b.sha256,
+                "attachments": {"cylinder": ["gripper_base_mount", T_go.tolist()]},
+                "start": [q_hold.tolist()],
+                "goal": "place TSR over the table",
+            },
+            "planner": planner_b,
+        }
+    )
     return out
 
 
@@ -447,6 +585,21 @@ def versions() -> dict[str, str]:
 
 def run_case(case: dict[str, Any], backend: str = "python") -> dict[str, Any]:
     """Run one case. With backend="native", a case the native core cannot lower is recorded as unsupported."""
+    if "skipped" in case:
+        return {
+            "name": case["name"],
+            "description": case["description"],
+            "seed": case["seed"],
+            "spec": None,
+            "status": "skipped",
+            "skipped_reason": case["skipped"],
+            "failure_category": None,
+            "start_source": [],
+            "goal_source": [],
+            "iterations": 0,
+            "path": None,
+            "validation": None,
+        }
     planner: CBiRRT = case["planner"]
     if backend == "native":
         from pycbirrt.backends import native
@@ -540,9 +693,11 @@ def parity_mismatches(python_artifact: dict[str, Any], native_artifact: dict[str
     by_name = {c["name"]: c for c in semantic_view(python_artifact)}
     out = []
     for nat in semantic_view(native_artifact):
-        if nat["status"] == "unsupported":
+        if nat["status"] in ("unsupported", "skipped"):
             continue
         py = by_name[nat["name"]]
+        if py["status"] == "skipped":
+            continue
         keys = ["status", "failure_category", "validation"]
         if uniquely_rooted(nat["name"]):
             keys += ["start_source", "goal_source"]
@@ -565,6 +720,20 @@ def semantic_view(artifact: dict[str, Any]) -> list[dict[str, Any]]:
     return view
 
 
+def semantic_mismatches(stored: dict[str, Any], fresh: dict[str, Any]) -> list[str]:
+    """Where a fresh Python run disagrees with the stored artifact. A case skipped in either run (an
+    environment without the Menagerie, for instance) is not compared; a case missing on one side is."""
+    a = {c["name"]: c for c in semantic_view(stored)}
+    b = {c["name"]: c for c in semantic_view(fresh)}
+    out = [f"{n}: missing from the {'fresh' if n in a else 'stored'} run" for n in sorted(set(a) ^ set(b))]
+    for name in sorted(set(a) & set(b)):
+        if a[name]["status"] == "skipped" or b[name]["status"] == "skipped":
+            continue
+        if a[name] != b[name]:
+            out.append(f"{name}:\n    stored: {a[name]}\n    fresh:  {b[name]}")
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--check", action="store_true", help="compare a fresh run's semantics with the stored artifact")
@@ -581,7 +750,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.check and args.backend == "native":
         stored = json.loads(ARTIFACT.read_text())
         mismatches = parity_mismatches(stored, fresh)
-        supported = [c["name"] for c in fresh["cases"] if c["status"] != "unsupported"]
+        supported = [c["name"] for c in fresh["cases"] if c["status"] not in ("unsupported", "skipped")]
         if mismatches:
             print("PARITY MISMATCH between the native core and the Python artifact:", file=sys.stderr)
             for m in mismatches:
@@ -591,11 +760,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.check:
         stored = json.loads(args.output.read_text())
-        if semantic_view(stored) != semantic_view(fresh):
+        bad = semantic_mismatches(stored, fresh)
+        if bad:
             print("MISMATCH: the Python planner's semantics on the reference matrix changed", file=sys.stderr)
-            for old, new in zip(semantic_view(stored), semantic_view(fresh)):
-                if old != new:
-                    print(f"  {old['name']}:\n    stored: {old}\n    fresh:  {new}", file=sys.stderr)
+            for line in bad:
+                print(f"  {line}", file=sys.stderr)
             return 1
         exact = json.dumps(stored, sort_keys=True) == json.dumps(fresh, sort_keys=True)
         print(f"semantics match ({len(fresh['cases'])} cases); bit-for-bit: {exact} (versions {fresh['versions']})")

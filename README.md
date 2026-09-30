@@ -410,8 +410,19 @@ snap = Snapshot.capture(scene, data, attachments={"can": ("robot/gripper/base", 
 checker = NativeCollisionChecker(scene, snap)                   # a CollisionChecker for either backend
 ```
 
+One call does all of it from a live world, with SSIK for the pose regions:
+
+```python
+from pycbirrt.backends.native_mujoco import plan_native
+
+result = plan_native(model, data, joint_names, ik=ssik_solver, start=q_now, goal_tsrs=[grasp_tsr],
+                     attachments={"can": ("robot/gripper/base", T_gripper_can)}, seed=0)
+result.provenance   # versions, scene MJB hash, snapshot hash, SSIK family
+```
+
 The snapshot is a value: `qpos`, mocap poses, and attachments copied at capture,
-so later changes to `data` do not reach a running solve. The contact policy is
+so later changes to `data` do not reach a running solve. Downstream integration
+is described in [docs/migration-mj-manipulator.md](docs/migration-mj-manipulator.md). The contact policy is
 mj_manipulator's (a grasped object may touch its gripper; everything else that
 touches the robot is a collision) and is checked against it on a checked-in
 corpus. `PlanResult.provenance` records the scene's MJB hash and the snapshot

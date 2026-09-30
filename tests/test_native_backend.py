@@ -174,6 +174,8 @@ class TestParityWithTheArtifact:
     def test_semantic_parity(self, artifact_tool):
         lowered_any = False
         for case in artifact_tool.cases():
+            if "skipped" in case:  # an environment-gated case (the Menagerie is absent here)
+                continue
             cfg, problem, planner = case["config"], case["problem"], case["planner"]
             try:
                 lowered = native.lower(problem, cfg)
