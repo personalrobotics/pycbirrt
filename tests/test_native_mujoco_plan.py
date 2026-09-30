@@ -19,6 +19,9 @@ if not nm.available():
 
 from sscbirrt import CBiRRTConfig  # noqa: E402
 
+# plan_native is deprecated (sscbirrt.mujoco.plan replaces it) but keeps working until 4.0.
+pytestmark = pytest.mark.filterwarnings("ignore:plan_native is deprecated:DeprecationWarning")
+
 XML = """
 <mujoco><compiler angle="radian"/><worldbody>
   <geom name="floor" type="plane" size="3 3 0.1"/>
@@ -169,3 +172,12 @@ class TestArgumentErrors:
         model = mujoco.MjModel.from_xml_string(XML)
         with pytest.raises(ValueError, match=r"joint 'jX' not found in the model; its joints are: j0, j1"):
             nm.plan_native(model, mujoco.MjData(model), ["j0", "jX"], start=np.zeros(2), goal=np.ones(2), ee_site="tip")
+
+
+def test_plan_native_warns_that_it_is_deprecated():
+    model = mujoco.MjModel.from_xml_string(XML)
+    with pytest.warns(DeprecationWarning, match="use sscbirrt.mujoco.plan"):
+        nm.plan_native(
+            model, mujoco.MjData(model), ["j0", "j1"], start=np.array([0.0, -1.2]), goal=np.array([2.5, -1.2]),
+            ee_site="tip", seed=0,
+        )  # fmt: skip

@@ -255,6 +255,8 @@ def plan_native(
 ):
     """One call from a live MuJoCo world to a native solve (docs/native-design.md, v1.7.0).
 
+    Deprecated since 3.1.0: use ``sscbirrt.mujoco.plan`` with an ``sscbirrt.mujoco.Arm``.
+
     Builds or reuses the owned scene for ``model``, captures a snapshot of ``data`` now (call on the
     thread that owns it), plans with ``backend="native"`` (or ``"auto"`` when ``fallback`` is true), and
     returns a ``PlanResult`` whose ``provenance`` names the scene, the snapshot, and every dependency.
@@ -264,9 +266,16 @@ def plan_native(
     ``ee_site``, and lowering checks its forward kinematics against SSIK's at the start configurations.
     ``attachments`` is mj_manipulator's ``{object_body: (gripper_body, T_gripper_object)}``.
     """
+    import warnings
+
     from sscbirrt import CBiRRT, CBiRRTConfig
     from sscbirrt.backends.mujoco import MuJoCoRobotModel
 
+    warnings.warn(
+        "plan_native is deprecated and will be removed in 4.0; use sscbirrt.mujoco.plan(model, data, Arm(...), ...)",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     # Check the arguments before any work, so the first error is about what the caller passed (#172).
     if ik is None and (goal_tsrs or constraint_tsrs):
         raise ValueError(
