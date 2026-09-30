@@ -642,7 +642,7 @@ and both are correct.
 | `JointSpace` | `JointSpace` | |
 | `FiniteSet`, `EmptySet` | same | |
 | `AnyOf`, `AllOf` with `MostViolatedProjection` / `RejectionSampling` | same, children lowered recursively | |
-| `PredicateSet`, `TSRConfigurationSet`, any other set | | `NativeUnsupported("goal: TSRConfigurationSet has no native form in v1.5.0")` |
+| `PredicateSet`, `TSRConfigurationSet`, any other set | | `NativeUnsupported("goal: TSRConfigurationSet has no native form")` (v1.5.0; v1.6.0 lowers a plain TSR with SSIK) |
 | validator: `sscbirrt.testing.NoCollision`, `Wall` | `AcceptAll`, `JointBoxObstacles` | any other validator: `NativeUnsupported("validator: <type> is a Python object; native needs a sscbirrt.StateValidator")` |
 | `motion_validator` None | default | any custom validator: `NativeUnsupported` |
 | `sampler` None | default (`space`) | any custom sampler: `NativeUnsupported("sampler: <type> is a Python object")` |

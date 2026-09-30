@@ -1,10 +1,36 @@
 # Changelog
 
-All notable changes to pycbirrt. The format follows
+All notable changes to sscbirrt (named pycbirrt before 3.0.0). The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+### Fixed
+- The native backend's "All N start/goal configuration(s)" count matches
+  Python's; it counted each rejected explicit candidate twice (#170).
+- `plan(start=[0.1, 0.2])`: a flat list is one configuration on every
+  backend, and a malformed `start`/`goal` raises a `ValueError` naming the
+  argument and the expected shape. It used to crash under the default
+  backend with `TypeError: iteration over a 0-d array` (#171).
+- `plan_native` checks its arguments before doing any work. Pose regions
+  without `ik` raise a `ValueError` naming `ik`, instead of leaking `_NoIK`
+  or claiming there are no pose regions. A wrong site or joint is reported
+  before the scene is built. A missing native scene says that `fallback`
+  cannot cover it (#172).
+- `MuJoCoRobotModel`, `MuJoCoCollisionChecker` and `MuJoCoIKSolver` no
+  longer take every joint by default when the model has free or ball joints,
+  which silently gave the wrong DOF; they ask for the arm's joints and list
+  them (#173).
+
+### Changed
+- Errors name what exists: a missing site or joint lists the model's sites
+  or joints, and the unlimited-joint error names the joint and both fixes.
+  `MuJoCoRobotModel(joint_limits=(lower, upper))` gives finite planning
+  limits. Install hints match pyproject. `NativeUnsupported` is exported
+  from `sscbirrt` (#174).
+- `CBiRRTConfig`'s set tolerances are documented as applying to the sets
+  `plan(...)` builds (#177).
 
 ## [3.0.0] - 2026-09-30
 

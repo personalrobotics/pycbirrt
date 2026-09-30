@@ -91,6 +91,27 @@ class PlanResult:
     stats: dict = field(default_factory=dict, repr=False)  # cost breakdown: counts and seconds per component
 
 
+def as_configurations(value, dof: int, name: str) -> list[np.ndarray]:
+    """Read ``value`` as a list of configurations: one configuration (length ``dof``) or several (``n x dof``).
+
+    A flat list of numbers is one configuration, not a list of scalars (#171). Anything else raises a
+    ``ValueError`` that names the argument and the shape it expected.
+    """
+    try:
+        arr = np.asarray(value, dtype=float)
+    except (TypeError, ValueError):
+        raise ValueError(
+            f"{name}: expected one configuration of length {dof} or a list of them, got a ragged or non-numeric value"
+        ) from None
+    if arr.ndim == 1 and arr.shape[0] == dof:
+        return [arr]
+    if arr.ndim == 2 and arr.shape[1] == dof:
+        return list(arr)
+    if arr.size == 0:
+        return []
+    raise ValueError(f"{name}: expected one configuration of length {dof} or a list of them, got shape {arr.shape}")
+
+
 class _AbortedDuringRoots(Exception):
     """Raised inside root collection when ``abort_fn`` fires; carries the roots gathered so far."""
 
@@ -144,7 +165,9 @@ class CBiRRT:
         # Joint-space geometry: limits, metric, interpolation, sampling.
         # Raises ValueError if angular_joints length does not match robot DOF.
         lower, upper = robot.joint_limits
-        self.space = JointSpace(lower, upper, angular_joints=self.config.angular_joints)
+        self.space = JointSpace(
+            lower, upper, angular_joints=self.config.angular_joints, joint_names=getattr(robot, "joint_names", None)
+        )
 
         self._rng = np.random.default_rng()
 
@@ -203,12 +226,8 @@ class CBiRRT:
             # Mix configs and TSRs
             path = planner.plan(start=[q1], goal_tsrs=[tsr1, tsr2])
         """
-        start_configs = None
-        if start is not None:
-            start_configs = [start] if isinstance(start, np.ndarray) else list(start)
-        goal_configs = None
-        if goal is not None:
-            goal_configs = [goal] if isinstance(goal, np.ndarray) else list(goal)
+        start_configs = None if start is None else as_configurations(start, self.space.dof, "start")
+        goal_configs = None if goal is None else as_configurations(goal, self.space.dof, "goal")
 
         problem = legacy_problem(
             self.robot,

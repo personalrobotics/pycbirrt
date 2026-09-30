@@ -10,7 +10,47 @@ from sscbirrt.interfaces.collision_checker import CollisionChecker
 try:
     import mujoco
 except ImportError:
-    raise ImportError("MuJoCo backend requires mujoco. Install with: pip install mujoco")
+    raise ImportError('The MuJoCo backend requires mujoco: pip install "sscbirrt[mujoco]" (mujoco==3.14.0)') from None
+
+
+def _names(model: "mujoco.MjModel", kind: str) -> list[str]:
+    count = {"site": model.nsite, "joint": model.njnt}[kind]
+    return [getattr(model, kind)(i).name for i in range(count)]
+
+
+def _site_id(model: "mujoco.MjModel", name: str) -> int:
+    """The site's id, or a ValueError that lists the sites the model has."""
+    site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, name)
+    if site_id == -1:
+        raise ValueError(
+            f"site '{name}' not found in the model; its sites are: {', '.join(_names(model, 'site')) or '(none)'}"
+        )
+    return site_id
+
+
+def _joint_ids(model: "mujoco.MjModel", joint_names: list[str] | None) -> np.ndarray:
+    """Ids of the named joints, in order. ``None`` means every joint, allowed only when all are hinges or slides:
+    a free or ball joint (an object in the scene) is never an arm joint, and taking it silently gives the wrong DOF
+    and qpos mapping (#173)."""
+    if joint_names is None:
+        scalar = {int(mujoco.mjtJoint.mjJNT_HINGE), int(mujoco.mjtJoint.mjJNT_SLIDE)}
+        others = [model.joint(i).name or f"#{i}" for i in range(model.njnt) if int(model.jnt_type[i]) not in scalar]
+        if others:
+            arm = [model.joint(i).name for i in range(model.njnt) if int(model.jnt_type[i]) in scalar]
+            raise ValueError(
+                f"joint_names is required: the model has free or ball joints ({', '.join(others)}); "
+                f"pass the arm's joints, from: {', '.join(arm)}"
+            )
+        return np.arange(model.njnt)
+    ids = []
+    for name in joint_names:
+        joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)
+        if joint_id == -1:
+            raise ValueError(
+                f"joint '{name}' not found in the model; its joints are: {', '.join(_names(model, 'joint'))}"
+            )
+        ids.append(joint_id)
+    return np.array(ids, dtype=int)
 
 
 class MuJoCoRobotModel:
@@ -22,6 +62,7 @@ class MuJoCoRobotModel:
         data: "mujoco.MjData",
         ee_site: str,
         joint_names: list[str] | None = None,
+        joint_limits: tuple[np.ndarray, np.ndarray] | None = None,
     ):
         """Initialize MuJoCo robot model.
 
@@ -29,40 +70,35 @@ class MuJoCoRobotModel:
             model: MuJoCo model
             data: MuJoCo data
             ee_site: Name of end-effector site
-            joint_names: List of joint names to control (if None, uses all joints)
+            joint_names: The controlled joints, in order. ``None`` means every joint, and is allowed only
+                when every joint is a hinge or slide (a scene with free objects must name the arm's joints).
+            joint_limits: Optional ``(lower, upper)`` planning limits that replace the model's, for example
+                finite limits on a joint the model leaves unlimited.
         """
         self.model = model
         self.data = data
         self.ee_site = ee_site
-
-        # Get site ID
-        self.ee_site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, ee_site)
-        if self.ee_site_id == -1:
-            raise ValueError(f"Site '{ee_site}' not found in model")
-
-        # Get joint indices
-        if joint_names is not None:
-            self.joint_ids = []
-            for name in joint_names:
-                jnt_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)
-                if jnt_id == -1:
-                    raise ValueError(f"Joint '{name}' not found in model")
-                self.joint_ids.append(jnt_id)
-            self.joint_ids = np.array(self.joint_ids)
-        else:
-            # Use all joints
-            self.joint_ids = np.arange(model.njnt)
-
+        self.ee_site_id = _site_id(model, ee_site)
+        self.joint_ids = _joint_ids(model, joint_names)
         self._dof = len(self.joint_ids)
 
         # Cache joint limits. MuJoCo stores an unlimited joint's range as (0, 0);
         # report it honestly as unbounded so the planner's JointSpace can insist
         # the caller declare the joint angular or give finite planning limits.
-        self._lower = self.model.jnt_range[self.joint_ids, 0].copy()
-        self._upper = self.model.jnt_range[self.joint_ids, 1].copy()
-        unlimited = ~self.model.jnt_limited[self.joint_ids].astype(bool)
-        self._lower[unlimited] = -np.inf
-        self._upper[unlimited] = np.inf
+        if joint_limits is not None:
+            lower, upper = (np.array(b, dtype=float) for b in joint_limits)
+            if lower.shape != (self._dof,) or upper.shape != (self._dof,):
+                raise ValueError(
+                    f"joint_limits: expected two arrays of length {self._dof}, got {lower.shape} and {upper.shape}"
+                )
+            self._lower, self._upper = lower, upper
+        else:
+            self._lower = self.model.jnt_range[self.joint_ids, 0].copy()
+            self._upper = self.model.jnt_range[self.joint_ids, 1].copy()
+            unlimited = ~self.model.jnt_limited[self.joint_ids].astype(bool)
+            self._lower[unlimited] = -np.inf
+            self._upper[unlimited] = np.inf
+        self.joint_names = [model.joint(int(i)).name for i in self.joint_ids]
 
     @property
     def dof(self) -> int:
@@ -119,18 +155,7 @@ class MuJoCoCollisionChecker:
         """
         self.model = model
         self.data = data
-
-        # Get joint indices
-        if joint_names is not None:
-            self.joint_ids = []
-            for name in joint_names:
-                jnt_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)
-                if jnt_id == -1:
-                    raise ValueError(f"Joint '{name}' not found in model")
-                self.joint_ids.append(jnt_id)
-            self.joint_ids = np.array(self.joint_ids)
-        else:
-            self.joint_ids = np.arange(model.njnt)
+        self.joint_ids = _joint_ids(model, joint_names)
 
     def is_valid(self, q: np.ndarray) -> bool:
         """Check if configuration is collision-free.
@@ -230,30 +255,10 @@ class MuJoCoIKSolver:
         self._rng = np.random.default_rng(seed)
         self.collision_checker = collision_checker
 
-        # Get site ID
-        self.ee_site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, ee_site)
-        if self.ee_site_id == -1:
-            raise ValueError(f"Site '{ee_site}' not found in model")
-
-        # Get joint indices and qpos addresses
-        if joint_names is not None:
-            self.joint_ids = []
-            self.qpos_adrs = []
-            self.dof_adrs = []
-            for name in joint_names:
-                jnt_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)
-                if jnt_id == -1:
-                    raise ValueError(f"Joint '{name}' not found in model")
-                self.joint_ids.append(jnt_id)
-                self.qpos_adrs.append(model.jnt_qposadr[jnt_id])
-                self.dof_adrs.append(model.jnt_dofadr[jnt_id])
-            self.joint_ids = np.array(self.joint_ids)
-            self.qpos_adrs = np.array(self.qpos_adrs)
-            self.dof_adrs = np.array(self.dof_adrs)
-        else:
-            self.joint_ids = np.arange(model.njnt)
-            self.qpos_adrs = np.array([model.jnt_qposadr[i] for i in range(model.njnt)])
-            self.dof_adrs = np.array([model.jnt_dofadr[i] for i in range(model.njnt)])
+        self.ee_site_id = _site_id(model, ee_site)
+        self.joint_ids = _joint_ids(model, joint_names)
+        self.qpos_adrs = np.array([model.jnt_qposadr[i] for i in self.joint_ids], dtype=int)
+        self.dof_adrs = np.array([model.jnt_dofadr[i] for i in self.joint_ids], dtype=int)
 
         self._dof = len(self.joint_ids)
 
@@ -487,9 +492,7 @@ def site_offset_in_body(model: "mujoco.MjModel", site_name: str) -> np.ndarray:
     so that SSIK's forward kinematics lands on the site, as
     ``MuJoCoRobotModel.forward_kinematics`` does.
     """
-    site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, site_name)
-    if site_id < 0:
-        raise ValueError(f"Site '{site_name}' not found in model")
+    site_id = _site_id(model, site_name)
     rot = np.zeros(9)
     mujoco.mju_quat2Mat(rot, model.site_quat[site_id])
     T = np.eye(4)

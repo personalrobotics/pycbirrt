@@ -8,6 +8,7 @@ from sscbirrt.exceptions import (
     AllStartConfigurationsInCollision,
     AllStartConfigurationsInvalid,
     MotionContractError,
+    NativeUnsupported,
     PlanningError,
     UnsupportedCapability,
 )
@@ -37,6 +38,7 @@ from sscbirrt.space import JointSpace, SpaceSampler
 from sscbirrt.tsr_set import PoseRegion, TSRConfigurationSet, region_volume, tsr_weights
 
 __all__ = [
+    "NativeUnsupported",
     "CBiRRT",
     "CBiRRTConfig",
     "PlanResult",

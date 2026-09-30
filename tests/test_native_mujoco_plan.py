@@ -144,3 +144,28 @@ class TestUR5eReleaseCases:
         assert all(checker.is_valid(q) for q in r.path)
         # the grasp itself is a contact, and it is allowed: without the attachment the held pose is not special
         assert checker.invalid_contacts(home) == []
+
+
+class TestArgumentErrors:
+    """#172: plan_native reports what the caller passed wrong, before any work."""
+
+    def test_pose_regions_without_ik_name_the_argument(self):
+        from tsr import TSR
+
+        model = mujoco.MjModel.from_xml_string(XML)
+        for fallback in (False, True):
+            with pytest.raises(ValueError, match="goal_tsrs and constraint_tsrs need an IK solver; pass ik="):
+                nm.plan_native(
+                    model, mujoco.MjData(model), ["j0", "j1"], start=np.zeros(2), goal_tsrs=[TSR()], ee_site="tip",
+                    fallback=fallback,
+                )  # fmt: skip
+
+    def test_wrong_site_lists_the_sites(self):
+        model = mujoco.MjModel.from_xml_string(XML)
+        with pytest.raises(ValueError, match=r"site 'attachment_site' not found in the model; its sites are: tip"):
+            nm.plan_native(model, mujoco.MjData(model), ["j0", "j1"], start=np.zeros(2), goal=np.ones(2))
+
+    def test_wrong_joint_lists_the_joints(self):
+        model = mujoco.MjModel.from_xml_string(XML)
+        with pytest.raises(ValueError, match=r"joint 'jX' not found in the model; its joints are: j0, j1"):
+            nm.plan_native(model, mujoco.MjData(model), ["j0", "jX"], start=np.zeros(2), goal=np.ones(2), ee_site="tip")

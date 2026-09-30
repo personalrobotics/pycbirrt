@@ -210,7 +210,7 @@ std::vector<Sample> Solve::roots(const StateSet& s, const std::string& role, Roo
                                 " or " + lower_role + "_tsrs.");
   }
   std::string message = "All " + lower_role + " configurations " + (report.only_collisions() ? "in collision" : "invalid") +
-                        " (" + std::to_string(report.explicit_candidates + report.rejections()) + " candidates)";
+                        " (" + std::to_string(report.candidates()) + " candidates)";
   for (const std::string& d : report.details) message += "; " + d;
   if (report.draws > 0) message += "; sampling: " + report.summary();
   throw NoRoots(lower_role, report, message);
