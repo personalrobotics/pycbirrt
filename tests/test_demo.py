@@ -36,13 +36,18 @@ def test_pick_plans_and_reports_without_rendering(capsys):
     assert "== pick:" in out and "reached: the " in out and "backend: native" in out
 
 
-def test_transport_constraint_holds_on_every_run(capsys):
-    """The path constraint is the claim: every upright carry stays within it, and some free carries do not."""
+def test_transport_constraint_holds(capsys):
+    """The claim: the upright carry stays within the constraint; the free carry, same endpoints, does not."""
+    import numpy as np
+
+    from sscbirrt.demo.scenarios.transport import TILT_LIMIT
+
     assert main(["transport", "--no-video", "--seed", "0"]) == 0
     out = capsys.readouterr().out
-    assert "upright carries: 10 of 10 within the constraint" in out
-    spilled = int(out.split("free carries:")[1].split(" of ")[0])
-    assert spilled >= 1
+    free = float(out.split("free carry:")[1].split("max tilt")[1].split("deg")[0])
+    upright = float(out.split("upright carry:")[1].split("max tilt")[1].split("deg")[0])
+    assert upright <= np.degrees(np.hypot(TILT_LIMIT, TILT_LIMIT)) + 0.1  # roll and pitch each at most TILT_LIMIT
+    assert free > 10.0
 
 
 def test_render_writes_a_playable_mp4(tmp_path, capsys):

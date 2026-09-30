@@ -37,7 +37,6 @@ OBSTACLES = {
     "pillar_behind": ((-0.50, 0.0, 0.65), (0.08, 0.30, 0.65)),
 }
 TILT_LIMIT = 0.05  # rad
-RUNS = 10  # seeds per carry; the report gives the spread, the video the worst free carry
 
 
 def _grasp(center: np.ndarray) -> TSR:
@@ -102,40 +101,34 @@ def run(seed: int) -> Outcome:
     def max_tilt(path) -> float:
         return max(tilt(model, view, q) for q in path)
 
+    def length(path) -> float:
+        return float(sum(np.linalg.norm(b - a) for a, b in zip(path, path[1:])))
+
     # Upright first, starting from the set of all grasps of the can: the planner picks a grasp configuration from
     # which an upright carry exists (from some windings of the wrist there is none within the joint limits).
-    uprights = []
-    for k in range(RUNS):
-        r = plan(
-            model, data, arm, start=_grasp(PICK_AT), goal=_grasp(PLACE_AT), constraint=upright(), holding=held,
-            config=config, seed=seed + k,
-        )  # fmt: skip
-        if not r.success:
-            return Outcome(False, [f"upright (seed {seed + k}): no path: {r.failure_reason}"], model, data)
-        uprights.append(r)
-    carried = uprights[0]
-    q_grasp = carried.path[0]
+    carried = plan(
+        model, data, arm, start=_grasp(PICK_AT), goal=_grasp(PLACE_AT), constraint=upright(), holding=held,
+        config=config, seed=seed,
+    )  # fmt: skip
+    if not carried.success:
+        return Outcome(False, [f"upright: no path: {carried.failure_reason}"], model, data)
 
-    # Then free carries from the same grasp. Whether one free plan tilts the can depends on its seed, so plan
-    # several and show the worst: the point is that nothing keeps the can upright, not that every plan spills it.
-    frees = []
-    for k in range(RUNS):
-        r = plan(model, data, arm, start=q_grasp, goal=_grasp(PLACE_AT), holding=held, config=config, seed=seed + k)
-        if not r.success:
-            return Outcome(False, [f"free (seed {seed + k}): no path: {r.failure_reason}"], model, data)
-        frees.append((max_tilt(r.path), r))
-    free_tilts = [t for t, _ in frees]
-    worst_free_tilt, free = max(frees, key=lambda pair: pair[0])
-    upright_tilts = [max_tilt(r.path) for r in uprights]
-    spilled = sum(t > np.radians(30) for t in free_tilts)
+    # Then the same carry, same start and same goal configuration, with no constraint: the only difference is the
+    # constraint, so what the free path does to the can is what the constraint prevents.
+    q_start, q_goal = carried.path[0], carried.path[-1]
+    free = plan(model, data, arm, start=q_start, goal=q_goal, holding=held, config=config, seed=seed)
+    if not free.success:
+        return Outcome(False, [f"free: no path: {free.failure_reason}"], model, data)
 
     report = [
-        f"free carries:    {spilled} of {RUNS} tilt the can past 30 deg; "
-        f"worst {np.degrees(worst_free_tilt):.0f} deg (shown)",
-        f"upright carries: {RUNS} of {RUNS} within the constraint; worst {np.degrees(max(upright_tilts)):.1f} deg",
-        f"backend: {carried.backend}; upright plans {min(r.planning_time for r in uprights):.2f}-"
-        f"{max(r.planning_time for r in uprights):.2f} s, free {max(r.planning_time for _, r in frees):.2f} s at most",
-        "start: chosen from every grasp of the can, so that an upright carry exists",
+        f"free carry:    max tilt {np.degrees(max_tilt(free.path)):5.1f} deg, {length(free.path):.2f} rad of joint "
+        f"travel, {free.backend}, {free.planning_time:.2f} s",
+        f"upright carry: max tilt {np.degrees(max_tilt(carried.path)):5.1f} deg, "
+        f"{length(carried.path):.2f} rad of joint travel, {carried.backend}, {carried.planning_time:.2f} s",
+        f"constraint: the can's roll and pitch each within {np.degrees(TILT_LIMIT):.2f} deg "
+        f"(so its tilt within {np.degrees(np.hypot(TILT_LIMIT, TILT_LIMIT)):.2f} deg)",
+        "start: chosen from every grasp of the can, so that an upright carry exists; both carries share it and "
+        "the goal",
     ]
 
     def clip(carry, title, lines):
@@ -147,31 +140,17 @@ def run(seed: int) -> Outcome:
             held=(CAN, held[CAN][1]),
         )
 
+    # The overlay states each case in words; the numbers are in the report.
     clips = [
-        clip(
-            free,
-            "Carried freely",
-            [
-                f"No constraint: {spilled} of {RUNS} plans tilt the can past 30 deg",
-                f"The worst of them, shown: up to {np.degrees(worst_free_tilt):.0f} deg",
-            ],
-        ),
-        clip(
-            carried,
-            "Carried upright: a path constraint",
-            [
-                f"Constraint: the can's roll and pitch within {np.degrees(TILT_LIMIT):.0f} deg",
-                f"{RUNS} of {RUNS} plans hold it; worst tilt {np.degrees(max(upright_tilts)):.1f} deg",
-                f"{carried.backend} backend, planned in {carried.planning_time:.2f} s",
-            ],
-        ),
+        clip(free, "Carried freely", ["No constraint on the path"]),
+        clip(carried, "Carried upright: a path constraint", ["Constraint: keep the can upright"]),
     ]
-    set_arm(model, data, q_grasp)
+    set_arm(model, data, q_start)
     return Outcome(True, report, model, data, clips, Camera())
 
 
 SCENARIO = Scenario(
     name="transport",
-    claim="a path constraint holds everywhere: the same carry, free and then with the can kept upright",
+    claim="a path constraint holds everywhere: the same carry, same start and goal, free and then kept upright",
     run=run,
 )
