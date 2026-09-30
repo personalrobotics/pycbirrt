@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import functools
 import os
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -289,6 +290,41 @@ def _style(spec: mujoco.MjSpec) -> None:
         mat.rgba = rgba
         mat.specular = 0.2
         mat.shininess = 0.3
+
+
+@functools.lru_cache(maxsize=None)
+def gripper_closure(width: float) -> tuple[tuple[str, float], ...]:
+    """Finger joint positions of the 2F-85 closed until its pads are ``width`` apart (for rendering a grasp).
+
+    The fingers are a linkage held by equality constraints, so they are not set joint by joint: a standalone
+    2F-85 is simulated at increasing close commands, bisecting on the command until MuJoCo's distance between the
+    two pads is ``width``. Returns ``(joint name, qpos)`` pairs, names as in the gripper's own model.
+    """
+    model = mujoco.MjModel.from_xml_path(str(robotiq_2f85_xml()))
+    left, right = model.geom("left_pad1").id, model.geom("right_pad1").id
+
+    def settle(command: float) -> mujoco.MjData:
+        data = mujoco.MjData(model)
+        data.ctrl[:] = command
+        for _ in range(1500):
+            mujoco.mj_step(model, data)
+        return data
+
+    def gap(data: mujoco.MjData) -> float:
+        return float(mujoco.mj_geomDistance(model, data, left, right, 1.0, None))
+
+    lo, hi = 0.0, float(model.actuator_ctrlrange[0, 1])  # the gap shrinks as the command grows
+    for _ in range(12):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if gap(settle(mid)) > width else (lo, mid)
+    data = settle(lo)
+    return tuple((model.joint(i).name, float(data.qpos[model.jnt_qposadr[i]])) for i in range(model.njnt))
+
+
+def close_gripper(model: mujoco.MjModel, data: mujoco.MjData, width: float) -> None:
+    """Set the scene's 2F-85 fingers as if closed on an object ``width`` wide (visual; call before kinematics)."""
+    for name, value in gripper_closure(round(width, 4)):
+        data.qpos[model.jnt_qposadr[model.joint(f"gripper_{name}").id]] = value
 
 
 def set_arm(model: mujoco.MjModel, data: mujoco.MjData, q: np.ndarray, joints: Sequence[str] = UR5E_JOINTS) -> None:

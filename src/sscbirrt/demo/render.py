@@ -14,7 +14,7 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
-from sscbirrt.demo.scene import EE_SITE, UR5E_JOINTS, set_arm
+from sscbirrt.demo.scene import EE_SITE, UR5E_JOINTS, close_gripper, set_arm
 
 
 class RenderUnavailable(RuntimeError):
@@ -42,6 +42,7 @@ class Clip:
     lines: Sequence[str] = ()
     caption: Callable[[np.ndarray], str] | None = None
     held: tuple[str, np.ndarray] | None = None
+    grip: float | None = None  # close the gripper's fingers on an object this wide (visual only)
     trail_rgba: tuple[float, float, float, float] = (0.1, 0.4, 0.9, 0.9)
     joints: Sequence[str] = field(default_factory=lambda: list(UR5E_JOINTS))
 
@@ -166,6 +167,8 @@ def render_video(
             for clip, q in plan:
                 if clip is not current:
                     current, trail = clip, []
+                if clip.grip is not None:
+                    close_gripper(model, data, clip.grip)
                 set_arm(model, data, q, clip.joints)
                 if clip.held is not None:
                     _place_held(model, data, *clip.held)

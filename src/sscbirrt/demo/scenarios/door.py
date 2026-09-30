@@ -142,6 +142,7 @@ def run(seed: int) -> Outcome:
             title="Open the door: a TSR chain",
             lines=["The gripper follows the handle's arc about the hinge"],
             held=(DOOR_BODY, held[DOOR_BODY][1]),
+            grip=2 * HANDLE_RADIUS,
         ),
     ]
     return Outcome(True, report, model, data, clips, Camera(lookat=(0.35, -0.3, 0.5), distance=2.0, azimuth=-120.0))

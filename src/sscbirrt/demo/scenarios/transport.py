@@ -138,6 +138,7 @@ def run(seed: int) -> Outcome:
             lines=lines,
             caption=lambda q: f"tilt {np.degrees(tilt(model, view, q)):5.1f} deg",
             held=(CAN, held[CAN][1]),
+            grip=2 * CAN_RADIUS,
         )
 
     # The overlay states each case in words; the numbers are in the report.
