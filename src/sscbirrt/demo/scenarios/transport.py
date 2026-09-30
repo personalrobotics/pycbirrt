@@ -30,7 +30,12 @@ from sscbirrt.mujoco import Arm, plan
 CAN = "green_can"
 PICK_AT = can_position((0.45, 0.25))
 PLACE_AT = can_position((0.50, -0.25))
-OBSTACLES = {"box_on_table": ((0.52, 0.0, TABLE_TOP_Z + 0.09), (0.06, 0.06, 0.09))}
+# A box between pick and place, and a pillar behind the robot so the upright carry cannot simply swing the can
+# around the base at table height: it has to lift it over the box, upright.
+OBSTACLES = {
+    "box_on_table": ((0.52, 0.0, TABLE_TOP_Z + 0.09), (0.06, 0.06, 0.09)),
+    "pillar_behind": ((-0.50, 0.0, 0.65), (0.08, 0.30, 0.65)),
+}
 TILT_LIMIT = 0.05  # rad
 RUNS = 10  # seeds per carry; the report gives the spread, the video the worst free carry
 
