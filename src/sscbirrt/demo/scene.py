@@ -82,15 +82,32 @@ def can_position(xy: Sequence[float]) -> np.ndarray:
 OBSTACLE_RGBA = (0.80, 0.15, 0.12, 1.0)  # solid red; no can is red
 
 
+# A door beside the robot that swings toward it about a vertical hinge. The leaf is a free body whose origin is the
+# hinge (identity rotation when closed), so a planner can hold it: along a path that keeps the handle grasp fixed it
+# moves rigidly with the gripper, as a door does.
+DOOR_BODY = "door"
+DOOR_HINGE = np.array([0.30, -0.60, 0.0])
+DOOR_WIDTH = 0.45
+DOOR_HEIGHT = 0.95
+DOOR_THICKNESS = 0.03
+HANDLE_RADIUS = 0.012
+HANDLE_LENGTH = 0.16
+HANDLE_OFFSET = np.array([DOOR_WIDTH - 0.07, DOOR_THICKNESS / 2 + 0.05, 0.50])  # handle bottom, in the door frame
+
+
 def build_scene(
     cans: Mapping[str, Sequence[float]] | None = None,
     obstacles: Mapping[str, tuple[Sequence[float], Sequence[float]]] | None = None,
+    *,
+    table: bool = True,
+    door: bool = False,
 ) -> mujoco.MjModel:
     """Compile the world: arm, gripper, floor, table, and one free-floating can per entry of ``cans``.
 
     ``cans`` maps a body name to the can's center (see :func:`can_position`). Cans are free bodies so a
     planner can treat one as held (``attachments``); the demos never step the simulation. ``obstacles`` maps a
-    name to a box ``(center, half_extents)``, floating or resting on the table: fixed, solid red.
+    name to a box ``(center, half_extents)``, floating or resting on the table: fixed, solid red. ``door`` adds the
+    door (``DOOR_*``) in a frame beside the robot; ``table=False`` leaves the table out.
     """
     from tsr import Robotiq2F85
 
@@ -144,22 +161,26 @@ def build_scene(
     base.contype = 0
     base.conaffinity = 0
 
-    table = world.add_body()
-    table.name = "table"
-    table.pos = list(TABLE_CENTER)
-    top = table.add_geom()
-    top.name = "table_top"
-    top.type = mujoco.mjtGeom.mjGEOM_BOX
-    top.size = list(TABLE_HALF)
-    top.material = "table"
-    leg_half = (TABLE_CENTER[2] - TABLE_HALF[2]) / 2  # from the floor to the underside of the top
-    for i, (x, y) in enumerate([(1, 1), (1, -1), (-1, 1), (-1, -1)]):
-        leg = table.add_geom()
-        leg.name = f"table_leg_{i}"
-        leg.type = mujoco.mjtGeom.mjGEOM_CYLINDER
-        leg.pos = [x * (TABLE_HALF[0] - 0.03), y * (TABLE_HALF[1] - 0.03), leg_half - TABLE_CENTER[2]]
-        leg.size = [0.025, leg_half, 0]
-        leg.material = "table_leg"  # solid: a planner must not route the arm through the legs
+    if table:
+        table_body = world.add_body()
+        table_body.name = "table"
+        table_body.pos = list(TABLE_CENTER)
+        top = table_body.add_geom()
+        top.name = "table_top"
+        top.type = mujoco.mjtGeom.mjGEOM_BOX
+        top.size = list(TABLE_HALF)
+        top.material = "table"
+        leg_half = (TABLE_CENTER[2] - TABLE_HALF[2]) / 2  # from the floor to the underside of the top
+        for i, (x, y) in enumerate([(1, 1), (1, -1), (-1, 1), (-1, -1)]):
+            leg = table_body.add_geom()
+            leg.name = f"table_leg_{i}"
+            leg.type = mujoco.mjtGeom.mjGEOM_CYLINDER
+            leg.pos = [x * (TABLE_HALF[0] - 0.03), y * (TABLE_HALF[1] - 0.03), leg_half - TABLE_CENTER[2]]
+            leg.size = [0.025, leg_half, 0]
+            leg.material = "table_leg"  # solid: a planner must not route the arm through the legs
+
+    if door:
+        _add_door(world)
 
     for i, (name, pos) in enumerate((cans or {}).items()):
         body = world.add_body()
@@ -186,6 +207,45 @@ def build_scene(
         box.rgba = list(OBSTACLE_RGBA)
 
     return arm.compile()
+
+
+def _add_door(world) -> None:
+    """The door leaf (a free body at the hinge) with its handle, and a fixed frame around it."""
+    leaf = world.add_body()
+    leaf.name = DOOR_BODY
+    leaf.pos = list(DOOR_HINGE)
+    leaf.add_freejoint()
+    panel = leaf.add_geom()
+    panel.name = "door_panel"
+    panel.type = mujoco.mjtGeom.mjGEOM_BOX
+    panel.pos = [DOOR_WIDTH / 2, 0.0, 0.05 + DOOR_HEIGHT / 2]
+    panel.size = [DOOR_WIDTH / 2 - 0.005, DOOR_THICKNESS / 2, DOOR_HEIGHT / 2]
+    panel.rgba = [0.82, 0.78, 0.70, 1]
+    handle = leaf.add_geom()
+    handle.name = "door_handle"
+    handle.type = mujoco.mjtGeom.mjGEOM_CYLINDER
+    handle.pos = list(HANDLE_OFFSET + [0.0, 0.0, HANDLE_LENGTH / 2])
+    handle.size = [HANDLE_RADIUS, HANDLE_LENGTH / 2, 0]
+    handle.rgba = [0.25, 0.25, 0.28, 1]
+    for k, z in enumerate((HANDLE_OFFSET[2] + 0.02, HANDLE_OFFSET[2] + HANDLE_LENGTH - 0.02)):
+        post = leaf.add_geom()  # the standoffs that hold the bar off the panel
+        post.name = f"door_handle_post_{k}"
+        post.type = mujoco.mjtGeom.mjGEOM_BOX
+        post.pos = [HANDLE_OFFSET[0], (DOOR_THICKNESS / 2 + HANDLE_OFFSET[1]) / 2, z]
+        post.size = [0.008, (HANDLE_OFFSET[1] - DOOR_THICKNESS / 2) / 2, 0.008]
+        post.rgba = [0.25, 0.25, 0.28, 1]
+    frame_rgba = [0.55, 0.42, 0.30, 1]
+    for name, pos, size in (
+        ("door_jamb_hinge", DOOR_HINGE + [-0.07, 0.0, 0.52], [0.03, 0.05, 0.52]),  # clear of the swinging leaf
+        ("door_jamb_latch", DOOR_HINGE + [DOOR_WIDTH + 0.04, 0.0, 0.52], [0.03, 0.05, 0.52]),
+        ("door_lintel", DOOR_HINGE + [DOOR_WIDTH / 2, 0.0, 1.07], [DOOR_WIDTH / 2 + 0.10, 0.05, 0.03]),
+    ):
+        geom = world.add_geom()
+        geom.name = name
+        geom.type = mujoco.mjtGeom.mjGEOM_BOX
+        geom.pos = list(pos)
+        geom.size = list(size)
+        geom.rgba = frame_rgba
 
 
 def _style(spec: mujoco.MjSpec) -> None:

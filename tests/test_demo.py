@@ -27,7 +27,7 @@ REQUIRE_RENDER = os.environ.get("SSCBIRRT_REQUIRE_RENDER") == "1"
 def test_list_names_every_scenario(capsys):
     assert main(["--list"]) == 0
     listed = [line.split()[0] for line in capsys.readouterr().out.splitlines()]
-    assert listed == ["pick", "transport"]
+    assert listed == ["pick", "transport", "door"]
 
 
 def test_pick_plans_and_reports_without_rendering(capsys):
@@ -48,6 +48,23 @@ def test_transport_constraint_holds(capsys):
     upright = float(out.split("upright carry:")[1].split("max tilt")[1].split("deg")[0])
     assert upright <= np.degrees(np.hypot(TILT_LIMIT, TILT_LIMIT)) + 0.1  # roll and pitch each at most TILT_LIMIT
     assert free > 10.0
+
+
+def test_door_follows_the_arc(capsys):
+    """The chain constraint holds (the door angle stays in range) and the chain's Python fallback is reported."""
+    assert main(["door", "--no-video", "--seed", "0"]) == 0
+    out = capsys.readouterr().out
+    assert "opened to 60 deg" in out and "as a TSR chain: python" in out
+    assert "TSR chains stay Python" in out and "the same set as one TSR: native" in out
+
+
+def test_door_single_tsr_matches_the_chain():
+    import numpy as np
+
+    from sscbirrt.demo.scenarios.door import OPEN, door_chain, door_region
+
+    for angle in (0.0, OPEN / 2, OPEN):
+        assert np.allclose(door_region(angle, angle).sample(), door_chain(angle, angle).sample(), atol=1e-12)
 
 
 def test_render_writes_a_playable_mp4(tmp_path, capsys):
