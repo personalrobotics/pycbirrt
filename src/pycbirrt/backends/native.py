@@ -205,6 +205,8 @@ def _lower_set(s, where: str, space: JointSpace, nspace, reasons: list[str], ctx
 
 
 def _lower_validator(v, dof: int, reasons: list[str]):
+    if type(v).__name__ == "NativeCollisionChecker" and hasattr(v, "fresh"):
+        return v.fresh()  # its own mjData for this solve (docs/native-design.md, v1.7.0: one validator per solve)
     if isinstance(v, NoCollision):
         return _native.AcceptAll()
     if isinstance(v, Wall):

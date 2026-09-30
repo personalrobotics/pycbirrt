@@ -1,0 +1,7197 @@
+{
+ "artifact": "decision parity between the native MuJoCo validator and mj_manipulator's CollisionChecker",
+ "issue": "https://github.com/personalrobotics/pycbirrt/issues/84",
+ "scenarios": [
+  {
+   "attachments": {},
+   "configurations": [
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.1860505235346843,
+      -0.21813308451330837,
+      -0.7801766477049235
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.252818895736878,
+      -1.7090335097856235,
+      0.9861405703394595
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.3545669080294642,
+      0.5487623420376392,
+      0.31245718743675965
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.801383347286254,
+      1.8701787883348957,
+      -2.0688658155000366
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.09522983823791531,
+      -1.9610425864052399,
+      -2.059578664818326
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.16984208548139912,
+      0.8795020221136246,
+      1.459825256053382
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.10515387501962059,
+      -0.8354631648620808,
+      -1.9603439655975838
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.2653355189932585,
+      -0.050620038891967534,
+      -0.18796226430764473
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.6146860907616385,
+      -1.0619848514928554,
+      -2.236392683629353
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.340978264883205,
+      0.246220098807034,
+      -2.4604597065828626
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -2.2720500351944466,
+      -2.013025557358952,
+      -0.14489092111901092
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.9434315574972225,
+      -2.118082510071433,
+      -0.11291703185120835
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.424563696123464,
+      -0.44325617107385584,
+      2.2117921747210105
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.14790807158108055,
+      -1.6610465038906552,
+      -2.197523351784476
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.4280883516499434,
+      -0.29791350872955036,
+      -0.8772375580613144
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.37316653974996816,
+      -0.6537825230881245,
+      -1.715865408589577
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.784051978260258,
+      -2.4048786685377346,
+      0.13028440294020197
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.6840275553959505,
+      0.21523777884214057,
+      0.7508118645566861
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.223805429360598,
+      0.9818978017698898,
+      0.42297796860409864
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -2.4620463092207947,
+      -1.799849613452652,
+      -0.012522945259210515
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.4591116283601768,
+      -1.2681175249189942,
+      -0.22882140055630015
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.6979110363135232,
+      1.2772514957806287,
+      0.26916284565468096
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.510488279569875,
+      -0.9100292227260015,
+      -1.9549950576430932
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.3992299262484897,
+      -0.9285906818895995,
+      -0.9334609493616303
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.1724585625940802,
+      -0.7702445775843919,
+      1.6085298849362717
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.2797328569795303,
+      -0.4766708777460449,
+      -1.2387245906081323
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.44152907160600385,
+      -1.1570242410471232,
+      0.5035195398756437
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.6959030487563145,
+      -0.7097546769339386,
+      2.069898998190801
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|arm/link2",
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.7363278978358576,
+      1.3426881095392385,
+      2.732696431775233
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -2.0219221935912417,
+      -0.7730586483959906,
+      0.7118762052196826
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.4221319301213182,
+      2.3708769215104555,
+      1.3374304328931934
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.9986479331847797,
+      2.0800878815598853,
+      -2.389016238722306
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.4124579808498363,
+      -0.38266543452189883,
+      -2.40290877593212
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.0244949697757026,
+      1.344550252577279,
+      -1.4355063949036253
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.2146663434955114,
+      -0.035765164567367336,
+      -2.0251446540769735
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.0224062067855733,
+      -2.486672513611527,
+      0.8415729371435112
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.44451395656243675,
+      0.5819903794112563,
+      -2.5656420481702846
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.0283876617516308,
+      1.403241988051633,
+      1.6109255434451923
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.297133620100845,
+      1.4226840288593938,
+      -2.4779738606243193
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.8888656168623301,
+      1.6865884397888182,
+      -0.7871704627304769
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.012045571174476688,
+      -1.2647104436775942,
+      2.0899512330800762
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -2.496154126908575,
+      -2.391735504137637,
+      2.0028722603717393
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.7984631253919969,
+      2.0761955329622426,
+      0.45045299974099523
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.115547797431832,
+      -1.4177950438921822,
+      -0.01880294186784379
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.956583497119588,
+      0.3854768872391906,
+      2.186193604599511
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.03427136624946825,
+      -2.3615860109626414,
+      -2.3131077294663327
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.426598790573121,
+      1.1708146971522282,
+      0.13910981304266937
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.4563204308925475,
+      -1.2526313180069986,
+      -2.377997439061066
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.5129013648470306,
+      0.15078172557855823,
+      0.4312070415519328
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.5126820650453443,
+      0.15133294526894478,
+      0.4310425680697788
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.0100478603229854,
+      0.8235145504603323,
+      -2.0663286276062784
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.0093406793694886,
+      0.8225791936793899,
+      -2.0663263602355064
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.059438593815102636,
+      -0.3035959032118594,
+      -0.006020224661250238
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/right_finger|can"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.059503308640229416,
+      -0.3029024108757953,
+      -0.005160995188381168
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.017103850583982165,
+      -0.07302380805476648,
+      -0.439804865835277
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.01703671289831297,
+      -0.07344250072736797,
+      -0.44063986808665667
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.2127847920806474,
+      -0.06110262771745563,
+      0.6853656088393225
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|tetra"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.213875631810544,
+      -0.06046295085041953,
+      0.6855171048016312
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|can",
+      "arm/gripper/left_finger|can"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.11340040606952526,
+      -0.4055802180786583,
+      0.2057591289989374
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.11454441284163985,
+      -0.40625935563120286,
+      0.2056528055336387
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.5194228394663338,
+      0.3270881089032548,
+      0.08326980062133377
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.5201935969528264,
+      0.327709536886824,
+      0.08339137880644386
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.11737121109024715,
+      0.09496645897064838,
+      -0.9330553178954343
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.1186427929544765,
+      0.09443245488898172,
+      -0.933598325196044
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.1272531008761442,
+      -0.7730280051991318,
+      1.563846452302129
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.1278809545111157,
+      -0.7729893464822605,
+      1.5644670555331586
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.1532789087625175,
+      -0.7639373301269274,
+      1.5473584020632474
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.1530609581507951,
+      -0.7638656568603653,
+      1.5466632715760538
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.4956011068527522,
+      -0.28132728864424955,
+      2.208251489820364
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.495366835575672,
+      -0.28082620397958324,
+      2.2084133056000477
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.6763559534480095,
+      -0.204348399253733,
+      1.2550703139691115
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.6766698192428717,
+      -0.20486493898955702,
+      1.2545769496559875
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.9753259665303118,
+      2.332895442903631,
+      0.8506997274941963
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/right_finger|tetra"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.9744908151964968,
+      2.332824449485674,
+      0.8497899504747589
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.25811781591614025,
+      0.823458381899014,
+      -2.3961049601013373
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.25728502638634665,
+      0.8228571237652049,
+      -2.3961083518340542
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.1416605568603468,
+      0.8229277416051883,
+      -1.7276638034320062
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.1415658393283463,
+      0.8233494251225466,
+      -1.7274276212100754
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.40133702432292984,
+      0.7369553558214692,
+      -1.6950566344762685
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.4021278351904277,
+      0.7366183647528304,
+      -1.6952005891293869
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.038474640764529555,
+      0.7423910842238299,
+      -1.749906190432887
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.03907837651118826,
+      0.7425915851048457,
+      -1.7488865206107151
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.1540900570541726,
+      -1.0413455379464938,
+      1.8722003234850393
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.15363184903520585,
+      -1.0420660699004651,
+      1.8729027457740557
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.2445856589936115,
+      -0.694445295708093,
+      1.4131348654641616
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.243781309078499,
+      -0.6933544922322386,
+      1.4127558568556091
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.4817651097876634,
+      0.2635173162103742,
+      0.20700356714363613
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.482086663662673,
+      0.2626642911671969,
+      0.2068890027047668
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.6580322502089446,
+      -0.25464942815754177,
+      1.4034628969423983
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.6582375811903134,
+      -0.2542091762212304,
+      1.4040012261773755
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.3373044615738694,
+      -0.19666437146178356,
+      1.2327283804859488
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.3365910064637934,
+      -0.19733504111466488,
+      1.2316299182461865
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.9850119826471926,
+      0.5369488474294671,
+      -0.30092434070345275
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.985612781025323,
+      0.5378112499460967,
+      -0.3003256547799886
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.9753973498064274,
+      0.6158360930947686,
+      -0.4373175801392895
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.974916324816271,
+      0.6152444314699739,
+      -0.4379321082770101
+     ]
+    }
+   ],
+   "joints": [
+    "arm/j0",
+    "arm/j1",
+    "arm/j2"
+   ],
+   "mocap_pos": [
+    0.3,
+    0.35,
+    0.3
+   ],
+   "mocap_quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "name": "free_arm_no_margin",
+   "qpos": [
+    0.0,
+    0.0,
+    0.0,
+    0.62,
+    0.0,
+    0.36,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xml": "\n<mujoco>\n  <compiler angle=\"radian\"/>\n  <option timestep=\"0.002\"/>\n  <asset>\n    <mesh name=\"tet\" vertex=\"0 0 0  0.12 0 0  0 0.12 0  0 0 0.12\"/>\n  </asset>\n  <worldbody>\n    <geom name=\"floor\" type=\"plane\" size=\"3 3 0.1\"/>\n    <geom name=\"table\" type=\"box\" pos=\"0.55 0 0.15\" size=\"0.15 0.3 0.15\" margin=\"0.0\"/>\n    <geom name=\"crate\" type=\"box\" pos=\"0.2 -0.45 0.1\" size=\"0.08 0.08 0.1\"/>\n    <body name=\"tetra\" pos=\"-0.4 0.4 -0.01\"><geom type=\"mesh\" mesh=\"tet\"/></body>\n    <body name=\"arm/base\" pos=\"0 0 0.1\">\n      <joint name=\"arm/j0\" type=\"hinge\" axis=\"0 0 1\" limited=\"true\" range=\"-3 3\"/>\n      <geom name=\"arm/link0\" type=\"capsule\" size=\"0.035\" fromto=\"0 0 0 0 0 0.15\"/>\n      <body name=\"arm/link1\" pos=\"0 0 0.15\">\n        <joint name=\"arm/j1\" type=\"hinge\" axis=\"0 1 0\" limited=\"true\" range=\"-2.5 2.5\"/>\n        <geom name=\"arm/link1_geom\" type=\"capsule\" size=\"0.03\" fromto=\"0 0 0 0.3 0 0\"/>\n        <body name=\"arm/link2\" pos=\"0.3 0 0\">\n          <joint name=\"arm/j2\" type=\"hinge\" axis=\"0 1 0\" limited=\"true\" range=\"-2.8 2.8\"/>\n          <geom name=\"arm/link2_geom\" type=\"capsule\" size=\"0.025\" fromto=\"0 0 0 0.25 0 0\"/>\n          <body name=\"arm/gripper/base\" pos=\"0.25 0 0\">\n            <geom name=\"arm/gripper/palm\" type=\"box\" size=\"0.02 0.04 0.02\"/>\n            <body name=\"arm/gripper/left_finger\" pos=\"0.06 0.035 0\">\n              <geom name=\"arm/gripper/lf\" type=\"box\" size=\"0.04 0.006 0.015\"/>\n            </body>\n            <body name=\"arm/gripper/right_finger\" pos=\"0.06 -0.035 0\">\n              <geom name=\"arm/gripper/rf\" type=\"box\" size=\"0.04 0.006 0.015\"/>\n            </body>\n          </body>\n        </body>\n      </body>\n    </body>\n    <body name=\"can\" pos=\"0.62 0 0.36\"><freejoint/><geom name=\"can/geom\" type=\"cylinder\" size=\"0.031 0.06\"/></body>\n    <body name=\"ball\" mocap=\"true\" pos=\"0.3 0.35 0.3\"><geom name=\"ball/geom\" type=\"sphere\" size=\"0.06\"/></body>\n  </worldbody>\n</mujoco>\n"
+  },
+  {
+   "attachments": {},
+   "configurations": [
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      2.186498039599322,
+      0.1207989610520549,
+      -0.07701611965528476
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.684697522063723,
+      -0.3866313034252433,
+      2.204500194920463
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.821883349684818,
+      -1.7066651162272017,
+      -0.923813404314847
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.117815776763555,
+      0.23377446455059847,
+      0.27345019123265935
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.9840888167102997,
+      -0.5251540187193232,
+      -2.4990181241908753
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.2689922522928523,
+      0.6953622579443958,
+      0.43974554505936786
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.2538325937418975,
+      0.7600680789398062,
+      -1.709095997264177
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.0089628806446664,
+      1.1738343563188374,
+      -0.22894301976328463
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.8803550257692905,
+      2.0444739996521006,
+      0.7997932889628074
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.025191167432836892,
+      -0.38654124755227115,
+      1.6311063938224655
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.6617281206342476,
+      0.48866582088865684,
+      -1.3855800696535594
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.9791064442103605,
+      -2.276075567539892,
+      2.2719794765653596
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.0028075953729647,
+      -2.431768778269772,
+      0.9961117322281913
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      2.5694753992296535,
+      -0.45113091109725556,
+      0.7331173198964195
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      2.328644908876803,
+      -1.5799870846061848,
+      0.8295859420813211
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.2379879246931431,
+      -0.7679664925261248,
+      -1.7007712823659848
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.3723664737874308,
+      2.0561528357311056,
+      -2.171369071803925
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.1463457067143377,
+      -0.018216747757436313,
+      1.3958802191833815
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.2786697030564298,
+      -0.9122679060891642,
+      0.1750478234230999
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|arm/gripper/base",
+      "arm/base|arm/gripper/left_finger",
+      "arm/base|arm/gripper/left_finger",
+      "arm/base|arm/gripper/right_finger",
+      "arm/base|arm/gripper/right_finger",
+      "arm/base|arm/link2"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.567878391565491,
+      0.5159480542617828,
+      2.731034732152583
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.760482351864168,
+      -1.3975124505886645,
+      0.5666299974220181
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.19461797249249546,
+      0.7206318305729242,
+      1.5394518376512913
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      0.42470317530791113,
+      -1.038269122523292,
+      2.2583419846885375
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.252947329162214,
+      -2.292525288568194,
+      1.1297256890172727
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.269741849405487,
+      2.1293842044300346,
+      -2.274984383565234
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.184894058624286,
+      -0.22504545524900277,
+      -0.42730270677231175
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.5580899098463385,
+      0.010820103694550443,
+      -0.038513481414777125
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.2038938874115583,
+      0.8647816959735083,
+      0.09483226014593793
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      0.6420627357193001,
+      -1.9027851847518673,
+      -2.0948623529635055
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      0.5628625444603135,
+      -0.7836238641876864,
+      1.019154677718792
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.769724109081177,
+      -0.7688398043835643,
+      2.348081697774653
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.6665166100144708,
+      -1.3174618349712146,
+      -1.6120338425075158
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      2.579378707136706,
+      -1.7797262230318074,
+      1.0227562878609553
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.1066508009645113,
+      -0.26610492436802635,
+      -1.6205286901653795
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.79964455271352,
+      -1.0020307320057409,
+      -2.327221591422911
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.3762067240007743,
+      -1.9824902668580502,
+      0.263120737408094
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.2696837263314016,
+      -0.9479768375467612,
+      -1.9921914130052678
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.3392440094071545,
+      0.8781806371349038,
+      -1.392039602749085
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.7005615624420494,
+      -0.6575231771947482,
+      0.6943603287401915
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      0.6804358208928403,
+      -0.5494201610937544,
+      -1.0040434214728569
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.2804515987588505,
+      -2.257978995226159,
+      1.3345825348570086
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.7297218555178233,
+      -2.3218264390011454,
+      0.51514196878577
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.0623498689265418,
+      -2.0108410474689546,
+      1.7573565683443182
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.3820665837526178,
+      2.4225144404067374,
+      -1.1314177283220828
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.4039496182630222,
+      -0.5087211450975115,
+      -0.0940952174433402
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.5304262708737264,
+      -1.3339266297818302,
+      0.20318738324168706
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.9734249773597965,
+      -1.5584532475137813,
+      -0.8544326070440702
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.7002049167090103,
+      0.7719874614727107,
+      -0.38941471075446293
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.119190908741917,
+      0.22998454349439185,
+      0.27111178577260564
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.1190190172446217,
+      0.23045828362641768,
+      0.2714040864551124
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.017378311521920604,
+      -0.04396816152889679,
+      -0.7411811576003187
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.018135612448061684,
+      -0.044153446803132615,
+      -0.7418580297476389
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.2120254764769074,
+      0.4513185981329735,
+      -0.1478636944708932
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.212095032979735,
+      0.45161657573958086,
+      -0.14714622287195514
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.261479042610616,
+      0.7274308166896798,
+      -0.6252320747933655
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.261475341522103,
+      0.7274466140092588,
+      -0.6257566943105344
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.2164684407424424,
+      0.8232038024168311,
+      -1.4832425766250026
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.2164086580976434,
+      0.8233048195743944,
+      -1.48288121115198
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.4213456233639552,
+      0.07691679235211675,
+      0.033647180131181786
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.4219893091435454,
+      0.07713046595281034,
+      0.032910684412559704
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      0.3309841167598706,
+      0.8226690763921931,
+      -1.9658272150401372
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.3305909638305541,
+      0.8233585586500685,
+      -1.9659421070785743
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.2037851758296303,
+      -0.40630829060748813,
+      0.8659388130159544
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.2038174814927998,
+      -0.4065265648160652,
+      0.8656407582318333
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.7638362255031501,
+      -0.5140690226124109,
+      0.8876789390893768
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.7633854080972367,
+      -0.5137203370752159,
+      0.8883029593307659
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.098377516483506,
+      -0.33520551991729797,
+      1.7682550869672586
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.0986686795597507,
+      -0.335672673360865,
+      1.7677266678425685
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      0.7662260101564216,
+      -0.32034093260536634,
+      1.0613536041597078
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.7657486907412954,
+      -0.31982380753672335,
+      1.0615911094917951
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.17900081564588458,
+      -0.34046295827003237,
+      1.9731377637570129
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      0.17915201709798428,
+      -0.34089237744803436,
+      1.973313274046817
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      0.0003906782560652342,
+      -0.09560492278416202,
+      -0.5618233826881477
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.0010065691688014894,
+      -0.094525355036848,
+      -0.5626546107332118
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.2226778404565395,
+      0.8234115025768186,
+      -1.2500984534691602
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.2226571256638683,
+      0.8228366906481861,
+      -1.2496473593097868
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      0.4602110268114261,
+      -0.1269792816941026,
+      -0.2656552334364032
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.45978549361599874,
+      -0.12692169732912614,
+      -0.26556031419193116
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.8127138144568042,
+      0.48437638497536706,
+      -0.20614383047432983
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.8120190008281103,
+      0.4837007094673775,
+      -0.2066784238857335
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.3224992732956573,
+      0.43858315909874135,
+      -1.536509740667199
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.3225162557866426,
+      0.43902899832595854,
+      -1.5363632192291483
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|ball"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.041708346730014,
+      -0.16149384458778293,
+      0.020457225869021406
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.0422063461372038,
+      -0.16186877227682828,
+      0.020966600852295156
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      1.222520449693902,
+      0.21016614518751997,
+      0.31014835136202945
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.2225985055324826,
+      0.21124850736717712,
+      0.3094430841997574
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.7387338356528426,
+      0.19116860163665728,
+      -0.3417762271209307
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.7394140153896628,
+      0.19045296794879002,
+      -0.3415229745547982
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": false,
+     "q": [
+      2.247279356038906,
+      0.484665059607921,
+      -0.4467472394718095
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|tetra",
+      "arm/gripper/left_finger|tetra"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.2481762383372628,
+      0.4852340148591384,
+      -0.44663370971197314
+     ]
+    }
+   ],
+   "joints": [
+    "arm/j0",
+    "arm/j1",
+    "arm/j2"
+   ],
+   "mocap_pos": [
+    0.3,
+    0.35,
+    0.3
+   ],
+   "mocap_quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "name": "free_arm_table_margin_2cm",
+   "qpos": [
+    0.0,
+    0.0,
+    0.0,
+    0.62,
+    0.0,
+    0.36,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xml": "\n<mujoco>\n  <compiler angle=\"radian\"/>\n  <option timestep=\"0.002\"/>\n  <asset>\n    <mesh name=\"tet\" vertex=\"0 0 0  0.12 0 0  0 0.12 0  0 0 0.12\"/>\n  </asset>\n  <worldbody>\n    <geom name=\"floor\" type=\"plane\" size=\"3 3 0.1\"/>\n    <geom name=\"table\" type=\"box\" pos=\"0.55 0 0.15\" size=\"0.15 0.3 0.15\" margin=\"0.02\"/>\n    <geom name=\"crate\" type=\"box\" pos=\"0.2 -0.45 0.1\" size=\"0.08 0.08 0.1\"/>\n    <body name=\"tetra\" pos=\"-0.4 0.4 -0.01\"><geom type=\"mesh\" mesh=\"tet\"/></body>\n    <body name=\"arm/base\" pos=\"0 0 0.1\">\n      <joint name=\"arm/j0\" type=\"hinge\" axis=\"0 0 1\" limited=\"true\" range=\"-3 3\"/>\n      <geom name=\"arm/link0\" type=\"capsule\" size=\"0.035\" fromto=\"0 0 0 0 0 0.15\"/>\n      <body name=\"arm/link1\" pos=\"0 0 0.15\">\n        <joint name=\"arm/j1\" type=\"hinge\" axis=\"0 1 0\" limited=\"true\" range=\"-2.5 2.5\"/>\n        <geom name=\"arm/link1_geom\" type=\"capsule\" size=\"0.03\" fromto=\"0 0 0 0.3 0 0\"/>\n        <body name=\"arm/link2\" pos=\"0.3 0 0\">\n          <joint name=\"arm/j2\" type=\"hinge\" axis=\"0 1 0\" limited=\"true\" range=\"-2.8 2.8\"/>\n          <geom name=\"arm/link2_geom\" type=\"capsule\" size=\"0.025\" fromto=\"0 0 0 0.25 0 0\"/>\n          <body name=\"arm/gripper/base\" pos=\"0.25 0 0\">\n            <geom name=\"arm/gripper/palm\" type=\"box\" size=\"0.02 0.04 0.02\"/>\n            <body name=\"arm/gripper/left_finger\" pos=\"0.06 0.035 0\">\n              <geom name=\"arm/gripper/lf\" type=\"box\" size=\"0.04 0.006 0.015\"/>\n            </body>\n            <body name=\"arm/gripper/right_finger\" pos=\"0.06 -0.035 0\">\n              <geom name=\"arm/gripper/rf\" type=\"box\" size=\"0.04 0.006 0.015\"/>\n            </body>\n          </body>\n        </body>\n      </body>\n    </body>\n    <body name=\"can\" pos=\"0.62 0 0.36\"><freejoint/><geom name=\"can/geom\" type=\"cylinder\" size=\"0.031 0.06\"/></body>\n    <body name=\"ball\" mocap=\"true\" pos=\"0.3 0.35 0.3\"><geom name=\"ball/geom\" type=\"sphere\" size=\"0.06\"/></body>\n  </worldbody>\n</mujoco>\n"
+  },
+  {
+   "attachments": {},
+   "configurations": [
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|arm/link2",
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.2249798489761607,
+      2.1020504145227314,
+      -2.6193757287163315
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.7966719606057513,
+      -2.199614140756993,
+      0.3827461159637088
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.9809807101642911,
+      -1.334797477876799,
+      -1.8145178547603928
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.7665315196480176,
+      0.10471942119312683,
+      -2.711457757004918
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.7736967870381275,
+      -1.144865109019867,
+      0.08260988794012042
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.3424888844937275,
+      -1.0289335628021394,
+      -1.2303387395525547
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|arm/link2",
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.2407173475151838,
+      1.4940232848731916,
+      2.6646494738763615
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.3079142553498777,
+      -2.199337684571087,
+      0.747509562276027
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.2717978890750956,
+      -0.974938511801175,
+      1.1703391953055213
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.6741557672944523,
+      2.4562570052857384,
+      -1.13355234057712
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.00578039583218426,
+      0.9070932617374972,
+      1.1231994815956292
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.837121864973768,
+      2.1527574430526326,
+      2.763842191975927
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.3745336221374096,
+      -1.534827361236497,
+      2.2691881245870955
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.7050267161001353,
+      2.264107472819705,
+      2.1220160274033377
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.18305766682176,
+      2.10010314173058,
+      1.3831337017319751
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.943858859856773,
+      1.5425731275619359,
+      -0.7160014272683525
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.544754823138834,
+      -0.3475892926003288,
+      -2.5621606653734643
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.2629359925328254,
+      2.3815372105278483,
+      -0.15072687681676467
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.41014758584478805,
+      0.6314114775884422,
+      -1.8958258430606192
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.5169325159407294,
+      2.2199462266678194,
+      0.28713413582061564
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.217313078961407,
+      1.2185085487057767,
+      0.1410295615059688
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.5272169440854737,
+      -1.0475314208326663,
+      1.5586462229351215
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -2.077747109605956,
+      0.6594439655575496,
+      -2.0918409437998986
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.024145310056001845,
+      2.4935127336654843,
+      -0.17130959248523253
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.0399069170415103,
+      -0.35338364488537777,
+      1.5159976741456909
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.962888167293966,
+      -0.42499767992337956,
+      -1.8061098648822875
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.2092214269577957,
+      0.493505425767925,
+      0.8476153484308766
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.8917489542752026,
+      0.006756303306261757,
+      -1.3167626161156978
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.3670044693960413,
+      2.348107387502438,
+      -1.6017860188536313
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.3457452448424405,
+      0.1973075041098371,
+      -1.2861688886699039
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.4789221439865976,
+      1.8566167190636467,
+      1.6534479319689928
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.6840197054590231,
+      0.2548883333942964,
+      1.05376669470884
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.6554391823287613,
+      2.4869783346107472,
+      -2.2996228464699833
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.3325549153845877,
+      0.20111470746699167,
+      -2.0016278205070486
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -2.6423891674923317,
+      1.5663577148556747,
+      1.8398697985968309
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.1847451963299727,
+      -0.8253937467969291,
+      -1.7602439272579842
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.349960934727376,
+      1.9783689931692146,
+      -1.0562431861672872
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.5526491186339126,
+      0.3291139771850804,
+      -1.9751614990750788
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.5305141339698585,
+      1.9679170594881974,
+      1.5593534455702929
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.9978282541116168,
+      -2.376101664761163,
+      -0.14695743829481936
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.5169360276366701,
+      0.6149768243574999,
+      1.433815887453758
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.6057510424593175,
+      0.10010509834037062,
+      0.8188330369739811
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.37220088786144534,
+      2.2186119406060536,
+      -1.5811107204371058
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.980784485908875,
+      1.0982009349896427,
+      1.1371449461389118
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.1313067514628794,
+      0.5184096740051297,
+      0.8838735134729707
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.025787719211700866,
+      -2.461380487230207,
+      0.03514038092857827
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.4358623156683583,
+      2.3086650145335508,
+      2.6581635951201537
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.11227588568437463,
+      -0.8660937741221153,
+      -1.370256224029974
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.6919596585106365,
+      0.8239435386009968,
+      -1.727387866173458
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.6923433724050772,
+      0.8228933275279304,
+      -1.7266549262699717
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.18344558343075046,
+      -0.3409104185508346,
+      -0.1681556745134679
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|ball"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.1833031990967639,
+      -0.3402944622891951,
+      -0.16720474965667373
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.5233901889570548,
+      -0.3283113145523179,
+      1.718716914954419
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.523768272844473,
+      -0.3292130140077486,
+      1.7182488632181885
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.3817193894968387,
+      -0.03755868181576093,
+      0.5409313269821141
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/right_finger|tetra"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.381817621400701,
+      -0.036720987597722125,
+      0.5403688534626115
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|arm/gripper/base",
+      "arm/base|arm/gripper/base"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.134593482497171,
+      0.2405430572347343,
+      2.507337006640508
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.133321105669263,
+      0.23964276797587464,
+      2.5072162414873365
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.4841869704517032,
+      -0.2743897539409945,
+      2.2203583198818406
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.4842676572422215,
+      -0.2734622796162738,
+      2.2203223891940516
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.17242231464033,
+      0.8236099804396682,
+      -1.4182270359030604
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.1725690177563655,
+      0.8231485150050583,
+      -1.418677758373301
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.6209742452858436,
+      0.7444610830410487,
+      -1.597233912579414
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.6198004926452987,
+      0.7451273736912265,
+      -1.5966451836271296
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.6132486587458936,
+      0.8232587564189582,
+      -1.7045295940753922
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.6127963178262921,
+      0.8228314796286897,
+      -1.7049556436276978
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.271356416404669,
+      0.745820108198407,
+      -1.7386058250503744
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.270885937864194,
+      0.7462079340648815,
+      -1.7380728758367803
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.3962492706162943,
+      -0.08988611144032131,
+      0.9595509004415026
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.3963249307396157,
+      -0.09043934385475941,
+      0.9598969982592342
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -1.8947479258081696,
+      0.8228802693562304,
+      -1.9206998443785477
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -1.8942465581813264,
+      0.8233280400515692,
+      -1.9202309646541056
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.0100324038295438,
+      -0.27345369285086873,
+      1.4686245453218247
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.0102921822053001,
+      -0.27414873591203837,
+      1.469036485572467
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.2425041085314598,
+      -0.04624969517908918,
+      -0.7118369436699012
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|ball"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.24148552708755067,
+      -0.04602545125680126,
+      -0.7111890615377446
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.6949443272012258,
+      0.21638165780391166,
+      -0.38464280911858917
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.6961896812982065,
+      0.21626282256893567,
+      -0.3851712217075898
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      2.3601729961679165,
+      0.823028116839499,
+      -1.4161311266405434
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      2.359800744096413,
+      0.823599735756539,
+      -1.4162007124322276
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.24538881627377945,
+      0.3233309347773723,
+      -1.3046620798916067
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.2458069680594822,
+      0.3228058371495909,
+      -1.304585024928183
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.3145383490249354,
+      0.2600987463749349,
+      -1.1749285060529533
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.31433701421320953,
+      0.260503851163742,
+      -1.174210826165102
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.5191727330236544,
+      0.8233651821411341,
+      -2.082747071959361
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.5199022237701665,
+      0.8228071099665385,
+      -2.0826743192674755
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.724443107345271,
+      0.6424188436443883,
+      -0.7598937268318688
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.7232285213875373,
+      0.642752154925489,
+      -0.7589558612022048
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|ball"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.21674929766788592,
+      -0.22044879702346779,
+      -0.8496682876130652
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.21768365664342848,
+      -0.22103272072016034,
+      -0.8505472216281664
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.4668504338529512,
+      0.4861319880114525,
+      -1.4309310805954412
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.46647574973892353,
+      0.4868165003991396,
+      -1.4307592054145108
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.31862278155635193,
+      0.7567284368958105,
+      -1.7369067997811154
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.31884314533891084,
+      0.7563257867454237,
+      -1.7371311450723526
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.3003910685139247,
+      0.5275627879327234,
+      -1.5471538299969283
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.299882483735457,
+      0.5279628863414888,
+      -1.5462909113092707
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.42230622583988386,
+      -0.4363530693871199,
+      0.6149670262045192
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.42316763755572406,
+      -0.4374136208334698,
+      0.614550446398888
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.037577233268006396,
+      -0.6439634381524059,
+      0.7684708646045035
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|can"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.0384353300164801,
+      -0.6432331943806484,
+      0.7688567955922351
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      -0.8727405324939759,
+      -0.17852366936973668,
+      0.6853661060077539
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      -0.8724706303864926,
+      -0.17925115720206952,
+      0.6851588957703163
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      1.1353225999748895,
+      -0.21144691559749704,
+      1.272367150903706
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      1.1359235887529362,
+      -0.210282353707418,
+      1.2730075374306082
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": false,
+     "q": [
+      0.9722751600632125,
+      0.3089390197260268,
+      0.12073118950312986
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": true,
+     "q": [
+      0.9717078782199546,
+      0.30816393213114013,
+      0.11974768857072016
+     ]
+    }
+   ],
+   "joints": [
+    "arm/j0",
+    "arm/j1",
+    "arm/j2"
+   ],
+   "mocap_pos": [
+    0.35,
+    0.0,
+    0.32
+   ],
+   "mocap_quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "name": "mocap_ball_in_the_workspace",
+   "qpos": [
+    0.0,
+    0.0,
+    0.0,
+    0.62,
+    0.0,
+    0.36,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "xml": "\n<mujoco>\n  <compiler angle=\"radian\"/>\n  <option timestep=\"0.002\"/>\n  <asset>\n    <mesh name=\"tet\" vertex=\"0 0 0  0.12 0 0  0 0.12 0  0 0 0.12\"/>\n  </asset>\n  <worldbody>\n    <geom name=\"floor\" type=\"plane\" size=\"3 3 0.1\"/>\n    <geom name=\"table\" type=\"box\" pos=\"0.55 0 0.15\" size=\"0.15 0.3 0.15\" margin=\"0.0\"/>\n    <geom name=\"crate\" type=\"box\" pos=\"0.2 -0.45 0.1\" size=\"0.08 0.08 0.1\"/>\n    <body name=\"tetra\" pos=\"-0.4 0.4 -0.01\"><geom type=\"mesh\" mesh=\"tet\"/></body>\n    <body name=\"arm/base\" pos=\"0 0 0.1\">\n      <joint name=\"arm/j0\" type=\"hinge\" axis=\"0 0 1\" limited=\"true\" range=\"-3 3\"/>\n      <geom name=\"arm/link0\" type=\"capsule\" size=\"0.035\" fromto=\"0 0 0 0 0 0.15\"/>\n      <body name=\"arm/link1\" pos=\"0 0 0.15\">\n        <joint name=\"arm/j1\" type=\"hinge\" axis=\"0 1 0\" limited=\"true\" range=\"-2.5 2.5\"/>\n        <geom name=\"arm/link1_geom\" type=\"capsule\" size=\"0.03\" fromto=\"0 0 0 0.3 0 0\"/>\n        <body name=\"arm/link2\" pos=\"0.3 0 0\">\n          <joint name=\"arm/j2\" type=\"hinge\" axis=\"0 1 0\" limited=\"true\" range=\"-2.8 2.8\"/>\n          <geom name=\"arm/link2_geom\" type=\"capsule\" size=\"0.025\" fromto=\"0 0 0 0.25 0 0\"/>\n          <body name=\"arm/gripper/base\" pos=\"0.25 0 0\">\n            <geom name=\"arm/gripper/palm\" type=\"box\" size=\"0.02 0.04 0.02\"/>\n            <body name=\"arm/gripper/left_finger\" pos=\"0.06 0.035 0\">\n              <geom name=\"arm/gripper/lf\" type=\"box\" size=\"0.04 0.006 0.015\"/>\n            </body>\n            <body name=\"arm/gripper/right_finger\" pos=\"0.06 -0.035 0\">\n              <geom name=\"arm/gripper/rf\" type=\"box\" size=\"0.04 0.006 0.015\"/>\n            </body>\n          </body>\n        </body>\n      </body>\n    </body>\n    <body name=\"can\" pos=\"0.62 0 0.36\"><freejoint/><geom name=\"can/geom\" type=\"cylinder\" size=\"0.031 0.06\"/></body>\n    <body name=\"ball\" mocap=\"true\" pos=\"0.3 0.35 0.3\"><geom name=\"ball/geom\" type=\"sphere\" size=\"0.06\"/></body>\n  </worldbody>\n</mujoco>\n"
+  },
+  {
+   "attachments": {
+    "can": [
+     "arm/gripper/base",
+     [
+      [
+       1.0,
+       0.0,
+       0.0,
+       0.08
+      ],
+      [
+       0.0,
+       1.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       1.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.0,
+       1.0
+      ]
+     ]
+    ]
+   },
+   "configurations": [
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.7399935011732441,
+      -0.8243257787910196,
+      1.655838911985024
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.4783180197641874,
+      0.26035860959672585,
+      -0.22625899734371788
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.9670262095661954,
+      -2.0255872564406903,
+      0.899046792725029
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|arm/link2",
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.5870211573541393,
+      1.1621031788707277,
+      2.5786584377064323
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.1462609618218202,
+      -2.1582270703720314,
+      2.4477595711744318
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.27058947432398206,
+      0.2155226613472444,
+      2.2648563383653855
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.516438545217161,
+      -2.2336681245704444,
+      1.7971438176746963
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.2826776026265043,
+      0.116101616520774,
+      1.0584181665888366
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.2068876224105305,
+      2.155738604753468,
+      -1.6911356171402117
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.2849471569006092,
+      1.1077977894151714,
+      -1.3542221792231546
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.0872035570930476,
+      0.7232159614188621,
+      0.8204912838048819
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.7931125046522145,
+      1.0264867311743076,
+      -1.5351178184432692
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.7750332853341988,
+      -1.0418838548482379,
+      -2.3844459500041766
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.7688081770162567,
+      0.8557669725010986,
+      -2.753055705193317
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.533807276496657,
+      0.5229221511712406,
+      -1.827260841653836
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.4548086621600691,
+      0.22359581629833924,
+      0.17835717978797472
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.726558651260686,
+      1.7104904446880143,
+      0.04800410538819291
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.27521537389312756,
+      -1.6749701375082564,
+      -2.3487641100830756
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.171227211243679,
+      -0.8559579160752151,
+      0.5215465693736814
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.0589417049939915,
+      -1.4039375304710922,
+      1.535662622357056
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.8823265694044475,
+      1.9421951936735993,
+      -2.065208916128093
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.9301794297417025,
+      -1.8606598312277955,
+      -2.6150649461265973
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.0906977621270615,
+      -2.1512184768984435,
+      1.907615915479996
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.3275302089432532,
+      -0.24949116836454177,
+      -1.888131162238871
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.624903805580931,
+      1.0122011910474034,
+      -1.480791715158656
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.8162551047600743,
+      2.213477210823208,
+      -0.9365929967867519
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.5191543496168951,
+      -2.1587926248069196,
+      -2.620040230451485
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.195267717740693,
+      -2.4492116688680583,
+      -0.5718114848098966
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.0345601635444988,
+      -0.5601167942939905,
+      2.352028744144325
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.14259688606057397,
+      -2.228845091680261,
+      -1.180111889768501
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.09257020450218,
+      2.0062744429204153,
+      1.0687332463117865
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.0735271258106047,
+      -2.3168985295803535,
+      2.0765839262878334
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.8694165283384885,
+      -0.18126599000649113,
+      -1.3444621727243227
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.84424628801062,
+      0.9499784773103398,
+      2.0417452249586487
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.0756235057879262,
+      -0.0020466880457092884,
+      -0.9397829036781721
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.5234621116062517,
+      -0.5831165828981416,
+      -2.0629898160224167
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.5665952049227714,
+      -0.03082480887622141,
+      1.1492459719410784
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.5815235373284666,
+      1.304883365345746,
+      -2.50445658562901
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.213177403431413,
+      -1.025584211076228,
+      2.4343441450882723
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.1458744483065595,
+      -0.7061098052962927,
+      0.6570947786684608
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.938932991699047,
+      0.20222109487944173,
+      1.0132978949778013
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.6960950160512978,
+      -0.6846210555870946,
+      -0.5607007028531349
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.1338235894094029,
+      -2.1389025038622456,
+      1.195152790859608
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.127341843851169,
+      0.31474149748258795,
+      -2.141525061993094
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.3295818573045746,
+      -0.8459083916771531,
+      1.5505887360297754
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.8947405984971206,
+      0.1918441356836159,
+      1.2044020785719192
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.4830338566070678,
+      0.5190080365848637,
+      -1.7966989797767978
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.8672772612446806,
+      0.4850559288163431,
+      1.8951310295900043
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.4715218489221629,
+      -1.0091996322911023,
+      1.4345870291375564
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.47114244282672335,
+      -1.008421387555919,
+      1.4349970905743195
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|can"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.6775222058876682,
+      -0.3740359379054024,
+      2.5180985372967295
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.6781895110925452,
+      -0.3748465654076589,
+      2.5180665795656427
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.32536241544829825,
+      -0.3698013691792371,
+      2.3099569890336316
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.3247723640722861,
+      -0.3692218404361416,
+      2.309912334924059
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.5817475796764533,
+      -0.3961770881629596,
+      2.148042395819835
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.5820517420472768,
+      -0.39677503513217777,
+      2.147928208192713
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.5641719904014709,
+      -0.9899423436413033,
+      1.4061386390726103
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.5637327530606888,
+      -0.9893686693881072,
+      1.4059582861304507
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.442918508662337,
+      0.8234874695578369,
+      -1.618474729792753
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.4420473793190784,
+      0.8229824962702338,
+      -1.6186820852936226
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.7420472532303968,
+      0.8228731227106193,
+      -2.746666229456396
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.7424241676499159,
+      0.8233364163696402,
+      -2.746756222072409
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.6415996366341362,
+      0.8232625954181048,
+      -2.66264605055079
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.6412816152831808,
+      0.8231813344753973,
+      -2.6624200264141837
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.5154076968879887,
+      0.4532060077462533,
+      -1.360132034902008
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.5153884101169104,
+      0.45313293002777844,
+      -1.359642382064742
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.8148870479180728,
+      0.6822890373998891,
+      -0.6799206163027879
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.814154192931463,
+      0.6814625089374389,
+      -0.6805057647928932
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.182086239395256,
+      0.6571691255389314,
+      -0.6823546851619946
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|tetra"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.1825314017156687,
+      0.6579860524735369,
+      -0.6832338041899451
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.17234860822986,
+      0.8234353535841997,
+      -2.2269707608908367
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.1709295393824122,
+      0.8225069221816359,
+      -2.2271050030856605
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.430424462725576,
+      0.8230705492800854,
+      -1.5418528529778095
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.430741204326318,
+      0.8233785796412699,
+      -1.541753404870612
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.0860731752687607,
+      0.8236590160013264,
+      -1.4717122102221722
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.085512359654712,
+      0.822591567310987,
+      -1.4721232080819537
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.2742098201269063,
+      0.2288890718318991,
+      0.12494301464137281
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.2746858878316039,
+      0.22992303656202623,
+      0.12549204909842365
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.5303052245600512,
+      -0.3790700194457315,
+      1.6248227328220075
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.5300564347459176,
+      -0.3801254815972209,
+      1.6250687901169236
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.6990564003533706,
+      0.09961184770376694,
+      -0.5036972988367294
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.6979056037673478,
+      0.09988803043504546,
+      -0.5028705880462795
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.6411457503229507,
+      0.10347563252842311,
+      -0.609310791763837
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.6421027497843272,
+      0.10324320450953736,
+      -0.6100387039046173
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.561761686897312,
+      -0.0927149271076817,
+      0.7892810728504425
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.5617722174376725,
+      -0.09258009024878963,
+      0.7900653101033632
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.7119872020557843,
+      0.823541673535934,
+      -1.484382020641993
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.7121414144254383,
+      0.8229727117252841,
+      -1.4831762587448454
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.1722419213232022,
+      -0.56750950924897,
+      0.7114470608201546
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.17275090751460984,
+      -0.5672877487752943,
+      0.7115340244715973
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.126190103678742,
+      -0.01710778657138867,
+      0.6240252925357266
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.1263749576885935,
+      -0.017324300768279913,
+      0.623641015534303
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.1084455433163107,
+      -0.318164613724887,
+      1.3745372693587026
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.10833938089961,
+      -0.31791125617426186,
+      1.3744527511317843
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.143357695613409,
+      0.3301060283740602,
+      -0.06388550248316607
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.1435013218971273,
+      0.3301859023733037,
+      -0.06461819317123949
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.7248505644614492,
+      0.5078509230456967,
+      -0.5835146065815547
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.7235443361611924,
+      0.507842633956886,
+      -0.5826132808956741
+     ]
+    }
+   ],
+   "joints": [
+    "arm/j0",
+    "arm/j1",
+    "arm/j2"
+   ],
+   "mocap_pos": [
+    0.3,
+    0.35,
+    0.3
+   ],
+   "mocap_quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "name": "holding_the_can",
+   "qpos": [
+    0.0,
+    -0.6,
+    0.9,
+    0.5628617258843535,
+    0.0,
+    0.32187107382026847,
+    0.9887710779360422,
+    0.0,
+    0.14943813247359927,
+    0.0
+   ],
+   "xml": "\n<mujoco>\n  <compiler angle=\"radian\"/>\n  <option timestep=\"0.002\"/>\n  <asset>\n    <mesh name=\"tet\" vertex=\"0 0 0  0.12 0 0  0 0.12 0  0 0 0.12\"/>\n  </asset>\n  <worldbody>\n    <geom name=\"floor\" type=\"plane\" size=\"3 3 0.1\"/>\n    <geom name=\"table\" type=\"box\" pos=\"0.55 0 0.15\" size=\"0.15 0.3 0.15\" margin=\"0.0\"/>\n    <geom name=\"crate\" type=\"box\" pos=\"0.2 -0.45 0.1\" size=\"0.08 0.08 0.1\"/>\n    <body name=\"tetra\" pos=\"-0.4 0.4 -0.01\"><geom type=\"mesh\" mesh=\"tet\"/></body>\n    <body name=\"arm/base\" pos=\"0 0 0.1\">\n      <joint name=\"arm/j0\" type=\"hinge\" axis=\"0 0 1\" limited=\"true\" range=\"-3 3\"/>\n      <geom name=\"arm/link0\" type=\"capsule\" size=\"0.035\" fromto=\"0 0 0 0 0 0.15\"/>\n      <body name=\"arm/link1\" pos=\"0 0 0.15\">\n        <joint name=\"arm/j1\" type=\"hinge\" axis=\"0 1 0\" limited=\"true\" range=\"-2.5 2.5\"/>\n        <geom name=\"arm/link1_geom\" type=\"capsule\" size=\"0.03\" fromto=\"0 0 0 0.3 0 0\"/>\n        <body name=\"arm/link2\" pos=\"0.3 0 0\">\n          <joint name=\"arm/j2\" type=\"hinge\" axis=\"0 1 0\" limited=\"true\" range=\"-2.8 2.8\"/>\n          <geom name=\"arm/link2_geom\" type=\"capsule\" size=\"0.025\" fromto=\"0 0 0 0.25 0 0\"/>\n          <body name=\"arm/gripper/base\" pos=\"0.25 0 0\">\n            <geom name=\"arm/gripper/palm\" type=\"box\" size=\"0.02 0.04 0.02\"/>\n            <body name=\"arm/gripper/left_finger\" pos=\"0.06 0.035 0\">\n              <geom name=\"arm/gripper/lf\" type=\"box\" size=\"0.04 0.006 0.015\"/>\n            </body>\n            <body name=\"arm/gripper/right_finger\" pos=\"0.06 -0.035 0\">\n              <geom name=\"arm/gripper/rf\" type=\"box\" size=\"0.04 0.006 0.015\"/>\n            </body>\n          </body>\n        </body>\n      </body>\n    </body>\n    <body name=\"can\" pos=\"0.62 0 0.36\"><freejoint/><geom name=\"can/geom\" type=\"cylinder\" size=\"0.031 0.06\"/></body>\n    <body name=\"ball\" mocap=\"true\" pos=\"0.3 0.35 0.3\"><geom name=\"ball/geom\" type=\"sphere\" size=\"0.06\"/></body>\n  </worldbody>\n</mujoco>\n"
+  },
+  {
+   "attachments": {
+    "can": [
+     "arm/gripper/base",
+     [
+      [
+       1.0,
+       0.0,
+       0.0,
+       0.08
+      ],
+      [
+       0.0,
+       1.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       1.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.0,
+       1.0
+      ]
+     ]
+    ]
+   },
+   "configurations": [
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.2211170928931745,
+      0.8984192242701339,
+      1.1898774039308622
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.7021831123937732,
+      0.23628122679730912,
+      1.1909138359919158
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.734623385363651,
+      -0.8589153862184817,
+      0.2754670265741668
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.487697739338264,
+      -2.2970765944373666,
+      -0.08642245699452279
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.5456080070180755,
+      -1.7811599182482796,
+      -1.8891908689415795
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.0951164298295735,
+      -1.5133363363315828,
+      -0.23774314349496214
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.467403775387872,
+      2.0765091938785822,
+      2.2463416002558025
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.7578956448037624,
+      1.6338811914951257,
+      -0.5385505887385257
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.09052138279863042,
+      -1.1423740001725435,
+      0.22303650952883938
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.2266996209047778,
+      1.9949564934589477,
+      -1.4661889379986792
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.4661785828117468,
+      -1.46963225095738,
+      -2.778400890947245
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.9612280311093324,
+      0.7327907620583307,
+      1.2844938991565553
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/link2|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.510127286075402,
+      2.49649279255972,
+      1.0842941761151317
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.18768072201707064,
+      -1.1100088663768277,
+      0.2558047323811453
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.3648146341152221,
+      -1.61002842831943,
+      -2.791216487210385
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.1622036208034685,
+      0.46766019651571733,
+      0.5391999975828861
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.058732297251759,
+      0.17641221787470407,
+      2.3271792062142613
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.583807275814447,
+      0.46940552688961135,
+      -1.8763152575946584
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.6473819761358979,
+      -1.0740367878975554,
+      -2.013722643641457
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|arm/gripper/left_finger",
+      "arm/base|arm/gripper/right_finger",
+      "arm/base|can"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.8750072337476364,
+      -0.3788781965867788,
+      2.749226990975793
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.323697553015908,
+      2.3458294434663483,
+      2.0070552200115777
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.6399298476271706,
+      -1.5165172986237647,
+      1.7700256713138187
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|can"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.8356334437729149,
+      -0.39283390087586023,
+      2.7386647118629748
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.9217529011511365,
+      0.6383218877454855,
+      -1.8158827086829805
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.02440188477227423,
+      -0.234317845473056,
+      0.78760597707656
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.593276024804134,
+      2.1681394417159567,
+      2.0781350698042678
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.7474518133717447,
+      2.2571116575115466,
+      2.513862100856359
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.2121137361440617,
+      1.0809058637855673,
+      0.9224497945886166
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.505590266742593,
+      -0.38713271818494543,
+      -0.01294121938971493
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.8602404347004329,
+      0.009364337751653906,
+      0.2806583209727999
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.8666025385706781,
+      1.9787369711764096,
+      -0.32463737037664325
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.27390799766408946,
+      -1.4574856999522112,
+      -0.2681233430383397
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.5366854960988152,
+      -2.1883113806286945,
+      1.0738488991156097
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.4797604542347225,
+      -1.0903899339815832,
+      1.284682396295093
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.590888932996431,
+      -0.13896775454920074,
+      -1.3297643970119322
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.0400323226878283,
+      -1.6741027377104651,
+      1.7877045807426586
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.7326045898847475,
+      0.42918398668485847,
+      1.394685212039584
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.94686389630301,
+      0.20234710623468266,
+      -0.07590459333418166
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.6420837066405529,
+      1.5436321736012437,
+      -2.0355874203241355
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world",
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.0445470558014653,
+      1.2787594018893034,
+      -1.9941534443018303
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.882821456574317,
+      -2.005871747811101,
+      0.23581616636422884
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.931202635282017,
+      0.7690592002861285,
+      -0.18102898274446594
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.13555992685227491,
+      -1.0606683355606812,
+      -2.381845551592606
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link1|world",
+      "arm/link2|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.43749624138886145,
+      2.230440176966341,
+      -1.7607842053830436
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.4797248588907133,
+      -1.1837809153127825,
+      -1.143556092893307
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.4830045368316582,
+      2.3499797798505466,
+      1.1990652365742498
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|arm/gripper/base",
+      "arm/base|arm/gripper/base",
+      "arm/base|arm/link2",
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.39973250521683146,
+      2.3122471324850786,
+      -2.7832719934732766
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/base|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/gripper/right_finger|world",
+      "arm/link2|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.2183720599021226,
+      0.22609024862450144,
+      0.3890906070247584
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|ball"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.9338564063642631,
+      -0.49901923360147626,
+      0.5762950064267767
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.9344513298256296,
+      -0.4992866155870759,
+      0.5760715086705712
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.6438973556168035,
+      -0.07774869510007638,
+      0.7556481676045868
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.6442323867070276,
+      -0.07687226796867741,
+      0.756254633606479
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.5778951167878201,
+      0.40571361158745556,
+      -0.20163754624329486
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.5772439023683853,
+      0.40503581490980234,
+      -0.20145161189313193
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.008687627392791924,
+      -0.16119227108515577,
+      -0.3052588513800355
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.008765073926899201,
+      -0.16042632125760903,
+      -0.30567125993656075
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.6458105491863091,
+      0.8234585903787196,
+      -1.9098934191592658
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.6461131563547433,
+      0.8226127435172899,
+      -1.9102137834055912
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.1197647521760572,
+      0.04130736490544887,
+      0.008887771208926653
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.1196414732327704,
+      0.04184506583636091,
+      0.009879688882291838
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world",
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.32211014669962207,
+      -0.4285068439117672,
+      0.41236011066486244
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.3214515021663964,
+      -0.42938733748084346,
+      0.41215784273426337
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.21983102082988282,
+      -0.12328395581166215,
+      -0.40804980827262194
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.219781555250461,
+      -0.12277670761223951,
+      -0.4072367183105142
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.9993002315766584,
+      0.40459792484676327,
+      -0.9465384059806738
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.999945382839614,
+      0.404669456416347,
+      -0.9475646497462522
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.819260578983041,
+      -0.41044545683673106,
+      2.532940703856943
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|can"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.8195602921807,
+      -0.41027574038377435,
+      2.534103533357582
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.3293506307968483,
+      2.317890546766585,
+      2.014665379772442
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.329216033706826,
+      2.31855575859277,
+      2.014484185492421
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.0876006173580306,
+      -0.5497545316160461,
+      2.6033957833487857
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/base|can"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.0871601153063084,
+      -0.5494801948490178,
+      2.603632267489545
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|world",
+      "arm/gripper/base|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.7524218266557561,
+      0.20103731625249782,
+      0.11557453484444244
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.7530950166813724,
+      0.2012890632712042,
+      0.1144625847905982
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.0351501593217702,
+      0.24077654053215586,
+      -0.6298207243989711
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/base|ball"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.0346750238759883,
+      0.24056349372228805,
+      -0.6291851070440493
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/right_finger|tetra"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.4125175096020923,
+      0.07843908796244131,
+      0.2837074444671827
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.4125891591456954,
+      0.07808068010551492,
+      0.2834790775204107
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.7763052022636912,
+      0.17572247524310053,
+      0.22952738610783227
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.7760626148867065,
+      0.17620327910868275,
+      0.22937960883943642
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link2|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.5065869092309339,
+      -0.10849984663804563,
+      -0.29030951392700965
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.5064422084152829,
+      -0.10933876818861414,
+      -0.290295716557054
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      2.094584184476534,
+      -0.36365651684697253,
+      1.5428350912577353
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      2.094997410127705,
+      -0.36314301911152447,
+      1.542739139263423
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.1911728989953128,
+      0.2325292595172378,
+      0.11976714590622417
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.1925594879811983,
+      0.23247387941947165,
+      0.11940811519202159
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.4240145472024457,
+      0.7714763657764511,
+      -0.9074301678723995
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/gripper/left_finger|world",
+      "arm/gripper/left_finger|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -1.4231383392915706,
+      0.771803827951101,
+      -0.9079086060625825
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.022120263721138,
+      0.8232734416769427,
+      -1.684919377197748
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -2.0220807799322644,
+      0.8224715297751604,
+      -1.684374951023269
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.368783067049296,
+      0.35986528118194727,
+      -0.11956060626457055
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.3697142252748469,
+      0.3605427545579476,
+      -0.11966237509980215
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.712007968725652,
+      0.5457037881954534,
+      -0.44968334905893614
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.7115695793925392,
+      0.545257077371272,
+      -0.45022065779156506
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      0.30834770060075123,
+      0.8227199343034154,
+      -2.02643349214065
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      0.3084214155212924,
+      0.8235234275926067,
+      -2.026281865835423
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "arm/link1|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.7647179229841665,
+      0.8234076565153741,
+      -1.5064187137124687
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      -0.765430135166852,
+      0.8225741064440169,
+      -1.5062680232553178
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [],
+     "mj_manipulator_valid": true,
+     "pycbirrt_valid": null,
+     "q": [
+      1.3949357901207848,
+      2.34691215983768,
+      0.8753058865728273
+     ]
+    },
+    {
+     "forward_vs_kinematics_agree": true,
+     "invalid_contacts_mjm": [
+      "can|world"
+     ],
+     "mj_manipulator_valid": false,
+     "pycbirrt_valid": null,
+     "q": [
+      1.3946713194099414,
+      2.346902947765569,
+      0.8743336362725227
+     ]
+    }
+   ],
+   "joints": [
+    "arm/j0",
+    "arm/j1",
+    "arm/j2"
+   ],
+   "mocap_pos": [
+    0.3,
+    0.35,
+    0.3
+   ],
+   "mocap_quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "name": "holding_the_can_table_margin",
+   "qpos": [
+    0.0,
+    -0.6,
+    0.9,
+    0.5628617258843535,
+    0.0,
+    0.32187107382026847,
+    0.9887710779360422,
+    0.0,
+    0.14943813247359927,
+    0.0
+   ],
+   "xml": "\n<mujoco>\n  <compiler angle=\"radian\"/>\n  <option timestep=\"0.002\"/>\n  <asset>\n    <mesh name=\"tet\" vertex=\"0 0 0  0.12 0 0  0 0.12 0  0 0 0.12\"/>\n  </asset>\n  <worldbody>\n    <geom name=\"floor\" type=\"plane\" size=\"3 3 0.1\"/>\n    <geom name=\"table\" type=\"box\" pos=\"0.55 0 0.15\" size=\"0.15 0.3 0.15\" margin=\"0.02\"/>\n    <geom name=\"crate\" type=\"box\" pos=\"0.2 -0.45 0.1\" size=\"0.08 0.08 0.1\"/>\n    <body name=\"tetra\" pos=\"-0.4 0.4 -0.01\"><geom type=\"mesh\" mesh=\"tet\"/></body>\n    <body name=\"arm/base\" pos=\"0 0 0.1\">\n      <joint name=\"arm/j0\" type=\"hinge\" axis=\"0 0 1\" limited=\"true\" range=\"-3 3\"/>\n      <geom name=\"arm/link0\" type=\"capsule\" size=\"0.035\" fromto=\"0 0 0 0 0 0.15\"/>\n      <body name=\"arm/link1\" pos=\"0 0 0.15\">\n        <joint name=\"arm/j1\" type=\"hinge\" axis=\"0 1 0\" limited=\"true\" range=\"-2.5 2.5\"/>\n        <geom name=\"arm/link1_geom\" type=\"capsule\" size=\"0.03\" fromto=\"0 0 0 0.3 0 0\"/>\n        <body name=\"arm/link2\" pos=\"0.3 0 0\">\n          <joint name=\"arm/j2\" type=\"hinge\" axis=\"0 1 0\" limited=\"true\" range=\"-2.8 2.8\"/>\n          <geom name=\"arm/link2_geom\" type=\"capsule\" size=\"0.025\" fromto=\"0 0 0 0.25 0 0\"/>\n          <body name=\"arm/gripper/base\" pos=\"0.25 0 0\">\n            <geom name=\"arm/gripper/palm\" type=\"box\" size=\"0.02 0.04 0.02\"/>\n            <body name=\"arm/gripper/left_finger\" pos=\"0.06 0.035 0\">\n              <geom name=\"arm/gripper/lf\" type=\"box\" size=\"0.04 0.006 0.015\"/>\n            </body>\n            <body name=\"arm/gripper/right_finger\" pos=\"0.06 -0.035 0\">\n              <geom name=\"arm/gripper/rf\" type=\"box\" size=\"0.04 0.006 0.015\"/>\n            </body>\n          </body>\n        </body>\n      </body>\n    </body>\n    <body name=\"can\" pos=\"0.62 0 0.36\"><freejoint/><geom name=\"can/geom\" type=\"cylinder\" size=\"0.031 0.06\"/></body>\n    <body name=\"ball\" mocap=\"true\" pos=\"0.3 0.35 0.3\"><geom name=\"ball/geom\" type=\"sphere\" size=\"0.06\"/></body>\n  </worldbody>\n</mujoco>\n"
+  }
+ ],
+ "seed": 1707,
+ "versions": {
+  "mj_manipulator": "2.0.0",
+  "mujoco": "3.14.0",
+  "numpy": "2.4.6"
+ }
+}

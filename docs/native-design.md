@@ -1416,7 +1416,7 @@ the Python backend as well and are compared as the other cases are.
 | Python | Native | Relation |
 |---|---|---|
 | `mj_manipulator.CollisionChecker` (snapshot mode) | `SceneValidator` | same decisions on the corpus; the gripper-base name rule is resolved in Python to `allowed_bodies` |
-| `MuJoCoCollisionChecker` | `SceneValidator` with no attachments | same |
+| `MuJoCoCollisionChecker` | `SceneValidator` with no attachments | the legacy checker counts every contact in the world, environment against environment included, so it rejects any world with resting contacts; the policy ignores those. It never accepts what the validator rejects (checked on the corpus). |
 | `GraspManager.update_attached_poses` | steps 4 and 5 | same transform and free-joint write |
 | `mj_forward` in the checker | `mj_kinematics` then `mj_collision` | same contacts; no dynamics run |
 | live `MjModel`, `MjData` | `Scene` from MJB, `Snapshot` by value | difference by design (#93): no borrowed pointers, no observed mutation |
