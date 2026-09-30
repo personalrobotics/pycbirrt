@@ -1,0 +1,89 @@
+name: Assets release
+
+# Release pipeline for the sscbirrt-assets data wheel (assets/, #162). Separate from release.yml, whose
+# `v*` tags do not match these.
+#
+#   assets-v*rc*       build, verify, publish to TestPyPI
+#   assets-v*          build, verify, publish to PyPI
+#   workflow_dispatch  build and verify only; publishes to TestPyPI only with publish_testpypi=true
+#
+# Auth: Trusted Publishing, in the same GitHub environments as release.yml.
+
+on:
+  push:
+    tags: ["assets-v*"]
+  workflow_dispatch:
+    inputs:
+      publish_testpypi:
+        description: "Also publish the built artifacts to TestPyPI"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Build the wheel and sdist (the build hook fetches and hash-checks the menagerie files)
+        run: uv build assets --out-dir dist
+      - name: Every artifact carries the tag's version
+        if: startsWith(github.ref, 'refs/tags/assets-v')
+        run: |
+          TAG="${GITHUB_REF#refs/tags/assets-v}"; BASE="${TAG%%rc*}"; ls -1 dist/
+          for f in dist/*; do
+            case "$(basename "$f")" in
+              sscbirrt_assets-"$TAG".tar.gz|sscbirrt_assets-"$TAG"-*.whl|sscbirrt_assets-"$BASE".tar.gz|sscbirrt_assets-"$BASE"-*.whl) ;;
+              *) echo "::error::$(basename "$f") is neither version $TAG nor $BASE"; exit 1 ;;
+            esac
+          done
+      - name: The installed wheel matches the manifest and both models compile
+        run: |
+          uv venv --python 3.12 "$RUNNER_TEMP/env"
+          uv pip install --python "$RUNNER_TEMP/env/bin/python" dist/*.whl "mujoco==3.14.0"
+          "$RUNNER_TEMP/env/bin/python" assets/verify.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: assets-dist
+          path: dist/*
+
+  publish_testpypi:
+    needs: build
+    runs-on: ubuntu-latest
+    if: >-
+      (startsWith(github.ref, 'refs/tags/assets-v') && contains(github.ref, 'rc')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.publish_testpypi)
+    environment:
+      name: testpypi-release
+      url: https://test.pypi.org/p/sscbirrt-assets
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: assets-dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish_pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/assets-v') && !contains(github.ref, 'rc')
+    environment:
+      name: release
+      url: https://pypi.org/p/sscbirrt-assets
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: assets-dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
