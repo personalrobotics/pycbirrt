@@ -134,10 +134,12 @@ def render_video(
     height: int = 720,
     joint_speed: float = 1.2,
     max_frames: int | None = None,
+    overlay: bool = True,
 ) -> int:
     """Render ``clips`` one after another into ``out_path`` (H.264 MP4). Returns the number of frames written.
 
-    ``max_frames`` subsamples evenly (for smoke tests); the video then plays faster, not shorter.
+    ``max_frames`` subsamples evenly (for smoke tests); the video then plays faster, not shorter. ``overlay=False``
+    leaves out the text boxes (for small renders, where the caption goes alongside instead).
     """
     import imageio.v2 as imageio
 
@@ -174,7 +176,9 @@ def render_video(
                 for a, b in zip(points, points[1:]):
                     if np.linalg.norm(b - a) > 1e-6:
                         _add_segment(renderer.scene, a, b, 0.004, clip.trail_rgba)
-                frame = _overlay(renderer.render(), clip.title, clip.lines, clip.caption(q) if clip.caption else None)
+                frame = renderer.render()
+                if overlay:
+                    frame = _overlay(frame, clip.title, clip.lines, clip.caption(q) if clip.caption else None)
                 writer.append_data(frame)
                 written += 1
     finally:

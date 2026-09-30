@@ -9,11 +9,24 @@ a bidirectional RRT that grows trees from many roots and projects onto
 constraints. Task Space Regions are one representation of a set; the planner
 does not depend on it, and sets you define yourself take the same roles.
 
+<table>
+<tr><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_yellow_seed0.gif" alt="UR5e reaching the yellow can, over the boxes" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_green_seed1.gif" alt="UR5e reaching the green can, straight in" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_blue_seed34.gif" alt="UR5e reaching the blue can, into the gap" width="100%"></td></tr>
+<tr><td align="center"><sub>yellow can, over the boxes (seed 0)</sub></td><td align="center"><sub>green can, straight in (seed 1)</sub></td><td align="center"><sub>blue can, into the gap (seed 34)</sub></td></tr>
+<tr><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_yellow_seed16.gif" alt="UR5e reaching the yellow can, from another side" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_green_seed17.gif" alt="UR5e reaching the green can, a different grasp" width="100%"></td><td><img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/pick_yellow_seed9.gif" alt="UR5e reaching the yellow can, around the right box" width="100%"></td></tr>
+<tr><td align="center"><sub>yellow can, from another side (seed 16)</sub></td><td align="center"><sub>green can, a different grasp (seed 17)</sub></td><td align="center"><sub>yellow can, around the right box (seed 9)</sub></td></tr>
+</table>
+
+Six runs of one call, `plan(model, data, arm, goal=grasps)`, where `grasps` is
+every side grasp of every can: 18 regions. Each seed lets the planner choose a
+different can, grasp, and route around the red boxes, planned natively in
+0.01 to 0.18 s. `sscbirrt-demo pick --seed N` renders any of them.
+
 ## Install
 
 ```bash
 pip install sscbirrt                                  # the planner, its C++ core, and Task Space Regions
 pip install "sscbirrt[mujoco,ssik]" sscbirrt-assets   # plus MuJoCo, analytical IK, and the UR5e model below
+pip install "sscbirrt[demo]" && sscbirrt-demo         # everything above, and the rendered demos (MP4s in ./sscbirrt-demo)
 ```
 
 Wheels for Linux x86_64 and macOS arm64, Python 3.10 through 3.14, include the
@@ -314,7 +327,7 @@ returns the path, or the `PlanResult` with `return_details=True`:
 ## How it works
 
 <p align="center">
-  <img src="docs/images/example1_result.png" alt="Basic planning" width="600">
+  <img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/example1_result.png" alt="Basic planning" width="600">
 </p>
 
 Two trees grow at once, blue from the start set and green from the goal set.
@@ -331,13 +344,13 @@ The right panel is configuration space; red regions are in collision.
    passes the same validation as a tree edge.
 
 <p align="center">
-  <img src="docs/images/example3_result.png" alt="Constrained planning" width="600">
+  <img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/example3_result.png" alt="Constrained planning" width="600">
   <br>
   <em>With a path constraint, the end effector stays within the yellow band throughout the motion.</em>
 </p>
 
 <p align="center">
-  <img src="docs/images/tsr_union_demo.gif" alt="UR5e planning side grasps" width="400">
+  <img src="https://raw.githubusercontent.com/personalrobotics/sscbirrt/main/docs/images/tsr_union_demo.gif" alt="UR5e planning side grasps" width="400">
   <br>
   <em>UR5e planning into a union of side-grasp regions.</em>
 </p>
