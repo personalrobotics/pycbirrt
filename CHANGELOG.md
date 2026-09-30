@@ -6,34 +6,22 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Added
+## [1.7.0] - 2026-09-30
 
-- **Native TSR planning.** `backend="native"` and `"auto"` now run
-  problems with `TSRConfigurationSet`s entirely in C++ when the region is a
-  single `TSR` and the IK is an `SSIKSolver` around an `ssik.Manipulator`
-  of a verified family (`ikgeo.three_parallel`, the UR family). The TSR
-  math is sstsr 3.2.0's, checked on a checked-in conformance corpus
-  (`tools/tsr_conformance.py`, 162 probes); the SSIK adapter calls ssik
-  7.0's header-only solver and is verified identical to the Python adapter
-  on the UR5e. Lowering checks that the robot model's FK agrees with
-  SSIK's on the problem's explicit configurations. TSR chains, other IK
-  backends, and other families fall back explicitly with a reason
-  (#87, #90, #127, #128, #129, #130).
-- `SSIKRobotModel`: a `RobotModel` from an `SSIKSolver`, for planning
-  without a simulator. The reference artifact gains a UR5e case (finite
-  start, `AnyOf` of two grasp TSRs by volume, a workspace path TSR) whose
-  native run records zero Python calls during the solve.
-
-### Fixed
-
-- `examples/tsr_union_demo.py` built its side-grasp frame from a
-  left-handed triad (a reflection, determinant −1), which sstsr 3.2's
-  constructor now rejects; the gripper x axis is the right-handed
-  completion of the approach and up directions.
+Collision checking joins the native path. A MuJoCo world becomes a scene the
+planner owns, loaded from the compiled model's MJB bytes, and every query runs
+against an immutable snapshot with mj_manipulator's attachment-aware contact
+policy implemented in C++ and checked against it on a corpus. One call,
+`plan_native`, takes a live model and data to a native solve with SSIK and
+native collision, and every result carries provenance and a cost breakdown.
+The scene lives in its own extension module, so `import pycbirrt` needs no
+MuJoCo, and the `mujoco` extra pins the exact version the module is built
+against. The default backend is still Python. Released together with 1.6.0
+from the same commit; the two milestones were planned and verified separately.
 
 ### Added
 
-- **Native MuJoCo collision checking (in progress toward 1.7.0).**
+- **Native MuJoCo collision checking.**
   `pycbirrt.backends.native_mujoco`: `NativeScene.from_model` (an owned
   `mjModel` from the compiled model's MJB bytes, cached by content),
   `Snapshot.capture` (qpos, mocap poses, and attachments as a value), and
@@ -67,6 +55,44 @@ follows [Semantic Versioning](https://semver.org/).
   loads MuJoCo) is built against that version and refuses another with a
   message naming the compiled, loaded, and installed versions (#137). The
   workspace lock moves to 3.14.0.
+
+## [1.6.0] - 2026-09-30
+
+TSR planning goes native. When a problem's regions are single TSRs and its
+IK is SSIK on a verified family, the whole solve, sampling, projection, and
+IK included, runs in C++ with no Python callback, and the reference
+artifact records the proof. The TSR math is checked against sstsr on a
+conformance corpus and the SSIK adapter against the Python one on the
+UR5e. Everything else falls back to Python with a stated reason, and the
+default backend is still Python, so `plan(...)` behaves as in 1.5.0.
+
+### Added
+
+- **Native TSR planning.** `backend="native"` and `"auto"` now run
+  problems with `TSRConfigurationSet`s entirely in C++ when the region is a
+  single `TSR` and the IK is an `SSIKSolver` around an `ssik.Manipulator`
+  of a verified family (`ikgeo.three_parallel`, the UR family). The TSR
+  math is sstsr 3.2.0's, checked on a checked-in conformance corpus
+  (`tools/tsr_conformance.py`, 162 probes); the SSIK adapter calls ssik
+  7.0's header-only solver and is verified identical to the Python adapter
+  on the UR5e. Lowering checks that the robot model's FK agrees with
+  SSIK's on the problem's explicit configurations. TSR chains, other IK
+  backends, and other families fall back explicitly with a reason
+  (#87, #90, #127, #128, #129, #130).
+- `SSIKRobotModel`: a `RobotModel` from an `SSIKSolver`, for planning
+  without a simulator. The reference artifact gains a UR5e case (finite
+  start, `AnyOf` of two grasp TSRs by volume, a workspace path TSR) whose
+  native run records zero Python calls during the solve.
+
+### Fixed
+
+- `examples/tsr_union_demo.py` built its side-grasp frame from a
+  left-handed triad (a reflection, determinant −1), which sstsr 3.2's
+  constructor now rejects; the gripper x axis is the right-handed
+  completion of the approach and up directions.
+
+### Changed
+
 - The `ssik` extra requires `ssik>=7.0,<8`: 7.0 ships the `ssik_cpp`
   headers and `ssik.cpp.joint_data`, which the native SSIK adapter is built
   on, and ssik is a build requirement of the extension (#129;
@@ -433,6 +459,8 @@ semantics; every 1.0.0 test passes unchanged.
 Initial release: CBiRRT with TSR start, goal, and path constraints; MuJoCo
 and EAIK backends; planar arm and UR5e examples.
 
+[1.7.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.6.0...v1.7.0
+[1.6.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/personalrobotics/pycbirrt/compare/v1.2.0...v1.3.0
