@@ -6,6 +6,14 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `sscbirrt-assets`, a separate data wheel in `assets/` that packages the
+  MuJoCo Menagerie UR5e and Robotiq 2F-85 models (pinned upstream commit,
+  SHA-256 manifest, upstream BSD licenses kept), released by its own
+  `assets-v*` tag pipeline. It is the first step toward
+  `pip install "sscbirrt[demo]"` running the demos without a Menagerie
+  clone (#162).
+
 ## [3.0.0] - 2026-09-30
 
 pycbirrt becomes **sscbirrt**, and this is the first release on PyPI:
