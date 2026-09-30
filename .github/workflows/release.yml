@@ -17,7 +17,6 @@ name: Release
 on:
   push:
     tags: ["v*"]
-    branches: [release-pipeline]  # TEMPORARY: exercise the build jobs on the PR branch; removed before merge
   workflow_dispatch:
     inputs:
       publish_testpypi:
