@@ -295,7 +295,7 @@ class TestTSRLowering:
         shifted_goal = TSRConfigurationSet(goal.tsr, Shifted(), ik, planner.space)
         with pytest.raises(native.NativeUnsupported) as info:
             planner.solve(PlanningProblem(goal=shifted_goal, **base_problem), seed=0)
-        assert "robot model FK disagrees with the SSIK model's" in info.value.reasons[0]
+        assert "robot model FK disagrees with the native IK model's" in info.value.reasons[0]
 
     def test_auto_backend_runs_tsr_problems_natively(self, ur5e):
         robot, ik, cfg = ur5e
@@ -307,6 +307,128 @@ class TestTSRLowering:
             return_details=True,
         )
         assert result.success and result.backend == "native" and result.backend_reasons == ()
+
+
+class TestIntegrations:
+    """Validators and IK solvers lower through protocols, not class names (#147).
+
+    Neither integration here is MuJoCo or SSIK; the lowering must accept them on the protocol alone and
+    carry their provenance into the result.
+    """
+
+    def test_validator_integration_lowers_and_its_provenance_reaches_the_result(self):
+        class BoxWall:  # a CollisionChecker with a native form, defined outside pycbirrt
+            def __init__(self):
+                self.fresh_calls = 0
+
+            def is_valid(self, q):
+                return not (0.45 <= q[0] <= 0.55)
+
+            def fresh(self):
+                self.fresh_calls += 1
+                lo, hi = [0.45, -np.inf], [0.55, np.inf]
+                return native._native.JointBoxObstacles([(lo, hi)])
+
+            @property
+            def provenance(self):
+                return {"wall": "x in [0.45, 0.55]"}
+
+        wall = BoxWall()
+        assert isinstance(wall, native.ValidatorIntegration)
+        planner = _planner("native", collision=wall, max_iterations=300)
+        problem = PlanningProblem(
+            space=planner.space,
+            start=_finite(planner, [np.zeros(2)]),
+            goal=_finite(planner, [np.array([1.0, 0.0])]),
+            validator=wall,
+        )
+        result = planner.solve(problem, seed=0)
+        assert result.backend == "native" and wall.fresh_calls == 1
+        assert not result.success and all(n.config[0] <= 0.45 for n in result.tree_start.nodes)
+        assert result.provenance["wall"] == "x in [0.45, 0.55]"
+
+    def test_validator_integration_that_hands_back_a_python_object_is_a_reason(self):
+        class Bad:
+            def is_valid(self, q):
+                return True
+
+            def fresh(self):
+                return object()
+
+            provenance = {}
+
+        planner = _planner("native", collision=Bad())
+        problem = PlanningProblem(
+            space=planner.space,
+            start=_finite(planner, [np.zeros(2)]),
+            goal=_finite(planner, [np.array([1.0, 0.5])]),
+            validator=planner.collision,
+        )
+        with pytest.raises(native.NativeUnsupported) as info:
+            planner.solve(problem, seed=0)
+        assert info.value.reasons == ["validator: Bad.fresh() returned object, not a sscbirrt StateValidator"]
+
+    def test_kinematics_integration_failures_are_forwarded_as_reasons(self):
+        planner = _planner("native")
+        tsr = TSR(T0_w=np.eye(4), Tw_e=np.eye(4), Bw=np.zeros((6, 2)))
+        base = dict(space=planner.space, start=_finite(planner, [np.zeros(2)]), validator=planner.collision)
+
+        class NoArm(PlanarIK):
+            def native_kinematics(self):
+                raise native.NativeUnsupported(["this arm has no native form today"])
+
+            provenance = {}
+
+        class WrongType(PlanarIK):
+            def native_kinematics(self):
+                return native._native.AcceptAll()
+
+            provenance = {}
+
+        with pytest.raises(native.NativeUnsupported) as info:
+            planner.solve(PlanningProblem(goal=TSRConfigurationSet(tsr, planner.robot, NoArm(), planner.space), **base))
+        assert info.value.reasons == ["goal: this arm has no native form today"]
+        with pytest.raises(native.NativeUnsupported) as info:
+            planner.solve(
+                PlanningProblem(goal=TSRConfigurationSet(tsr, planner.robot, WrongType(), planner.space), **base)
+            )
+        assert info.value.reasons == [
+            "goal: WrongType.native_kinematics() returned AcceptAll, not a sscbirrt ForwardKinematics and IKSolver"
+        ]
+
+    def test_kinematics_integration_lowers_without_the_ssik_adapter_class(self):
+        ssik = pytest.importorskip("ssik")
+        if not native._native.has_ssik():
+            pytest.skip(native._native.ssik_unavailable_reason())
+        from pycbirrt.backends import native_ssik
+        from pycbirrt.backends.ssik import SSIKRobotModel, SSIKSolver
+
+        manipulator = ssik.Manipulator.from_prebuilt("ur5e")
+        reference = SSIKSolver(manipulator)
+
+        class MyIK:  # an IKSolver from another package: not an SSIKSolver, but with a native form
+            def solve(self, pose, q_init=None):
+                return reference.solve(pose, q_init)
+
+            def native_kinematics(self):
+                return native_ssik.arm_from_manipulator(manipulator, T_base=None, T_ee=None)
+
+            provenance = {"ik_backend": "MyIK"}
+
+        robot = SSIKRobotModel(reference)
+        ik = MyIK()
+        cfg = CBiRRTConfig(step_size=0.2, edge_resolution=0.05, timeout=30.0, num_tree_roots=20)
+        planner = CBiRRT(robot, ik, NoCollision(), cfg, backend="native")
+        q0 = np.array([0.0, -1.2, 1.0, -1.4, -1.57, 0.0])
+        q1 = np.array([0.8, -1.0, 0.8, -1.3, -1.57, 0.4])
+        box = np.array([[-0.05, 0.05], [-0.05, 0.05], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]])
+        goal = TSRConfigurationSet(TSR(robot.forward_kinematics(q1), np.eye(4), box), robot, ik, planner.space)
+        result = planner.solve(
+            PlanningProblem(space=planner.space, start=_finite(planner, [q0]), goal=goal, validator=planner.collision),
+            seed=0,
+        )
+        assert result.success and result.backend == "native" and goal.contains(result.path[-1])
+        assert result.provenance["ik_backend"] == "MyIK" and "ssik_solver_name" not in result.provenance
 
 
 def test_benchmark_tool_runs_and_records_the_breakdown(tmp_path):

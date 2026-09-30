@@ -182,8 +182,9 @@ class NativeCollisionChecker:
     """A pycbirrt ``CollisionChecker`` over a scene and a snapshot, with mj_manipulator's contact policy.
 
     ``is_valid`` calls the native validator, so the Python backend exercises the same implementation the
-    native backend lowers to. ``fresh()`` returns a new validator on the same scene and snapshot with its own
-    ``mjData``; lowering calls it so that every solve owns its validator.
+    native backend lowers to. It is a ``pycbirrt.backends.native.ValidatorIntegration``: ``fresh()`` returns a
+    new validator on the same scene and snapshot with its own ``mjData``, and lowering calls it so that every
+    solve owns its validator.
     """
 
     def __init__(self, scene: NativeScene, snapshot: Snapshot):
@@ -196,6 +197,15 @@ class NativeCollisionChecker:
     def fresh(self):
         """A new native validator with its own mjData, for one solve."""
         return _load().SceneValidator(self.scene.native, self.snapshot.native)
+
+    @property
+    def provenance(self) -> dict[str, Any]:
+        """The scene and snapshot this checker validates against (``ValidatorIntegration``)."""
+        return {
+            "scene_model_signature": self.scene.provenance["model_signature"],
+            "scene_mjb_sha256": self.scene.provenance["mjb_sha256"],
+            "snapshot_sha256": self.snapshot.sha256,
+        }
 
     def is_valid(self, q) -> bool:
         return bool(self.native.is_valid([float(x) for x in np.asarray(q, dtype=float)]))

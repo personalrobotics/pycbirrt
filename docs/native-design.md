@@ -1052,7 +1052,7 @@ governs what is found there.
 
 | Python | Native | Otherwise |
 |---|---|---|
-| `TSRConfigurationSet` with `tsr: TSR`, `ik: SSIKSolver` around an `ssik.Manipulator` whose `solver_name` is verified, `dof == 6` | `TSRConfigurationSet(TSR, SSIKArm, SSIKArm, space, tolerance, max_projection_iters, progress_tolerance)` | region is a `TSRChain`: "TSR chains have no native form"; `ik` not an `SSIKSolver`: "IK <type> is a Python object"; family not verified: "SSIK family <name> is not in the native allowlist"; extension built without SSIK: "built without SSIK support" |
+| `TSRConfigurationSet` with `tsr: TSR`, `ik` a `KinematicsIntegration` (since #147; `SSIKSolver` around an `ssik.Manipulator` whose `solver_name` is verified, `dof == 6`, is the shipped one) | `TSRConfigurationSet(TSR, arm, arm, space, tolerance, max_projection_iters, progress_tolerance)` with `arm = ik.native_kinematics()` | region is a `TSRChain`: "TSR chains have no native form"; `ik` not a `KinematicsIntegration`: "IK <type> is a Python object"; `native_kinematics()` raised `NativeUnsupported`: its reasons (SSIK: "SSIK family <name> is not in the native allowlist", "built without SSIK support"); returned something else: "not a sscbirrt ForwardKinematics and IKSolver" |
 
 Two consistency checks run at lowering, each a blocker with a reason if it
 fails. First, the Python set's `robot.forward_kinematics` and the SSIK
@@ -1375,8 +1375,9 @@ checker = NativeCollisionChecker(scene, snap)                                 # 
 same object serves the Python backend and lowers to itself for the native
 one; there is one implementation of the policy and the Python backend
 exercises it too. `lower` gains the row: validator is a
-`NativeCollisionChecker` → its native handle; the row for other validators
-is unchanged (they remain Python objects). `NativeScene.from_model`
+`ValidatorIntegration` (#147; `NativeCollisionChecker` is the shipped one) →
+`fresh()`, a native validator owned by this solve; the row for other
+validators is unchanged (they remain Python objects). `NativeScene.from_model`
 refuses a model whose `mujoco.__version__` differs from the module's
 build version.
 
@@ -1387,6 +1388,54 @@ snapshot, build the `SSIKRobotModel` and lowering, solve with
 records `{"scene": signature, "mjb_sha256", "snapshot": sha256,
 "mujoco", "ssik", "sstsr", "pycbirrt", "solver_name"}`. The Python backend
 fills `provenance` with the versions only.
+
+## Integrations (#147)
+
+MuJoCo is one implementation of `StateValidator`, SSIK one implementation
+of `ForwardKinematics` and `IKSolver`, TSRs one implementation of
+`StateSet`. The core knows none of them, and the target graph above is the
+shape every further integration takes. What made it reachable from Python
+without a patch to pycbirrt is that `lower` recognizes validators and IK
+solvers by two runtime-checkable protocols in `pycbirrt.backends.native`,
+never by type:
+
+| Protocol | Members | Shipped implementation |
+|---|---|---|
+| `ValidatorIntegration` | `fresh()` → a native `StateValidator` for one solve; `provenance` → `dict` | `NativeCollisionChecker` |
+| `KinematicsIntegration` | `native_kinematics()` → one object that is a native `ForwardKinematics` and `IKSolver`, or raises `NativeUnsupported([reasons])`; `provenance` → `dict` | `SSIKSolver` |
+
+`lower` merges every integration's `provenance` into `Lowered.provenance`
+and so into `PlanResult.provenance`; the SSIK-specific checks (family
+allowlist, wrapped type, extension built without SSIK) live in
+`SSIKSolver.native_kinematics` and surface as the reasons they raise. The
+FK-agreement check stays in `lower`, because it is about the problem
+(`RobotModel` versus the native arm), not about any one IK library.
+
+Adding a simulator or an IK library:
+
+1. **Implement the interface in C++** in a target that links only
+   `sscbirrt::core` (plus the library you integrate), the way
+   `sscbirrt::mujoco` and `sscbirrt::ssik` do. `StateValidator` has one
+   virtual, `is_valid(q)`. `ForwardKinematics` has `dof()` and `fk(q)`;
+   `IKSolver` has `dof()` and `solve(T, seed)` returning every solution.
+2. **Own extension module.** Bind with pybind11 in a module of your own,
+   declaring `StateValidator` (or the kinematics bases) registered by
+   `pycbirrt._native` as the base class; pybind11 shares registered types
+   across modules built with the same pybind11. `pycbirrt._native` must not
+   learn to import your library: a missing library is a reason, not an
+   import error.
+3. **Pin and verify the library version** at import, as the MuJoCo module
+   compares its build header, the loaded library, and the Python package.
+4. **Python integration object.** A `CollisionChecker` that also satisfies
+   `ValidatorIntegration`, or an `IKSolver` that also satisfies
+   `KinematicsIntegration`. `fresh()` gives each solve its own scratch state
+   (the MuJoCo one allocates an `mjData`); `native_kinematics()` raises
+   `NativeUnsupported` with a reason for any instance that has no native
+   form rather than returning something approximate.
+5. **One implementation, or a parity corpus.** Either the Python form calls
+   the native one (as `NativeCollisionChecker.is_valid` does) or the two are
+   checked against each other on a checked-in corpus with a `--check` tool,
+   as `tools/mujoco_collision_corpus.py` and `tools/tsr_conformance.py` do.
 
 ## Artifacts
 

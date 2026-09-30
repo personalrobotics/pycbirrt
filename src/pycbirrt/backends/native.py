@@ -16,7 +16,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 
@@ -53,6 +53,39 @@ class NativeUnsupported(Exception):
         super().__init__("; ".join(self.reasons) if self.reasons else "native backend unavailable")
 
 
+@runtime_checkable
+class ValidatorIntegration(Protocol):
+    """A Python ``CollisionChecker`` that also has a native form.
+
+    ``lower`` recognizes validators by this protocol, never by type, so any collision backend with a
+    ``sscbirrt::StateValidator`` in its own extension module plugs in without a change here. The MuJoCo
+    scene's ``NativeCollisionChecker`` is one implementation.
+    """
+
+    def fresh(self) -> Any:
+        """A native ``StateValidator`` for one solve, with any per-solve state (scratch data) of its own."""
+
+    @property
+    def provenance(self) -> dict[str, Any]:
+        """What the validator checked against, for ``PlanResult.provenance``; may be empty."""
+
+
+@runtime_checkable
+class KinematicsIntegration(Protocol):
+    """A Python ``IKSolver`` that also has a native form.
+
+    ``native_kinematics`` returns one object that is both a native ``ForwardKinematics`` and a native
+    ``IKSolver`` for the same arm, or raises ``NativeUnsupported`` naming why this instance has none. The
+    SSIK adapter's ``SSIKSolver`` is one implementation; the lowering itself knows no IK library.
+    """
+
+    def native_kinematics(self) -> Any: ...
+
+    @property
+    def provenance(self) -> dict[str, Any]:
+        """Which kinematic model answered, for ``PlanResult.provenance``; may be empty."""
+
+
 def available() -> bool:
     return _native is not None
 
@@ -62,7 +95,7 @@ class Lowered:
     problem: Any  # _native.PlanningProblem
     config: Any  # _native.PlannerConfig
     space: Any  # _native.JointSpace
-    provenance: dict = field(default_factory=dict)  # scene, MJB, snapshot hashes; SSIK solver_name
+    provenance: dict = field(default_factory=dict)  # merged from every integration's ``provenance``
 
 
 def _space_metric(metric, space: JointSpace) -> bool:
@@ -76,13 +109,14 @@ def _lower_space(space: JointSpace):
 
 
 class _Lowering:
-    """Per-lowering state: one native SSIK arm per Python SSIKSolver instance, checked once."""
+    """Per-lowering state: one native kinematics object per Python IK instance, checked once."""
 
     def __init__(self, problem: PlanningProblem, nspace):
         self.problem = problem
         self.nspace = nspace
         self.arms: dict[int, Any] = {}
         self.arm_reasons: dict[int, str] = {}
+        self.provenance: dict[str, Any] = {}
 
     def arm_for(self, tsr_set: TSRConfigurationSet, where: str, reasons: list[str]):
         ik = tsr_set.ik
@@ -99,24 +133,22 @@ class _Lowering:
         return self.arms[key]
 
     def _arm_reason(self, tsr_set: TSRConfigurationSet, where: str) -> str | None:
-        from pycbirrt.backends import native_ssik
-
-        needs = "is a Python object; native needs an SSIKSolver around an ssik.Manipulator"
-        try:
-            from pycbirrt.backends.ssik import SSIKSolver
-        except ImportError:
-            return f"{where}: IK {type(tsr_set.ik).__name__} {needs}"
         ik = tsr_set.ik
-        if not isinstance(ik, SSIKSolver):
-            return f"{where}: IK {type(ik).__name__} {needs}"
-        manipulator = ik.solver
-        if not hasattr(manipulator, "solver_name"):
-            return f"{where}: SSIKSolver wraps {type(manipulator).__name__}, not an ssik.Manipulator"
-        why = native_ssik.unsupported_reason(manipulator)
-        if why is not None:
-            return f"{where}: {why}"
-        arm = native_ssik.arm_from_manipulator(manipulator, T_base=ik.T_base, T_ee=ik.T_ee)
-        # The native set uses SSIK's FK where the Python set used the robot model's: they must agree.
+        if not isinstance(ik, KinematicsIntegration):
+            return (
+                f"{where}: IK {type(ik).__name__} is a Python object; native needs an IK solver with a native form "
+                "(pycbirrt.backends.native.KinematicsIntegration)"
+            )
+        try:
+            arm = ik.native_kinematics()
+        except NativeUnsupported as e:
+            return f"{where}: " + "; ".join(e.reasons)
+        if not (isinstance(arm, _native.ForwardKinematics) and isinstance(arm, _native.IKSolver)):
+            return (
+                f"{where}: {type(ik).__name__}.native_kinematics() returned {type(arm).__name__}, "
+                "not a sscbirrt ForwardKinematics and IKSolver"
+            )
+        # The native set uses the integration's FK where the Python set used the robot model's: they must agree.
         from pycbirrt.sets import seeds
 
         for smp in seeds(self.problem.start) + seeds(self.problem.goal):
@@ -128,10 +160,11 @@ class _Lowering:
             err = float(np.abs(expected - got).max())
             if err > FK_AGREEMENT_ATOL:
                 return (
-                    f"{where}: robot model FK disagrees with the SSIK model's by {err:.3g} at an explicit "
+                    f"{where}: robot model FK disagrees with the native IK model's by {err:.3g} at an explicit "
                     f"configuration (tolerance {FK_AGREEMENT_ATOL:g}); pass T_base/T_ee so they agree"
                 )
         self.arms[id(ik)] = arm
+        self.provenance.update(dict(ik.provenance))
         return None
 
 
@@ -206,8 +239,14 @@ def _lower_set(s, where: str, space: JointSpace, nspace, reasons: list[str], ctx
 
 
 def _lower_validator(v, dof: int, reasons: list[str]):
-    if type(v).__name__ == "NativeCollisionChecker" and hasattr(v, "fresh"):
-        return v.fresh()  # its own mjData for this solve (docs/native-design.md, v1.7.0: one validator per solve)
+    if isinstance(v, ValidatorIntegration):
+        native = v.fresh()  # its own per-solve state (docs/native-design.md, v1.7.0: one validator per solve)
+        if isinstance(native, _native.StateValidator):
+            return native
+        reasons.append(
+            f"validator: {type(v).__name__}.fresh() returned {type(native).__name__}, not a sscbirrt StateValidator"
+        )
+        return None
     if isinstance(v, NoCollision):
         return _native.AcceptAll()
     if isinstance(v, Wall):
@@ -217,7 +256,10 @@ def _lower_validator(v, dof: int, reasons: list[str]):
             other = 1 - v.axis
             lo[other], hi[other] = -float(v.extent), float(v.extent)
         return _native.JointBoxObstacles([(lo, hi)])
-    reasons.append(f"validator: {type(v).__name__} is a Python object; native needs a sscbirrt StateValidator")
+    reasons.append(
+        f"validator: {type(v).__name__} is a Python object; native needs a validator with a native form "
+        "(pycbirrt.backends.native.ValidatorIntegration)"
+    )
     return None
 
 
@@ -268,18 +310,9 @@ def lower(problem: PlanningProblem, config: CBiRRTConfig) -> Lowered:
     np_problem.goal = goal
     np_problem.validator = validator
     np_problem.path_constraint = constraint
-    provenance: dict = {}
-    v = problem.validator
-    if type(v).__name__ == "NativeCollisionChecker" and hasattr(v, "scene"):
-        provenance.update(
-            {
-                "scene_model_signature": v.scene.provenance["model_signature"],
-                "scene_mjb_sha256": v.scene.provenance["mjb_sha256"],
-                "snapshot_sha256": v.snapshot.sha256,
-            }
-        )
-    for arm in ctx.arms.values():
-        provenance["ssik_solver_name"] = arm.family
+    provenance: dict = dict(ctx.provenance)
+    if isinstance(problem.validator, ValidatorIntegration):
+        provenance.update(dict(problem.validator.provenance))
     return Lowered(np_problem, _lower_config(config), nspace, provenance)
 
 
