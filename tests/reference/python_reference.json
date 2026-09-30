@@ -2041,7 +2041,7 @@
     "path_constraint": "TSR workspace box, z in [0.05, 1.5], rotation free",
     "robot": "ssik prebuilt ur5e",
     "solver_name": "ikgeo.three_parallel",
-    "ssik": "7.0.0rc1",
+    "ssik": "7.0.0",
     "start": [
      [
       0.0,
@@ -2684,7 +2684,7 @@
     "scene_mjb_sha256": "48b645aabeb47f6b3359ff7503e4f32099d6380cf00ac2a7baeb4137abcc9606",
     "snapshot_sha256": "fb21a08cd1d341da15b494adb7455b169b5aaa320c5b9709333917966f16e678",
     "solver_name": "ikgeo.three_parallel",
-    "ssik": "7.0.0rc1",
+    "ssik": "7.0.0",
     "start": [
      [
       0.0,
@@ -3566,7 +3566,7 @@
     "scene_mjb_sha256": "48b645aabeb47f6b3359ff7503e4f32099d6380cf00ac2a7baeb4137abcc9606",
     "snapshot_sha256": "2830b7a7e164b27f8e7fc257bff2a67aff829e3501d3d71790ef92919d6f5e8e",
     "solver_name": "ikgeo.three_parallel",
-    "ssik": "7.0.0rc1",
+    "ssik": "7.0.0",
     "start": [
      [
       0.0,

@@ -852,9 +852,7 @@ build asks its interpreter for that directory (`SSCBIRRT_WITH_SSIK=AUTO`);
 a pure CMake build passes `SSCBIRRT_SSIK_CMAKE_DIR` or puts it on
 `CMAKE_PREFIX_PATH`. A build without ssik or Eigen disables the adapter
 and `pycbirrt._native.has_ssik()` is false with a reason. pycbirrt pins
-`ssik>=7.0.0rc1,<8`
-for the native SSIK support (7.0.0rc1 is on TestPyPI; the pin moves to
-`>=7.0,<8` when 7.0.0 reaches PyPI). The C++ interface used here,
+`ssik>=7.0,<8` for the native SSIK support. The C++ interface used here,
 `three_parallel_artifact_solve(consts, limits, T, params)` with
 `JointConsts<6>`, `JointLimits<6>`, and `ArtifactParams<6>`, is fixed for
 7.0.
