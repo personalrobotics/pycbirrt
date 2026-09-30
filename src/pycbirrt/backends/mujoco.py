@@ -168,7 +168,7 @@ class MuJoCoIKSolver:
     """Differential IK solver using MuJoCo's Jacobian.
 
     Uses damped least squares (Levenberg-Marquardt) for numerical stability.
-    Unlike analytical solvers (e.g., EAIK), this returns at most one solution
+    Unlike analytical solvers (e.g., SSIK), this returns at most one solution
     per call, found iteratively from the current configuration.
 
     To find multiple solutions, call solve() with different initial configurations

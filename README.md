@@ -460,6 +460,11 @@ uv pip install "pycbirrt[ssik]"   # ssik >= 7.0
 `SSIKRobotModel(ik)` is a `RobotModel` whose forward kinematics and limits
 come from the wrapped manipulator, for planning without a simulator.
 
+SSIK is the analytical IK backend. The EAIK backend, deprecated in 1.3.0, was
+removed in 2.0 with its `eaik` extra; `SSIKSolver(ssik.Manipulator.from_prebuilt("ur5e"))`
+replaces `EAIKSolver.for_ur5e(...)`, and the backend choice (`python`,
+`native`, `auto`) is independent of the IK library.
+
 SSIK solves 6R and 7R arms in closed form, accepts a seed, and returns every
 in-limit winding of each geometric branch on joints wider than one turn, so
 the planner sees the complete TSR-induced configuration set. The adapter does
@@ -563,11 +568,6 @@ verified at import, and per-solve scratch state comes from `fresh()` so a
 validator is never shared between concurrent solves. Lowering itself checks
 that your `native_kinematics()` agrees with the problem's `RobotModel` on the
 explicit configurations, and refuses with a reason if it does not.
-
-### EAIK (deprecated)
-
-`pycbirrt.backends.eaik.EAIKSolver` still works but warns on construction and
-will be removed, with the `eaik` extra, in pycbirrt 2.0. Use SSIK.
 
 ## Examples
 

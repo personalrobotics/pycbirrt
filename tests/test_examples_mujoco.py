@@ -66,7 +66,7 @@ class TestUr5eMujocoExample:
 
     def test_bad_backend_rejected(self):
         with pytest.raises(ValueError):
-            ur5e_mujoco.build_ik_solver(None, None, JOINTS, None, Path(MENAGERIE), backend="eaik")
+            ur5e_mujoco.build_ik_solver(None, None, JOINTS, None, Path(MENAGERIE), backend="numerical")
 
     def test_script_runs_through_the_mujoco_fallback(self, tmp_path):
         env = dict(os.environ, MPLBACKEND="Agg", MUJOCO_MENAGERIE_PATH=MENAGERIE)
