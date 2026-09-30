@@ -215,3 +215,59 @@ class NativeCollisionChecker:
                 }
             )
         return out
+
+
+class _NoIK:
+    """Stands in for the IK solver when a problem has no TSR sets; any use is a programming error."""
+
+    def solve(self, pose, q_init=None):
+        raise RuntimeError("this problem has no pose regions; no IK solver was given to plan_native")
+
+
+def plan_native(
+    model,
+    data,
+    joint_names,
+    *,
+    start,
+    goal=None,
+    goal_tsrs=None,
+    constraint_tsrs=None,
+    ik=None,
+    robot=None,
+    ee_site: str = "attachment_site",
+    attachments: dict[str, tuple[str, np.ndarray]] | None = None,
+    extra_arm_bodies=(),
+    config=None,
+    seed: int | None = None,
+    fallback: bool = False,
+):
+    """One call from a live MuJoCo world to a native solve (docs/native-design.md, v1.7.0).
+
+    Builds or reuses the owned scene for ``model``, captures a snapshot of ``data`` now (call on the
+    thread that owns it), plans with ``backend="native"`` (or ``"auto"`` when ``fallback`` is true), and
+    returns a ``PlanResult`` whose ``provenance`` names the scene, the snapshot, and every dependency.
+
+    ``ik`` is an ``SSIKSolver`` around an ``ssik.Manipulator`` built from the same MJCF (needed only when
+    ``goal_tsrs`` or ``constraint_tsrs`` are given); ``robot`` defaults to ``MuJoCoRobotModel`` on
+    ``ee_site``, and lowering checks its forward kinematics against SSIK's at the start configurations.
+    ``attachments`` is mj_manipulator's ``{object_body: (gripper_body, T_gripper_object)}``.
+    """
+    from pycbirrt import CBiRRT, CBiRRTConfig
+    from pycbirrt.backends.mujoco import MuJoCoRobotModel
+
+    scene = NativeScene.from_model(model, joint_names, extra_arm_bodies)
+    snapshot = Snapshot.capture(scene, data, attachments)
+    checker = NativeCollisionChecker(scene, snapshot)
+    if robot is None:
+        robot = MuJoCoRobotModel(model, data, ee_site, list(joint_names))
+    planner = CBiRRT(
+        robot,
+        ik if ik is not None else _NoIK(),
+        checker,
+        config or CBiRRTConfig(),
+        backend="auto" if fallback else "native",
+    )
+    return planner.plan(
+        start=start, goal=goal, goal_tsrs=goal_tsrs, constraint_tsrs=constraint_tsrs, seed=seed, return_details=True
+    )

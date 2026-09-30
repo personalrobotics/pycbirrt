@@ -46,7 +46,8 @@ def test_artifact_is_checked_in(stored):
 
 
 def test_semantics_match_the_stored_artifact(tool, fresh, stored):
-    assert tool.semantic_view(fresh) == tool.semantic_view(stored)
+    assert tool.semantic_mismatches(stored, fresh) == []
+    assert {c["name"] for c in fresh["cases"]} == {c["name"] for c in stored["cases"]}
 
 
 def test_every_success_passes_independent_validation(fresh):
@@ -114,5 +115,9 @@ def test_native_backend_matches_the_artifact(tool):
     if "ur5e_tsr_goal_union_with_path_tsr" in by_name and pytest.importorskip("pycbirrt._native").has_ssik():
         ur5e = by_name["ur5e_tsr_goal_union_with_path_tsr"]
         assert ur5e["status"] == "success" and ur5e["native_python_calls"] == 0  # the no-callback proof (#91)
+    for name in ("ur5e_mujoco_tsr_goal_among_obstacles", "ur5e_mujoco_held_object"):  # the v1.7.0 release cases (#88)
+        case = by_name[name]
+        if case["status"] != "skipped":
+            assert case["status"] == "success" and case["native_python_calls"] == 0, name
     assert tool.parity_mismatches(json.loads(ARTIFACT.read_text()), native) == []
     assert tool.main(["--check", "--backend", "native"]) == 0
