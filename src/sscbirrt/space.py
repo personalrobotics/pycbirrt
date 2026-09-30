@@ -46,6 +46,7 @@ class JointSpace:
         lower: np.ndarray,
         upper: np.ndarray,
         angular_joints: Sequence[bool] | None = None,
+        joint_names: Sequence[str] | None = None,
     ):
         self.lower = np.asarray(lower, dtype=float)
         self.upper = np.asarray(upper, dtype=float)
@@ -69,9 +70,11 @@ class JointSpace:
         bad = np.flatnonzero(bounded & ~finite)
         if bad.size:
             i = int(bad[0])
+            name = f"joint '{joint_names[i]}' (index {i})" if joint_names is not None else f"joint {i}"
             raise ValueError(
-                f"joint {i} has non-finite limits [{self.lower[i]}, {self.upper[i]}]; "
-                f"give finite planning limits or mark it angular (angular_joints)"
+                f"{name} has no finite limits [{self.lower[i]}, {self.upper[i]}]. If it turns continuously, declare "
+                f"it with CBiRRTConfig(angular_joints=...); otherwise give the robot model finite planning limits "
+                f"(for example MuJoCoRobotModel(..., joint_limits=(lower, upper)))"
             )
         # Sampling interval: the limits for bounded joints, one full turn for angular ones.
         self._sample_lower = self.lower.copy()

@@ -1113,3 +1113,35 @@ class TestPlanResultIndices:
         assert result.iterations > 0
         assert result.tree_sizes[0] > 0
         assert result.tree_sizes[1] > 0
+
+
+class TestConfigurationInputs:
+    """#171: start/goal accept one configuration as any flat sequence, or a list of them, on every backend."""
+
+    @pytest.mark.parametrize("backend", ["python", "native", "auto"])
+    def test_flat_list_is_one_configuration(self, backend):
+        from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK
+
+        if backend == "native":
+            pytest.importorskip("sscbirrt._native")
+        planner = CBiRRT(PlanarArm(), PlanarIK(), NoCollision(), CBiRRTConfig(), backend=backend)
+        assert planner.plan(start=[0.1, 0.2], goal=(1.0, 0.5), seed=0) is not None
+        r = planner.plan(start=[[0.1, 0.2], [0.0, 0.0]], goal=[1.0, 0.5], seed=0, return_details=True)
+        assert r.success and r.start_index in (0, 1)
+
+    @pytest.mark.parametrize(
+        "bad, message",
+        [
+            ([0.1, 0.2, 0.3], r"got shape \(3,\)"),
+            ([[0.1, 0.2], [0.3]], "got a ragged or non-numeric value"),
+            ("ab", "got a ragged"),
+        ],
+    )
+    def test_malformed_input_names_the_argument(self, bad, message):
+        from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK
+
+        planner = CBiRRT(PlanarArm(), PlanarIK(), NoCollision(), CBiRRTConfig(), backend="python")
+        with pytest.raises(
+            ValueError, match=rf"start: expected one configuration of length 2 or a list of them, {message}"
+        ):
+            planner.plan(start=bad, goal=[1.0, 0.5])

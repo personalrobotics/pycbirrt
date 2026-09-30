@@ -24,6 +24,13 @@ struct RootReport {
   // Every rejection was the validator's: Python raises All...InCollision rather than All...Invalid.
   bool only_collisions() const { return in_collision > 0 && in_collision == rejections(); }
   std::string summary() const;  // Python's sampling summary, e.g. "2 IK unreachable, 3 in collision"
+  // The count Python's All...Invalid/InCollision reports: the explicit candidates when there are any, else the
+  // rejected draws (only the collisions when every rejection was one). An explicit rejection is also counted by
+  // reason in rejections(), so the two must not be added (#170).
+  int candidates() const {
+    if (explicit_candidates > 0) return explicit_candidates;
+    return only_collisions() ? in_collision : rejections();
+  }
 };
 
 // A set asked for a capability it lacks, or a start/goal set that is neither finite nor sampleable.

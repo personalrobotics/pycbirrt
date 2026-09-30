@@ -27,6 +27,7 @@ from sscbirrt.exceptions import (
     AllStartConfigurationsInCollision,
     AllStartConfigurationsInvalid,
     MotionContractError,
+    NativeUnsupported,
     UnsupportedCapability,
 )
 from sscbirrt.legacy import legacy_index
@@ -43,14 +44,6 @@ try:
     from sscbirrt import _native
 except ImportError:  # pragma: no cover - exercised only in builds without the extension
     _native = None
-
-
-class NativeUnsupported(Exception):
-    """The problem has a component with no native form. ``reasons`` lists every blocker."""
-
-    def __init__(self, reasons: list[str]):
-        self.reasons = list(reasons)
-        super().__init__("; ".join(self.reasons) if self.reasons else "native backend unavailable")
 
 
 @runtime_checkable
@@ -234,7 +227,7 @@ def _lower_set(s, where: str, space: JointSpace, nspace, reasons: list[str], ctx
                 reasons.append(f"{where}: sampling strategy {type(s.sampling).__name__} has no native form")
                 return None
         return _native.AllOf(children, projection, sampling)
-    reasons.append(f"{where}: {type(s).__name__} has no native form in v1.5.0")
+    reasons.append(f"{where}: {type(s).__name__} has no native form")
     return None
 
 
@@ -340,7 +333,7 @@ def _raise_no_roots(e) -> None:
     details = list(report.details)
     if report.draws:
         details.append("sampling: " + report.summary())
-    raise cls(report.explicit_candidates + report.rejections(), details) from None
+    raise cls(report.candidates(), details) from None
 
 
 def solve(lowered: Lowered, seed: int | None, abort_fn: Callable[[], bool] | None):
