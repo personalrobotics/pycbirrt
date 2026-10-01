@@ -6,6 +6,31 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-09-30
+
+sscbirrt becomes effortless to start with. `pip install "sscbirrt[demo]"`
+then `sscbirrt-demo` renders MuJoCo demos with no Menagerie clone: the robot
+models come from the new `sscbirrt-assets` wheel. `sscbirrt.mujoco` plans for
+an arm in a MuJoCo world in one call:
+`plan(model, data, Arm(model, joints, site, mjcf=...), goal=...)`. Errors
+name what exists and how to fix it. Names are consistent across the API, and
+the README opens with something you can run.
+
+Migrating from 3.0.0: nothing breaks. Renamed names keep working with a
+`DeprecationWarning` until 4.0:
+- `ik_solver` → `ik`;
+- `tsr_samples` / `max_ik_per_pose` → `sample_draws` / `max_per_draw`;
+- `angular_joints` → `continuous_joints`;
+- `seeds` → `explicit_samples`;
+- `plan_native` → `sscbirrt.mujoco.plan`.
+
+Two behaviours tighten:
+- A MuJoCo model with free bodies now needs explicit `joint_names`.
+- A malformed `start` or `goal` raises a `ValueError`. Seeded TSR plans on
+  arms whose IK enumerates many solutions per pose (SSIK on the UR5e) take
+  different, equally valid paths, because roots are now a random subset of
+  each draw (#168).
+
 ### Added
 - `sscbirrt-demo` (`pip install "sscbirrt[demo]"`): rendered MuJoCo demos on
   `sscbirrt.mujoco`, with no Menagerie clone and no system ffmpeg (#163-#165).

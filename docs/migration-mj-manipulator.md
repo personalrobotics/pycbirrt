@@ -14,14 +14,17 @@ caller must keep.
 | Today, in `Arm.create_planner` | On the boundary |
 |---|---|
 | `self.env.fork()` for an isolated `MjData` | `NativeScene.from_model(model, joint_names, extra_arm_bodies)`: an `mjModel` sscbirrt owns, built once from the compiled model's MJB bytes and cached by their hash; nothing borrows the live model. |
-| `ContextRobotModel(model, data, ...)` | `MuJoCoRobotModel(model, data, ee_site, joint_names)`, or nothing: `plan_native` builds it. Its forward kinematics must agree with the SSIK model's; lowering checks that at the start configurations and refuses with a reason if they differ by more than 1e-6. |
+| `ContextRobotModel(model, data, ...)` | `MuJoCoRobotModel(model, data, ee_site, joint_names)`, or nothing: `sscbirrt.mujoco.Arm(model, joint_names, ee_site, mjcf=...)` builds it, with the SSIK solver. Its forward kinematics must agree with the SSIK model's; lowering checks that at the start configurations and refuses with a reason if they differ by more than 1e-6. |
 | `CollisionChecker(model, data, joint_names, grasped_objects=..., attachments=..., extra_arm_body_names=...)` in snapshot mode | `Snapshot.capture(scene, data, attachments={object: (gripper_body, T_gripper_object)})` on the owner thread, then `NativeCollisionChecker(scene, snapshot)`. The gripper-base rule (`<prefix>/base` when it exists, else the attachment body) is resolved to body ids at capture. |
 | `continuous_joints(model, joint_names)` | Unchanged: `CBiRRTConfig(continuous_joints=...)`. Unlimited joints are reported as ±∞ by both robot models and the space demands the declaration. |
-| `CBiRRT(robot, ik, collision, config).plan(...)` | `plan_native(model, data, joint_names, ik=..., start=..., goal_tsrs=..., attachments=..., config=..., seed=...)`, or the same `CBiRRT(..., backend="native")` with a `NativeCollisionChecker` as the validator. |
+| `CBiRRT(robot, ik, collision, config).plan(...)` | `sscbirrt.mujoco.plan(model, data, arm, start=..., goal=..., constraint=..., holding=..., config=..., seed=...)`, or the same `CBiRRT(..., backend="native")` with a `NativeCollisionChecker` as the validator. `holding` takes body names (the grasp from the current poses) or the `{object: (gripper_body, T_gripper_object)}` dict. `plan_native(model, data, joint_names, ...)`, the 1.7 form of this call, is deprecated since 3.1.0. |
 
-The IK is `SSIKSolver(ssik.Manipulator.from_mjcf(ur5e_xml, base="world",
-ee="wrist_3_link"), T_ee=site_offset_in_body(model, "attachment_site"))`,
-built from the same MJCF as the MuJoCo model.
+The IK is SSIK built from the same MJCF as the MuJoCo model.
+`Arm(model, joint_names, ee_site, mjcf=ur5e_xml)` builds it and computes both
+frame offsets from the model (so an arm attached anywhere, with a name prefix,
+works), then checks that the two forward kinematics agree. By hand:
+`SSIKSolver(ssik.Manipulator.from_mjcf(ur5e_xml, base="world",
+ee="wrist_3_link"), T_ee=site_offset_in_body(model, "attachment_site"))`.
 
 ## What the result carries
 
@@ -58,13 +61,13 @@ first criterion), and it does not own the simulator or its threads.
 4. **One validator per solve.** Lowering creates a fresh validator with its
    own `mjData` for every solve; two solves in parallel never share one. Do
    not hand one `NativeCollisionChecker` to two threads' Python code either.
-5. **Pin `mujoco==3.14.0`** for sscbirrt 1.7 and 2.0, the versions built against it; the
+5. **Pin `mujoco==3.14.0`** for sscbirrt 1.7 through 3.1, the versions built against it; the
    native scene refuses another MuJoCo with a message naming the three
    versions it sees.
 6. **Unsupported means Python.** TSR chains, IK other than SSIK on a verified
    family, and any Python validator make `backend="native"` raise
-   `NativeUnsupported` listing every blocker, and `backend="auto"` (or
-   `plan_native(..., fallback=True)`) select the Python planner and record
+   `NativeUnsupported` listing every blocker, and `backend="auto"` (the
+   default, also for `sscbirrt.mujoco.plan`) selects the Python planner and records
    the reasons. The semantics are the same; the parity gate checks that.
 
 ## Downstream milestone
