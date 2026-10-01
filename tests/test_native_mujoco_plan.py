@@ -4,7 +4,6 @@
 """The one-call native path from a live MuJoCo world (#88, #140)."""
 
 import os
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -78,11 +77,9 @@ class TestUR5eReleaseCases:
     @pytest.fixture(scope="class")
     def world(self):
         ssik = pytest.importorskip("ssik")
-        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "examples"))
-        from ur5e_mujoco import create_grasp_tsr, create_scene
-
         from sscbirrt.backends.mujoco import site_offset_in_body
         from sscbirrt.backends.ssik import SSIKSolver
+        from sscbirrt.testing.ur5e import create_grasp_tsr, create_scene
 
         menagerie = Path(os.environ["MUJOCO_MENAGERIE_PATH"])
         model = create_scene(menagerie, free_cylinder=True)

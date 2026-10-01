@@ -11,7 +11,6 @@ With SSIK every in-limit winding is returned as well (#36, #63).
 """
 
 import os
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -23,14 +22,13 @@ MENAGERIE = os.environ.get("MUJOCO_MENAGERIE_PATH")
 if not MENAGERIE or not (Path(MENAGERIE) / "universal_robots_ur5e").exists():
     pytest.skip("MUJOCO_MENAGERIE_PATH not set to a mujoco_menagerie clone", allow_module_level=True)
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "examples"))
 from tsr import TSR  # noqa: E402
-from ur5e_mujoco import create_grasp_tsr, create_scene  # noqa: E402
 
 from sscbirrt import CBiRRT, CBiRRTConfig  # noqa: E402
 from sscbirrt.backends.mujoco import MuJoCoCollisionChecker, MuJoCoRobotModel, site_offset_in_body  # noqa: E402
 from sscbirrt.backends.ssik import SSIKSolver  # noqa: E402
 from sscbirrt.space import JointSpace  # noqa: E402
+from sscbirrt.testing.ur5e import create_grasp_tsr, create_scene  # noqa: E402
 from sscbirrt.tsr_set import TSRConfigurationSet  # noqa: E402
 
 JOINTS = [
@@ -196,3 +194,36 @@ def test_door_handle_chain_goal_on_the_ur5e(ur5e):
     # The handle is on the door's swing arc: 0.25 m from the hinge axis in the xy plane
     assert np.linalg.norm(T_end[:2, 3] - T_hinge[:2, 3]) == pytest.approx(0.25, abs=2e-3)
     assert all(collision.is_valid(q) for q in result.path)
+
+
+class TestMuJoCoDifferentialIK:
+    """MuJoCo's differential IK on the full UR5e, the non-SSIK path, exercised even where SSIK is installed (#65).
+
+    Moved from the removed example tests (#166)."""
+
+    HOME = np.array([0, -np.pi / 2, np.pi / 2, -np.pi / 2, -np.pi / 2, 0])
+
+    def _world(self):
+        from sscbirrt.backends.mujoco import MuJoCoIKSolver
+
+        model = create_scene(Path(MENAGERIE))
+        data = mujoco.MjData(model)
+        robot = MuJoCoRobotModel(model, data, "attachment_site", JOINTS)
+        collision = MuJoCoCollisionChecker(model, data, JOINTS)
+        ik = MuJoCoIKSolver(model, data, "attachment_site", JOINTS, collision_checker=collision, seed=0)
+        return robot, collision, ik
+
+    def test_solves_a_nontrivial_pose_from_a_seed(self):
+        robot, _, ik = self._world()
+        target = robot.forward_kinematics(self.HOME + np.array([0.3, 0.2, -0.2, 0.1, 0.1, 0.4]))
+        sols = ik.solve(target, q_init=self.HOME)  # requires iterative updates from the seed
+        assert sols
+        assert np.linalg.norm(robot.forward_kinematics(sols[0])[:3, 3] - target[:3, 3]) < 5e-3
+
+    def test_plans_to_a_grasp_region(self):
+        robot, collision, ik = self._world()
+        planner = CBiRRT(robot, ik, collision, CBiRRTConfig(timeout=60.0, goal_bias=0.15, sample_draws=100))
+        result = planner.plan(start=self.HOME, goal_tsrs=[create_grasp_tsr(np.array([0.45, 0.15, 0.47]))], seed=0,
+                              return_details=True)  # fmt: skip
+        assert result.success, result.failure_reason
+        assert all(collision.is_valid(q) for q in result.path)

@@ -48,7 +48,7 @@ Wheels for Linux x86_64 and macOS arm64, Python 3.10 through 3.14, include the
 native core with the SSIK and MuJoCo adapters. `numpy` and `sstsr` (Task Space
 Regions, imported as `tsr`) are installed as dependencies; the `mujoco` extra
 pins the exact MuJoCo the extension is built against. `sscbirrt-assets` packages
-the MuJoCo Menagerie UR5e and Robotiq 2F-85 so the examples need no clone.
+the MuJoCo Menagerie UR5e and Robotiq 2F-85 so the demos need no clone.
 
 From a checkout or the sdist, the extension compiles on install and needs
 CMake 3.16+ and a C++20 compiler; the build fetches scikit-build-core,
@@ -365,9 +365,9 @@ The right panel is configuration space; red regions are in collision.
 </p>
 
 <p align="center">
-  <img src="docs/images/tsr_union_demo.gif" alt="UR5e planning side grasps" width="400">
+  <img src="docs/images/pick_yellow_seed5.gif" alt="UR5e planning into a union of side-grasp regions" width="400">
   <br>
-  <em>UR5e planning into a union of side-grasp regions.</em>
+  <em>A goal that is a union of side-grasp regions over three cans (<code>sscbirrt-demo pick</code>).</em>
 </p>
 
 ## Configuration
@@ -667,25 +667,23 @@ explicit configurations, and refuses with a reason if it does not.
 ## Examples
 
 ```bash
-uv pip install -e ".[examples]"         # matplotlib and mediapy for plots and video
+# MuJoCo: a UR5e with a Robotiq 2F-85, rendered to MP4 (pip install "sscbirrt[demo]")
+sscbirrt-demo                           # pick, transport, and door
+sscbirrt-demo --list                    # what each one shows
+sscbirrt-demo pick --seed 3             # one scenario, another seed
 
-# 2-DOF planar arm (numpy and sstsr only)
-python examples/planar_arm.py           # All examples
-python examples/planar_arm.py -e 1      # Basic planning
-python examples/planar_arm.py -e 2      # Start/goal TSRs
-python examples/planar_arm.py -e 3      # Constrained planning
-python examples/multi_config_demo.py    # Several start and goal configurations
-
-# UR5e with Robotiq gripper (MuJoCo; the models from sscbirrt-assets or a Menagerie clone)
-export MUJOCO_MENAGERIE_PATH=$(python -c "import sscbirrt_assets; print(sscbirrt_assets.menagerie_path())")
-python examples/ur5e_mujoco.py --no-viz         # Grasp planning with a TSR goal
-python examples/tsr_union_demo.py               # Multiple grasp approaches, rendered to video
-python examples/ur5e_transport.py --no-viz      # Constrained transport: gripper kept pointing down
+# A 2-DOF planar arm with matplotlib plots of the trees (no simulator)
+uv pip install -e ".[examples]"
+python examples/planar_arm.py           # all four
+python examples/planar_arm.py -e 1      # basic planning
+python examples/planar_arm.py -e 2      # start and goal TSRs
+python examples/planar_arm.py -e 3      # a path constraint
+python examples/planar_arm.py -e 4      # several start and goal configurations
 ```
 
-The UR5e examples accept `--ik {auto,ssik,mujoco}` and `--seed N`; SSIK is
-used when installed, otherwise MuJoCo differential IK. Interactive viewing on
-macOS needs `mjpython`.
+The demos are the MuJoCo examples to read: each scenario in
+[`src/sscbirrt/demo/scenarios/`](src/sscbirrt/demo/scenarios/) is one file
+built on `sscbirrt.mujoco`, and `sscbirrt-demo` runs them.
 
 ## References
 

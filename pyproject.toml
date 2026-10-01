@@ -46,8 +46,7 @@ demo = [
     "pillow>=10.1",  # ImageFont.load_default(size=) for the overlay text
 ]
 examples = [
-    "matplotlib",
-    "mediapy",
+    "matplotlib",  # the planar example's plots; the MuJoCo examples are the demos (sscbirrt[demo])
 ]
 dev = [
     "pytest>=7.0",
