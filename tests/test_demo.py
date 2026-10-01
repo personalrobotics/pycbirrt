@@ -37,17 +37,15 @@ def test_pick_plans_and_reports_without_rendering(capsys):
 
 
 def test_transport_constraint_holds(capsys):
-    """The claim: the upright carry stays within the constraint; the free carry, same endpoints, does not."""
+    """The claim: every waypoint of the carry keeps the can within the constraint."""
     import numpy as np
 
     from sscbirrt.demo.scenarios.transport import TILT_LIMIT
 
     assert main(["transport", "--no-video", "--seed", "0"]) == 0
     out = capsys.readouterr().out
-    free = float(out.split("free carry:")[1].split("max tilt")[1].split("deg")[0])
     upright = float(out.split("upright carry:")[1].split("max tilt")[1].split("deg")[0])
     assert upright <= np.degrees(np.hypot(TILT_LIMIT, TILT_LIMIT)) + 0.1  # roll and pitch each at most TILT_LIMIT
-    assert free > 10.0
 
 
 def test_door_follows_the_arc(capsys):
@@ -111,10 +109,11 @@ def test_unknown_scenario_is_a_usage_error(capsys):
     ],
 )
 def test_headless_gl_default(monkeypatch, platform, env, expected):
-    for key in ("MUJOCO_GL", "DISPLAY", "WAYLAND_DISPLAY"):
-        monkeypatch.delenv(key, raising=False)
-    for key, value in env.items():
-        monkeypatch.setenv(key, value)
+    # A private copy of the environment: headless_gl_default writes MUJOCO_GL, and a leaked "egl" would reach
+    # every later subprocess (on macOS the example scripts then fail to import MuJoCo).
+    fake = {k: v for k, v in os.environ.items() if k not in ("MUJOCO_GL", "DISPLAY", "WAYLAND_DISPLAY")}
+    fake.update(env)
+    monkeypatch.setattr(os, "environ", fake)
     monkeypatch.setattr(sys, "platform", platform)
     headless_gl_default()
-    assert os.environ.get("MUJOCO_GL") == expected
+    assert fake.get("MUJOCO_GL") == expected

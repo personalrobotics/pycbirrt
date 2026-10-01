@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Siddhartha Srinivasa
 
-"""transport: carry a held can across the table twice, free and then kept upright by a path constraint."""
+"""transport: carry a held can across the table, kept upright the whole way by a path constraint."""
 
 from __future__ import annotations
 
@@ -113,45 +113,30 @@ def run(seed: int) -> Outcome:
     if not carried.success:
         return Outcome(False, [f"upright: no path: {carried.failure_reason}"], model, data)
 
-    # Then the same carry, same start and same goal configuration, with no constraint: the only difference is the
-    # constraint, so what the free path does to the can is what the constraint prevents.
-    q_start, q_goal = carried.path[0], carried.path[-1]
-    free = plan(model, data, arm, start=q_start, goal=q_goal, holding=held, config=config, seed=seed)
-    if not free.success:
-        return Outcome(False, [f"free: no path: {free.failure_reason}"], model, data)
-
+    view_tilts = [tilt(model, view, q) for q in carried.path]
     report = [
-        f"free carry:    max tilt {np.degrees(max_tilt(free.path)):5.1f} deg, {length(free.path):.2f} rad of joint "
-        f"travel, {free.backend}, {free.planning_time:.2f} s",
-        f"upright carry: max tilt {np.degrees(max_tilt(carried.path)):5.1f} deg, "
-        f"{length(carried.path):.2f} rad of joint travel, {carried.backend}, {carried.planning_time:.2f} s",
+        f"upright carry: max tilt {np.degrees(max(view_tilts)):.1f} deg, {length(carried.path):.2f} rad of joint "
+        f"travel, {carried.backend}, {carried.planning_time:.2f} s",
         f"constraint: the can's roll and pitch each within {np.degrees(TILT_LIMIT):.2f} deg "
         f"(so its tilt within {np.degrees(np.hypot(TILT_LIMIT, TILT_LIMIT)):.2f} deg)",
-        "start: chosen from every grasp of the can, so that an upright carry exists; both carries share it and "
-        "the goal",
+        "start: chosen from every grasp of the can, so that an upright carry exists",
     ]
-
-    def clip(carry, title, lines):
-        return Clip(
-            path=carry.path,
-            title=title,
-            lines=lines,
+    clips = [
+        Clip(
+            path=carried.path,
+            title="Carried upright: a path constraint",
+            lines=["Constraint: keep the can upright"],
             caption=lambda q: f"tilt {np.degrees(tilt(model, view, q)):5.1f} deg",
             held=(CAN, held[CAN][1]),
             grip=2 * CAN_RADIUS,
         )
-
-    # The overlay states each case in words; the numbers are in the report.
-    clips = [
-        clip(free, "Carried freely", ["No constraint on the path"]),
-        clip(carried, "Carried upright: a path constraint", ["Constraint: keep the can upright"]),
     ]
-    set_arm(model, data, q_start)
+    set_arm(model, data, carried.path[0])
     return Outcome(True, report, model, data, clips, Camera())
 
 
 SCENARIO = Scenario(
     name="transport",
-    claim="a path constraint holds everywhere: the same carry, same start and goal, free and then kept upright",
+    claim="a path constraint holds everywhere: the can is carried over a box and kept upright the whole way",
     run=run,
 )

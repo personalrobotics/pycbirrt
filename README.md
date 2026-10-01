@@ -14,28 +14,27 @@ constraints. Task Space Regions are one representation of a set; the planner
 does not depend on it, and sets you define yourself take the same roles.
 
 <table>
-<tr><td><img src="docs/images/pick_yellow_seed0.gif" alt="UR5e reaching the yellow can, over the boxes" width="100%"></td><td><img src="docs/images/pick_green_seed1.gif" alt="UR5e reaching the green can, straight in" width="100%"></td><td><img src="docs/images/pick_blue_seed34.gif" alt="UR5e reaching the blue can, into the gap" width="100%"></td></tr>
-<tr><td align="center"><sub>yellow can, over the boxes (seed 0)</sub></td><td align="center"><sub>green can, straight in (seed 1)</sub></td><td align="center"><sub>blue can, into the gap (seed 34)</sub></td></tr>
-<tr><td><img src="docs/images/pick_yellow_seed16.gif" alt="UR5e reaching the yellow can, from another side" width="100%"></td><td><img src="docs/images/pick_green_seed17.gif" alt="UR5e reaching the green can, a different grasp" width="100%"></td><td><img src="docs/images/pick_yellow_seed9.gif" alt="UR5e reaching the yellow can, around the right box" width="100%"></td></tr>
-<tr><td align="center"><sub>yellow can, from another side (seed 16)</sub></td><td align="center"><sub>green can, a different grasp (seed 17)</sub></td><td align="center"><sub>yellow can, around the right box (seed 9)</sub></td></tr>
+<tr><td><img src="docs/images/pick_yellow_seed5.gif" alt="UR5e reaching the yellow can, from the near side" width="100%"></td><td><img src="docs/images/pick_green_seed22.gif" alt="UR5e reaching the green can, straight in" width="100%"></td><td><img src="docs/images/pick_blue_seed12.gif" alt="UR5e reaching the blue can, over the boxes" width="100%"></td></tr>
+<tr><td align="center"><sub>yellow can, from the near side (seed 5)</sub></td><td align="center"><sub>green can, straight in (seed 22)</sub></td><td align="center"><sub>blue can, over the boxes (seed 12)</sub></td></tr>
+<tr><td><img src="docs/images/pick_yellow_seed15.gif" alt="UR5e reaching the yellow can, over the boxes" width="100%"></td><td><img src="docs/images/pick_green_seed57.gif" alt="UR5e reaching the green can, another grasp" width="100%"></td><td><img src="docs/images/pick_yellow_seed54.gif" alt="UR5e reaching the yellow can, a wide arc" width="100%"></td></tr>
+<tr><td align="center"><sub>yellow can, over the boxes (seed 15)</sub></td><td align="center"><sub>green can, another grasp (seed 57)</sub></td><td align="center"><sub>yellow can, a wide arc (seed 54)</sub></td></tr>
 </table>
 
 Six runs of one call, `plan(model, data, arm, goal=grasps)`, where `grasps` is
 every side grasp of every can: 18 regions. Each seed lets the planner choose a
 different can, grasp, and route around the red boxes, planned natively in
-0.01 to 0.18 s. `sscbirrt-demo pick --seed N` renders any of them.
+0.02 to 0.12 s. `sscbirrt-demo pick --seed N` renders any of them.
 
 <table>
-<tr><td><img src="docs/images/transport_free.gif" alt="UR5e carried freely: the can tips" width="100%"></td><td><img src="docs/images/transport_upright.gif" alt="UR5e carried upright: a path constraint" width="100%"></td><td><img src="docs/images/door.gif" alt="UR5e opening a door: a TSR chain" width="100%"></td></tr>
-<tr><td align="center"><sub>carried freely: the can tips</sub></td><td align="center"><sub>carried upright: a path constraint</sub></td><td align="center"><sub>opening a door: a TSR chain</sub></td></tr>
+<tr><td><img src="docs/images/transport.gif" alt="UR5e carrying a can upright over a box" width="100%"></td><td><img src="docs/images/door.gif" alt="UR5e opening a door: a TSR chain" width="100%"></td></tr>
+<tr><td align="center"><sub>carrying a can upright: a path constraint</sub></td><td align="center"><sub>opening a door: a TSR chain</sub></td></tr>
 </table>
 
-The same carry twice, from the same grasp to the same place: without a
-constraint the can leans as the arm lifts it over the box; with a path
-constraint that keeps it upright, it stays level all the way. The door's
-constraint is a TSR chain, the hinge and then the grasp on the handle, so
-the gripper follows the handle's arc as the door swings open.
-`sscbirrt-demo transport door` renders both.
+A path constraint holds at every point of the path: the can is lifted over
+the box and set down without tipping. The door's constraint is a TSR chain,
+the hinge and then the grasp on the handle, so the gripper follows the
+handle's arc as the door swings open. `sscbirrt-demo transport door`
+renders both.
 
 ## Install
 

@@ -6,8 +6,8 @@
     uv run python tools/readme_gifs.py                    # all of them
     uv run python tools/readme_gifs.py transport door     # only these scenarios
 
-pick: one GIF per seed (docs/images/pick_<can>_seed<N>.gif). transport: the free and the upright carry as two GIFs
-(transport_free.gif, transport_upright.gif), shown side by side. door: the reach and the opening (door.gif).
+pick: one GIF per seed (docs/images/pick_<can>_seed<N>.gif). transport: the upright carry (transport.gif). door: the
+reach and the opening (door.gif).
 
 Each GIF is rendered without the text overlay (the README captions each one), at 1024x576 scaled to 400 wide,
 12 fps, the motion at 1.5x the demo's speed, through a two-pass palette with the ffmpeg that imageio-ffmpeg
@@ -30,8 +30,8 @@ import imageio_ffmpeg  # noqa: E402
 from sscbirrt.demo.render import render_video  # noqa: E402
 from sscbirrt.demo.scenarios import door, pick, transport  # noqa: E402
 
-# Seeds chosen from a sweep of 0-59 for variety: every can, different sides, different routes, all planned fast.
-SEEDS = [0, 16, 9, 1, 17, 34]
+# Seeds chosen from a sweep of 0-59 (after #169) for variety: every can, different grasp regions, all planned fast.
+SEEDS = [5, 22, 12, 15, 57, 54]
 OUT = Path(__file__).resolve().parent.parent / "docs" / "images"
 FILTER = (
     "fps=12,scale=400:-1:flags=lanczos,split[a][b];"
@@ -77,9 +77,7 @@ def main(argv: list[str]) -> int:
         if not outcome.ok:
             print(f"transport: {outcome.report[-1]}", file=sys.stderr)
             return 1
-        free, upright = outcome.clips
-        write_gif(outcome, [free], OUT / "transport_free.gif")
-        write_gif(outcome, [upright], OUT / "transport_upright.gif")
+        write_gif(outcome, outcome.clips, OUT / "transport.gif")
     if "door" in chosen:
         outcome = door.run(0)
         if not outcome.ok:
