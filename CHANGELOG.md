@@ -80,6 +80,14 @@ follows [Semantic Versioning](https://semver.org/).
   which silently gave the wrong DOF; they ask for the arm's joints and list
   them (#173).
 
+### Documentation
+- The README starts with installing and a runnable MuJoCo plan
+  (`sscbirrt.mujoco` with the packaged UR5e), then the concepts. The
+  `PlanResult` table lists `backend`, `backend_reasons`, `provenance` and
+  `stats`. The MuJoCo snippets use real site names, and the tsr hand models
+  are introduced for grasp regions. `tests/test_readme.py` runs the snippets
+  (#178).
+
 ## [3.0.0] - 2026-09-30
 
 pycbirrt becomes **sscbirrt**, and this is the first release on PyPI:
