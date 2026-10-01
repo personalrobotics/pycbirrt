@@ -37,6 +37,14 @@ dependencies = [
 [project.optional-dependencies]
 mujoco = ["mujoco==3.14.0"]  # exact: sscbirrt._native_mujoco is built against this MuJoCo and refuses another (docs/native-design.md, v1.7.0)
 ssik = ["ssik>=7.0,<8"]  # 7.0 ships the ssik_cpp headers and ssik.cpp.joint_data for the native SSIK adapter (ssik#641)
+# `sscbirrt-demo`: rendered MuJoCo scenarios. The robot models come from the sscbirrt-assets data wheel;
+# imageio[ffmpeg] brings its own ffmpeg binary, so no system package is needed.
+demo = [
+    "sscbirrt[mujoco,ssik]",
+    "sscbirrt-assets>=1,<2",
+    "imageio[ffmpeg]>=2.30",
+    "pillow>=10.1",  # ImageFont.load_default(size=) for the overlay text
+]
 examples = [
     "matplotlib",
     "mediapy",
@@ -47,7 +55,14 @@ dev = [
     "ruff>=0.15,<0.16",  # formatter style only changes in minor releases; bump deliberately
     "hypothesis>=6.100",
 ]
-all = ["sscbirrt[mujoco,ssik,examples,dev]"]
+all = ["sscbirrt[mujoco,ssik,demo,examples,dev]"]
+
+[project.scripts]
+sscbirrt-demo = "sscbirrt.demo.__main__:main"
+
+# Develop against the in-repo asset package (assets/, built by its hook from the pinned menagerie).
+[tool.uv.sources]
+sscbirrt-assets = { path = "assets" }
 
 [build-system]
 # ssik is a build requirement so the isolated build can ask it for the ssik_cpp CMake package

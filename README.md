@@ -1,5 +1,9 @@
 # sscbirrt
 
+[![PyPI](https://img.shields.io/pypi/v/sscbirrt.svg?v=1)](https://pypi.org/project/sscbirrt/)
+[![Python](https://img.shields.io/pypi/pyversions/sscbirrt.svg?v=1)](https://pypi.org/project/sscbirrt/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A planner over sets of configurations. A planning problem names a start set,
 a goal set, a set the whole path must stay inside, and a validity predicate;
 a solution is a path that begins in the start set, ends in the goal set, and
@@ -9,11 +13,35 @@ a bidirectional RRT that grows trees from many roots and projects onto
 constraints. Task Space Regions are one representation of a set; the planner
 does not depend on it, and sets you define yourself take the same roles.
 
+<table>
+<tr><td><img src="docs/images/pick_yellow_seed5.gif" alt="UR5e reaching the yellow can, from the near side" width="100%"></td><td><img src="docs/images/pick_green_seed22.gif" alt="UR5e reaching the green can, straight in" width="100%"></td><td><img src="docs/images/pick_blue_seed12.gif" alt="UR5e reaching the blue can, over the boxes" width="100%"></td></tr>
+<tr><td align="center"><sub>yellow can, from the near side (seed 5)</sub></td><td align="center"><sub>green can, straight in (seed 22)</sub></td><td align="center"><sub>blue can, over the boxes (seed 12)</sub></td></tr>
+<tr><td><img src="docs/images/pick_yellow_seed15.gif" alt="UR5e reaching the yellow can, over the boxes" width="100%"></td><td><img src="docs/images/pick_green_seed57.gif" alt="UR5e reaching the green can, another grasp" width="100%"></td><td><img src="docs/images/pick_yellow_seed54.gif" alt="UR5e reaching the yellow can, a wide arc" width="100%"></td></tr>
+<tr><td align="center"><sub>yellow can, over the boxes (seed 15)</sub></td><td align="center"><sub>green can, another grasp (seed 57)</sub></td><td align="center"><sub>yellow can, a wide arc (seed 54)</sub></td></tr>
+</table>
+
+Six runs of one call, `plan(model, data, arm, goal=grasps)`, where `grasps` is
+every side grasp of every can: 18 regions. Each seed lets the planner choose a
+different can, grasp, and route around the red boxes, planned natively in
+0.02 to 0.12 s. `sscbirrt-demo pick --seed N` renders any of them.
+
+<table>
+<tr><td><img src="docs/images/transport.gif" alt="UR5e carrying a can upright over a box" width="100%"></td><td><img src="docs/images/door.gif" alt="UR5e opening a door: a TSR chain" width="100%"></td></tr>
+<tr><td align="center"><sub>carrying a can upright: a path constraint</sub></td><td align="center"><sub>opening a door: a TSR chain</sub></td></tr>
+</table>
+
+A path constraint holds at every point of the path: the can is lifted over
+the box and set down without tipping. The door's constraint is a TSR chain,
+the hinge and then the grasp on the handle, so the gripper follows the
+handle's arc as the door swings open. `sscbirrt-demo transport door`
+renders both.
+
 ## Install
 
 ```bash
 pip install sscbirrt                                  # the planner, its C++ core, and Task Space Regions
 pip install "sscbirrt[mujoco,ssik]" sscbirrt-assets   # plus MuJoCo, analytical IK, and the UR5e model below
+pip install "sscbirrt[demo]" && sscbirrt-demo         # everything above, and the rendered demos (MP4s in ./sscbirrt-demo)
 ```
 
 Wheels for Linux x86_64 and macOS arm64, Python 3.10 through 3.14, include the
@@ -210,7 +238,7 @@ default. A custom `motion_validator` owns the whole edge check, and
 default discretized check. A custom `sampler` proposes the free-space
 targets the trees grow toward and defaults to the space's uniform sampling;
 replacing it trades away probabilistic completeness unless it has full
-support over the space. [docs/design.md](https://github.com/personalrobotics/sscbirrt/blob/main/docs/design.md) has the
+support over the space. [docs/design.md](docs/design.md) has the
 definitions, the composition rules, what the planner requires of each role,
 the tolerances, and the reference behavior artifact that pins the planner's
 semantics (`python tools/reference_artifact.py --check`).
@@ -506,7 +534,7 @@ before 3.1.0 and is deprecated.
 
 The snapshot is a value: `qpos`, mocap poses, and attachments copied at capture,
 so later changes to `data` do not reach a running solve. Downstream integration
-is described in [docs/migration-mj-manipulator.md](https://github.com/personalrobotics/sscbirrt/blob/main/docs/migration-mj-manipulator.md). The contact policy is
+is described in [docs/migration-mj-manipulator.md](docs/migration-mj-manipulator.md). The contact policy is
 mj_manipulator's (a grasped object may touch its gripper; everything else that
 touches the robot is a collision) and is checked against it on a checked-in
 corpus. `PlanResult.provenance` records the scene's MJB hash and the snapshot
@@ -563,7 +591,7 @@ tolerance.
 ### Native core (the default)
 
 The C++20 core in `cpp/` implements the same contract as the Python planner
-([docs/native-design.md](https://github.com/personalrobotics/sscbirrt/blob/main/docs/native-design.md)). It is built into the wheel
+([docs/native-design.md](docs/native-design.md)). It is built into the wheel
 as `sscbirrt._native`, and since 2.0 the planner selects it by default:
 
 ```python
