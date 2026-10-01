@@ -359,8 +359,7 @@ def ur5e_mujoco_cases(base: dict[str, Any]) -> list[dict[str, Any]]:
         print(f"note: UR5e MuJoCo cases skipped: {reason}", file=sys.stderr)
         return [_skipped(n, d, s, reason) for n, d, s in names]
 
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "examples"))
-    from ur5e_mujoco import create_grasp_tsr, create_scene  # noqa: E402
+    from sscbirrt.testing.ur5e import create_grasp_tsr, create_scene
 
     joints = [
         "shoulder_pan_joint",

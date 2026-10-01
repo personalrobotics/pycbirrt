@@ -7,6 +7,7 @@ This example demonstrates three planning scenarios:
 1. Basic planning with fixed start and goal TSR
 2. Planning with both start and goal TSRs (no fixed configurations)
 3. Constrained planning with a trajectory-wide constraint TSR
+4. Several start and goal configurations, connected by whichever pair the planner reaches
 
 This example requires only numpy and TSR - no MuJoCo or SSIK needed.
 
@@ -22,112 +23,20 @@ from matplotlib.patches import Circle, Rectangle
 from tsr import TSR
 
 from sscbirrt import CBiRRT, CBiRRTConfig
-from sscbirrt.tree import RRTree
+from sscbirrt.testing import PlanarArm, PlanarIK
 
 
-class PlanarArmRobot:
-    """Simple 2-DOF planar arm."""
-
-    def __init__(self, l1: float = 1.0, l2: float = 1.0):
-        self.l1 = l1
-        self.l2 = l2
-
-    @property
-    def dof(self) -> int:
-        return 2
-
-    @property
-    def joint_limits(self) -> tuple[np.ndarray, np.ndarray]:
-        return np.array([-np.pi, -np.pi]), np.array([np.pi, np.pi])
-
-    def forward_kinematics(self, q: np.ndarray) -> np.ndarray:
-        """Compute end-effector pose (embedded in 4x4 for TSR compatibility)."""
-        x = self.l1 * np.cos(q[0]) + self.l2 * np.cos(q[0] + q[1])
-        y = self.l1 * np.sin(q[0]) + self.l2 * np.sin(q[0] + q[1])
-
-        T = np.eye(4)
-        T[0, 3] = x
-        T[1, 3] = y
-        return T
-
-    def get_joint_positions(self, q: np.ndarray) -> list[np.ndarray]:
-        """Get positions of base, elbow, and end-effector for visualization."""
-        base = np.array([0.0, 0.0])
-        elbow = np.array(
-            [
-                self.l1 * np.cos(q[0]),
-                self.l1 * np.sin(q[0]),
-            ]
-        )
-        ee = np.array(
-            [
-                self.l1 * np.cos(q[0]) + self.l2 * np.cos(q[0] + q[1]),
-                self.l1 * np.sin(q[0]) + self.l2 * np.sin(q[0] + q[1]),
-            ]
-        )
-        return [base, elbow, ee]
-
-
-class PlanarArmIK:
-    """Analytical IK for 2-DOF planar arm."""
-
-    def __init__(
-        self,
-        robot: PlanarArmRobot,
-        collision_checker: "CircleObstacleChecker",
-    ):
-        self.robot = robot
-        self.collision = collision_checker
-
-    def solve(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
-        """Return all kinematic IK solutions (unvalidated).
-
-        Note: q_init is ignored for analytical solver.
-        """
-        x, y = pose[0, 3], pose[1, 3]
-        d = np.sqrt(x**2 + y**2)
-
-        # Check reachability
-        if d > self.robot.l1 + self.robot.l2 - 1e-6 or d < abs(self.robot.l1 - self.robot.l2) + 1e-6:
-            return []
-
-        # Elbow angle via law of cosines
-        cos_q2 = (d**2 - self.robot.l1**2 - self.robot.l2**2) / (2 * self.robot.l1 * self.robot.l2)
-        cos_q2 = np.clip(cos_q2, -1, 1)
-
-        solutions = []
-        for sign in [1, -1]:  # Elbow up / elbow down
-            q2 = sign * np.arccos(cos_q2)
-            q1 = np.arctan2(y, x) - np.arctan2(self.robot.l2 * np.sin(q2), self.robot.l1 + self.robot.l2 * np.cos(q2))
-            solutions.append(np.array([q1, q2]))
-
-        return solutions
-
-    def solve_valid(self, pose: np.ndarray, q_init: np.ndarray | None = None) -> list[np.ndarray]:
-        """Return only valid IK solutions (within limits, collision-free).
-
-        Note: q_init is ignored for analytical solver.
-        """
-        solutions = self.solve(pose, q_init)
-        lower, upper = self.robot.joint_limits
-
-        valid = []
-        for q in solutions:
-            # Check joint limits
-            if not (np.all(q >= lower) and np.all(q <= upper)):
-                continue
-            # Check collisions
-            if not self.collision.is_valid(q):
-                continue
-            valid.append(q)
-
-        return valid
+def joint_positions(robot: PlanarArm, q: np.ndarray) -> list[np.ndarray]:
+    """Base, elbow, and tip of the arm in the plane, for drawing and for the obstacle checker."""
+    elbow = np.array([robot.l1 * np.cos(q[0]), robot.l1 * np.sin(q[0])])
+    tip = elbow + np.array([robot.l2 * np.cos(q[0] + q[1]), robot.l2 * np.sin(q[0] + q[1])])
+    return [np.zeros(2), elbow, tip]
 
 
 class CircleObstacleChecker:
     """Collision checker with circular obstacles."""
 
-    def __init__(self, robot: PlanarArmRobot, obstacles: list[tuple[np.ndarray, float]]):
+    def __init__(self, robot: PlanarArm, obstacles: list[tuple[np.ndarray, float]]):
         """
         Args:
             robot: The planar arm robot
@@ -138,7 +47,7 @@ class CircleObstacleChecker:
 
     def is_valid(self, q: np.ndarray) -> bool:
         """Check if arm configuration collides with any obstacle."""
-        positions = self.robot.get_joint_positions(q)
+        positions = joint_positions(self.robot, q)
 
         # Check each link (base->elbow, elbow->ee)
         for i in range(len(positions) - 1):
@@ -173,11 +82,11 @@ class CircleObstacleChecker:
 
 
 def visualize_result(
-    robot: PlanarArmRobot,
+    robot: PlanarArm,
     path: list[np.ndarray],
     obstacles: list[tuple[np.ndarray, float]],
-    tree_start: RRTree,
-    tree_goal: RRTree,
+    tree_start,
+    tree_goal,
     collision_checker: CircleObstacleChecker,
     start_region: tuple[np.ndarray, float] | None = None,
     goal_region: tuple[np.ndarray, float] | None = None,
@@ -232,7 +141,7 @@ def visualize_result(
     n_frames = len(path)
     for i, q in enumerate(path):
         alpha = 0.2 + 0.8 * (i / n_frames)
-        positions = robot.get_joint_positions(q)
+        positions = joint_positions(robot, q)
         xs = [p[0] for p in positions]
         ys = [p[1] for p in positions]
 
@@ -240,8 +149,8 @@ def visualize_result(
         ax_ws.plot(xs, ys, "o-", color=color, alpha=alpha, linewidth=2, markersize=5)
 
     # Draw start and end prominently
-    start_positions = robot.get_joint_positions(path[0])
-    end_positions = robot.get_joint_positions(path[-1])
+    start_positions = joint_positions(robot, path[0])
+    end_positions = joint_positions(robot, path[-1])
 
     ax_ws.plot(
         [p[0] for p in start_positions],
@@ -284,7 +193,7 @@ def visualize_result(
     ax_cs.contourf(Q1, Q2, collision_map, levels=[0.5, 1.5], colors=["red"], alpha=0.3)
 
     # Draw tree edges (handling angular wraparound)
-    def draw_tree(tree: RRTree, color: str, label: str):
+    def draw_tree(tree, color: str, label: str):
         for node in tree.nodes:
             if node.parent is not None:
                 parent = tree.nodes[node.parent]
@@ -417,13 +326,13 @@ def example_basic():
     print("Example 1: Basic Planning (fixed start, goal TSR)")
     print("=" * 60)
 
-    robot = PlanarArmRobot(l1=1.0, l2=1.0)
+    robot = PlanarArm()
     obstacles = [
         (np.array([1.2, 0.5]), 0.2),
         (np.array([0.5, 1.2]), 0.15),
     ]
     collision_checker = CircleObstacleChecker(robot, obstacles)
-    ik = PlanarArmIK(robot, collision_checker)
+    ik = PlanarIK(robot)
 
     config = CBiRRTConfig(
         step_size=0.3,
@@ -485,13 +394,13 @@ def example_start_goal_tsrs():
     print("Example 2: Planning with Start and Goal TSRs")
     print("=" * 60)
 
-    robot = PlanarArmRobot(l1=1.0, l2=1.0)
+    robot = PlanarArm()
     # Small obstacle that doesn't block too much
     obstacles = [
         (np.array([1.0, 0.0]), 0.15),
     ]
     collision_checker = CircleObstacleChecker(robot, obstacles)
-    ik = PlanarArmIK(robot, collision_checker)
+    ik = PlanarIK(robot)
 
     config = CBiRRTConfig(
         step_size=0.3,
@@ -569,11 +478,11 @@ def example_constrained():
     print("Example 3: Constrained Planning (y-band constraint)")
     print("=" * 60)
 
-    robot = PlanarArmRobot(l1=1.0, l2=1.0)
+    robot = PlanarArm()
     # No obstacles for this example - the constraint is the challenge
     obstacles = []
     collision_checker = CircleObstacleChecker(robot, obstacles)
-    ik = PlanarArmIK(robot, collision_checker)
+    ik = PlanarIK(robot)
 
     config = CBiRRTConfig(
         step_size=0.2,
@@ -659,14 +568,39 @@ def example_constrained():
     )
 
 
+def example_multiple_configs():
+    """Example 4: several start and goal configurations; the planner connects whichever pair it can."""
+    print("\n" + "=" * 60)
+    print("Example 4: Several start and goal configurations")
+    print("=" * 60)
+
+    robot = PlanarArm()
+    collision_checker = CircleObstacleChecker(robot, [(np.array([0.5, 1.2]), 0.15)])
+    config = CBiRRTConfig(step_size=0.3, continuous_joints=(True, True))  # both joints turn freely
+    planner = CBiRRT(robot, PlanarIK(robot), collision_checker, config)
+
+    starts = [np.array([np.pi / 4, 0.0]), np.array([np.pi / 4, 0.2])]
+    goals = [np.array([np.pi / 2, 0.0]), np.array([np.pi / 2, np.pi / 4])]
+    result = planner.plan(start=starts, goal=goals, seed=42, return_details=True)
+    if not result.success:
+        print(f"Planning failed: {result.failure_reason}")
+        return
+    print(f"Found a path with {len(result.path)} waypoints in {result.iterations} iterations")
+    print(f"  Start tree: {len(result.tree_start)} nodes from {result.tree_start.num_roots} roots")
+    print(f"  Goal tree:  {len(result.tree_goal)} nodes from {result.tree_goal.num_roots} roots")
+    # The result records which member each end came from (matching endpoints by value would break on continuous
+    # joints, where an endpoint may be re-expressed by a multiple of 2*pi).
+    print(f"  Connected start {result.start_index + 1} to goal {result.goal_index + 1}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="CBiRRT planar arm examples")
     parser.add_argument(
         "--example",
         "-e",
         type=int,
-        choices=[1, 2, 3],
-        help="Run specific example (1=basic, 2=start/goal TSRs, 3=constrained)",
+        choices=[1, 2, 3, 4],
+        help="Run one example (1=basic, 2=start/goal TSRs, 3=constrained, 4=several starts and goals)",
     )
     args = parser.parse_args()
 
@@ -676,11 +610,14 @@ def main():
         example_start_goal_tsrs()
     elif args.example == 3:
         example_constrained()
+    elif args.example == 4:
+        example_multiple_configs()
     else:
         # Run all examples
         example_basic()
         example_start_goal_tsrs()
         example_constrained()
+        example_multiple_configs()
 
 
 if __name__ == "__main__":

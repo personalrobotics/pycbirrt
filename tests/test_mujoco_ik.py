@@ -6,9 +6,6 @@
 Needs mujoco only; models are tiny MJCF strings.
 """
 
-import sys
-from pathlib import Path
-
 import numpy as np
 import pytest
 
@@ -139,18 +136,6 @@ class TestReproducibility:
         state_before = ik._rng.bit_generator.state
         ik.solve(target, q_init=q_init)
         assert ik._rng.bit_generator.state == state_before  # no randomness consumed
-
-    def test_examples_forward_seed_to_the_fallback(self, model_data):
-        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "examples"))
-        import tsr_union_demo
-        import ur5e_mujoco
-
-        model, data = model_data
-        collision = MuJoCoCollisionChecker(model, data, JOINTS)
-        for mod in (ur5e_mujoco, tsr_union_demo):
-            ik, name = mod.build_ik_solver(model, data, JOINTS, collision, Path("unused"), backend="mujoco", seed=7)
-            assert name == "mujoco"
-            assert ik._rng.bit_generator.state == np.random.default_rng(7).bit_generator.state
 
 
 class TestRobotModelLimits:

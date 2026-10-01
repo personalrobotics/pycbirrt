@@ -56,6 +56,15 @@ follows [Semantic Versioning](https://semver.org/).
 - `sscbirrt.backends.native_mujoco.plan_native`: use `sscbirrt.mujoco.plan`.
   It keeps working, with a `DeprecationWarning`, until 4.0 (#175).
 
+### Removed
+- The UR5e examples (`ur5e_mujoco.py`, `ur5e_transport.py`,
+  `tsr_union_demo.py`), superseded by `sscbirrt-demo` on `sscbirrt.mujoco`.
+  Their scene, which the reference artifact and the UR5e tests plan in, moved
+  unchanged to `sscbirrt.testing.ur5e`; the artifact is bit-for-bit
+  identical. `multi_config_demo.py` is now `planar_arm.py -e 4`, and
+  `planar_arm.py` uses `sscbirrt.testing`'s arm and IK. The `examples` extra
+  no longer installs mediapy (#166).
+
 ### Fixed
 - Roots kept from one sampling draw are now a random subset of its
   candidates, as `max_ik_per_pose`'s "for diversity" promised, on both
