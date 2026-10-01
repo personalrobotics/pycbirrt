@@ -1406,7 +1406,7 @@ validators is unchanged (they remain Python objects). `NativeScene.from_model`
 refuses a model whose `mujoco.__version__` differs from the module's
 build version.
 
-`plan_native(model, data, joint_names, *, ik, start, goal_tsrs, ...)` is
+`plan_native(model, data, joint_names, *, ik, start, goal_tsrs, ...)` (deprecated since 3.1.0 for `sscbirrt.mujoco.plan` with an `Arm`) is
 the one-call path #88 asks for: build or reuse the scene, capture the
 snapshot, build the `SSIKRobotModel` and lowering, solve with
 `backend="native"`, and return a `PlanResult` whose new `provenance` field
