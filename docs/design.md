@@ -352,11 +352,13 @@ frames, and their world-frame intersection is not the chain's set; a test
 shows a chain member lying in neither component.
 
 Two properties follow from the chain's numerical inverse: for two or more
-links, distance is the best residual a bounded multi-start solve found (an
-upper bound), so membership can be a false negative on a hard chain, and
-each membership test or projection step costs a few milliseconds. A chain
-as a goal is cheap; a chain as a path constraint pays that on every edge
-sample.
+links, distance is the best residual a bounded solve found (an upper
+bound), so membership can be a false negative on a hard chain, and each
+membership test or projection step costs a solve. In Python that is a few
+milliseconds, which a path constraint pays on every edge sample. The native
+backend runs sstsr's C++ chain (sstsr 3.3, #184), whose inverse is a
+different solver held to the same properties, so a chain plans natively
+like a single TSR.
 
 Independent TSRs on different robot links (an end-effector region and an
 elbow clearance region) are a different object: they compose as `AllOf` of
