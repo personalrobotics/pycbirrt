@@ -1,4 +1,8 @@
 @PACKAGE_INIT@
 
+include(CMakeFindDependencyMacro)
+# sscbirrt::tsr is built on sstsr's C++ core (#184): find it the way the build did, with no version pinned.
+find_dependency(sstsr_cpp CONFIG)
+
 include("${CMAKE_CURRENT_LIST_DIR}/sscbirrtTargets.cmake")
 check_required_components(sscbirrt)

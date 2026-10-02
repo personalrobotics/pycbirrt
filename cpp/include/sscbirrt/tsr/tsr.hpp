@@ -2,56 +2,52 @@
 // Copyright (c) 2025 Siddhartha Srinivasa
 #pragma once
 
-#include <array>
-#include <optional>
+#include <type_traits>
 #include <utility>
+#include <variant>
+
+#include <sstsr/rng.hpp>
+#include <sstsr/transform.hpp>
+#include <sstsr/tsr.hpp>
+#include <sstsr/tsr_chain.hpp>
 
 #include "sscbirrt/transform.hpp"
 #include "sscbirrt/types.hpp"
 
 namespace sscbirrt::tsr {
 
-constexpr double kEpsilon = 0.001;  // sstsr's utils.EPSILON: the containment slack
+// The pose regions are sstsr's own C++ (sstsr >= 3.3, #184): one implementation of the TSR and TSR-chain rules,
+// held to sstsr's Python by sstsr's conformance corpus. This header is the boundary to it.
+using sstsr::Bounds6;
+using sstsr::kEpsilon;
+using sstsr::TSR;
+using sstsr::TSRChain;
 
-// [lo, hi] for x, y, z, roll, pitch, yaw. A rotational row with hi < lo is an outer interval
-// wrapping through +-pi.
-struct Bounds6 {
-  std::array<std::array<double, 2>, 6> rows{};
-  double lo(int i) const { return rows[static_cast<std::size_t>(i)][0]; }
-  double hi(int i) const { return rows[static_cast<std::size_t>(i)][1]; }
-};
+// The core keeps its own Transform so that it depends on the standard library alone; the two are the same row-major
+// 4x4 of doubles, so crossing the boundary is a copy.
+inline sstsr::Transform to_sstsr(const Transform& T) {
+  sstsr::Transform out;
+  out.m = T.m;
+  return out;
+}
 
-// A Task Space Region: sstsr 3.2.0's tsr.TSR, rule for rule (docs/native-design.md, v1.6.0 addendum).
-class TSR {
- public:
-  TSR(Transform T0_w, Transform Tw_e, Bounds6 Bw);  // throws std::invalid_argument with sstsr's reasons
+inline Transform from_sstsr(const sstsr::Transform& T) {
+  Transform out;
+  out.m = T.m;
+  return out;
+}
 
-  const Transform& T0_w() const { return T0_w_; }
-  const Transform& Tw_e() const { return Tw_e_; }
-  const Bounds6& Bw() const { return Bw_; }
-  const Bounds6& continuous_bounds() const { return cont_; }  // sstsr's _Bw_cont
+// The planner's generator is passed straight to sstsr's sampling, so a seeded solve stays repeatable.
+static_assert(std::is_same_v<Rng, sstsr::Rng>, "sscbirrt and sstsr must draw from the same engine");
 
-  bool contains(const Transform& T) const;
-  double distance(const Transform& T) const;                      // 0 if contained; Berenson 2011 Sec. 4.2 otherwise
-  std::pair<double, XyzRpy> distance_bwopt(const Transform& T) const;  // sstsr's distance(): (dist, bwopt)
-  std::pair<double, Transform> closest_transform(const Transform& T) const;
-  XyzRpy sample_xyzrpy(Rng& rng) const;                            // six unit draws in coordinate order
-  Transform sample(Rng& rng) const;
-  Transform to_transform(const XyzRpy& v) const;                   // T0_w * xyzrpy_to_trans(v) * Tw_e; validates
-  XyzRpy to_xyzrpy(const Transform& T) const;
-  double volume() const;                                           // sstsr's _interval_sum
+// A pose region: a single TSR, or a chain of TSRs composed in series (a handle on a hinged door). A chain's distance
+// is the residual of a bounded inverse solve: an upper bound, exact on sstsr's exact paths, so a configuration it
+// rejects may still be in the region (sstsr #85). The same holds in sscbirrt's Python reference.
+using Region = std::variant<TSR, TSRChain>;
 
-  std::array<bool, 6> is_valid(const XyzRpy& v) const;
-
- private:
-  Transform local(const Transform& T) const;  // inv(T0_w) * T * inv(Tw_e)
-  std::array<bool, 3> xyz_within(const std::array<double, 3>& xyz) const;
-  std::array<bool, 3> rpy_within(const Rpy& rpy) const;
-  std::pair<std::array<bool, 3>, std::optional<Rpy>> rot_within_rpy_bounds(const Transform& local) const;
-  std::pair<XyzRpy, XyzRpy> displacement(const Transform& T) const;  // (dx, dw)
-
-  Transform T0_w_, Tw_e_, T0_w_inv_, Tw_e_inv_;
-  Bounds6 Bw_, cont_;
-};
+double region_distance(const Region& region, const Transform& T);
+std::pair<double, Transform> region_closest_transform(const Region& region, const Transform& T);
+Transform region_sample(const Region& region, Rng& rng);
+double region_volume(const Region& region);  // sstsr's _interval_sum; a chain's is the sum over its links
 
 }  // namespace sscbirrt::tsr

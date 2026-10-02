@@ -8,11 +8,14 @@
 
 #include "harness.hpp"
 #include "sscbirrt/sscbirrt.hpp"
+#include "sscbirrt/tsr/tsr.hpp"
+#include "sscbirrt/tsr/tsr_set.hpp"
 
 using namespace sscbirrt;
 using sscbirrt::tsr::Bounds6;
 using sscbirrt::tsr::TSR;
 using sscbirrt::tsr::TSRConfigurationSet;
+using sscbirrt::tsr::to_sstsr;
 constexpr double kPi = std::numbers::pi;
 
 namespace {
@@ -59,7 +62,7 @@ const Bounds6 kYBand{{{{-2.0, 2.0}, {-0.6, 0.6}, {0, 0}, {0, 0}, {0, 0}, {-kPi, 
 
 std::shared_ptr<TSRConfigurationSet> tsr_set(const std::shared_ptr<PlanarArm>& arm, const std::shared_ptr<JointSpace>& space,
                                              const Transform& T0_w, const Bounds6& Bw) {
-  return std::make_shared<TSRConfigurationSet>(TSR(T0_w, Transform::identity(), Bw), arm, arm, space, 1e-3, 50, 1e-6);
+  return std::make_shared<TSRConfigurationSet>(TSR(to_sstsr(T0_w), to_sstsr(Transform::identity()), Bw), arm, arm, space, 1e-3, 50, 1e-6);
 }
 
 PlannerConfig base() {
@@ -131,8 +134,8 @@ TEST(lifted_set_capabilities_and_construction) {
   }
   CHECK(candidates > 20);  // both elbow branches, most of the time
   auto three = std::make_shared<JointSpace>(std::vector<double>{-1, -1, -1}, std::vector<double>{1, 1, 1});
-  CHECK_THROWS(TSRConfigurationSet(TSR(frame(0, 0), Transform::identity(), kBox), arm, arm, three), std::invalid_argument);
-  CHECK_THROWS(TSRConfigurationSet(TSR(frame(0, 0), Transform::identity(), kBox), arm, arm, s, -1.0), std::invalid_argument);
+  CHECK_THROWS(TSRConfigurationSet(TSR(to_sstsr(frame(0, 0)), to_sstsr(Transform::identity()), kBox), arm, arm, three), std::invalid_argument);
+  CHECK_THROWS(TSRConfigurationSet(TSR(to_sstsr(frame(0, 0)), to_sstsr(Transform::identity()), kBox), arm, arm, s, -1.0), std::invalid_argument);
 }
 
 TEST(projection_returns_contained_in_limits_or_nothing) {

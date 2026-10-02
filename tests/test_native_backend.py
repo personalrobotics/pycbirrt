@@ -315,7 +315,8 @@ class TestTSRLowering:
 
         from tsr import TSRChain
 
-        chain = TSRConfigurationSet(TSRChain(TSRs=[goal.tsr, goal.tsr]), robot, ik, planner.space)
+        # the grasp, then an identity link (sstsr >= 3.3 refuses a later link whose T0_w the chain would not read)
+        chain = TSRConfigurationSet(TSRChain(TSRs=[goal.tsr, TSR()]), robot, ik, planner.space)
         with pytest.raises(native.NativeUnsupported) as info:
             planner.solve(PlanningProblem(goal=chain, **base_problem), seed=0)
         assert info.value.reasons == ["goal: TSRChain has no native form (TSR chains stay Python)"]

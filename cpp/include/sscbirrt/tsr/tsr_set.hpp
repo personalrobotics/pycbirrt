@@ -14,7 +14,7 @@
 
 namespace sscbirrt::tsr {
 
-// {q : FK(q) in TSR}: sscbirrt's TSRConfigurationSet (tsr_set.py), rule for rule.
+// {q : FK(q) in region}: sscbirrt's TSRConfigurationSet (tsr_set.py), rule for rule, for a TSR or a TSR chain.
 //   contains:  region distance of FK(q) within tolerance
 //   distance:  the region distance of FK(q); violation: max(0, distance - tolerance)
 //   sample:    one pose from the region, every IK solution within the space's limits (provenance empty);
@@ -24,7 +24,7 @@ namespace sscbirrt::tsr {
 //              distance stops shrinking by progress_tolerance or after max_projection_iters
 class TSRConfigurationSet final : public StateSet, public SetSampler, public SetDistance, public SetViolation, public SetProjector {
  public:
-  TSRConfigurationSet(TSR region, std::shared_ptr<const ForwardKinematics> fk, std::shared_ptr<const IKSolver> ik,
+  TSRConfigurationSet(Region region, std::shared_ptr<const ForwardKinematics> fk, std::shared_ptr<const IKSolver> ik,
                       std::shared_ptr<const JointSpace> space, double tolerance = 1e-3, int max_projection_iters = 50,
                       double progress_tolerance = 1e-6);
 
@@ -40,13 +40,13 @@ class TSRConfigurationSet final : public StateSet, public SetSampler, public Set
   const SetProjector* projector() const override { return this; }
   std::string describe() const override;
 
-  const TSR& region() const { return region_; }
+  const Region& region() const { return region_; }
   double tolerance() const { return tolerance_; }
 
  private:
   bool within_limits(ConfigView q) const;
 
-  TSR region_;
+  Region region_;
   std::shared_ptr<const ForwardKinematics> fk_;
   std::shared_ptr<const IKSolver> ik_;
   std::shared_ptr<const JointSpace> space_;

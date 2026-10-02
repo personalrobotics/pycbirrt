@@ -3,14 +3,9 @@
 #include "sscbirrt/transform.hpp"
 
 #include <cmath>
-#include <numbers>
 
 namespace sscbirrt {
 
-namespace {
-constexpr double kPi = std::numbers::pi;
-constexpr double kGimbalEpsilon = 1e-9;  // sstsr's _GIMBAL_EPSILON
-}  // namespace
 
 Transform Transform::identity() {
   Transform t;
@@ -49,59 +44,6 @@ Transform Transform::inverse_rigid() const {
     out.at(r, 3) = -s;
   }
   return out;
-}
-
-std::array<double, 9> rpy_to_rot(const Rpy& rpy) {
-  const double r = rpy[0], p = rpy[1], y = rpy[2];
-  const double cr = std::cos(r), sr = std::sin(r), cp = std::cos(p), sp = std::sin(p), cy = std::cos(y), sy = std::sin(y);
-  return {cp * cy, sr * sp * cy - cr * sy, cr * sp * cy + sr * sy,
-          cp * sy, sr * sp * sy + cr * cy, cr * sp * sy - sr * cy,
-          -sp,     sr * cp,                cr * cp};
-}
-
-Rpy rot_to_rpy(const Transform& T) {
-  double r20 = T.at(2, 0);
-  r20 = r20 < -1.0 ? -1.0 : (r20 > 1.0 ? 1.0 : r20);
-  Rpy rpy{};
-  if (std::fabs(std::fabs(r20) - 1.0) >= kGimbalEpsilon) {
-    const double p = -std::asin(r20);
-    const double cp = std::cos(p);
-    rpy[0] = std::atan2(T.at(2, 1) / cp, T.at(2, 2) / cp);
-    rpy[1] = p;
-    rpy[2] = std::atan2(T.at(1, 0) / cp, T.at(0, 0) / cp);
-  } else if (r20 < 0) {
-    rpy[0] = std::atan2(T.at(0, 1), T.at(0, 2));
-    rpy[1] = kPi / 2;
-    rpy[2] = 0.0;
-  } else {
-    rpy[0] = std::atan2(-T.at(0, 1), -T.at(0, 2));
-    rpy[1] = -kPi / 2;
-    rpy[2] = 0.0;
-  }
-  return rpy;
-}
-
-Transform xyzrpy_to_trans(const XyzRpy& v) {
-  Transform t = Transform::identity();
-  const std::array<double, 9> R = rpy_to_rot({v[3], v[4], v[5]});
-  for (int r = 0; r < 3; ++r) {
-    for (int c = 0; c < 3; ++c) t.at(r, c) = R[static_cast<std::size_t>(r * 3 + c)];
-    t.at(r, 3) = v[static_cast<std::size_t>(r)];
-  }
-  return t;
-}
-
-XyzRpy trans_to_xyzrpy(const Transform& T) {
-  const Rpy rpy = rot_to_rpy(T);
-  return {T.at(0, 3), T.at(1, 3), T.at(2, 3), rpy[0], rpy[1], rpy[2]};
-}
-
-double wrap_to_interval(double angle, double lower) {
-  const double two_pi = 2.0 * kPi;
-  double frac = std::fmod(angle - lower, two_pi);  // truncated; numpy's % is floored
-  if (frac < 0.0) frac += two_pi;
-  if (frac >= two_pi) frac = 0.0;  // the guard sstsr applies against rounding up to exactly 2pi
-  return frac + lower;
 }
 
 std::optional<std::string> why_not_frame(const Transform& T, const std::string& name) {
