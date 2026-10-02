@@ -276,6 +276,27 @@ PYBIND11_MODULE(_native, m) {
       .def("sample_xyzrpy", [](const tsr::TSR& t, std::uint64_t seed) { Rng rng(seed); return t.sample_xyzrpy(rng); })
       .def("volume", &tsr::TSR::volume)
       .def("continuous_bounds", [](const tsr::TSR& t) { return t.continuous_bounds().rows; });
+  py::class_<tsr::TSRChain>(m, "TSRChain",
+                            "sstsr's own C++ TSRChain (sstsr >= 3.3): TSRs composed in series. A later link's T0_w must be "
+                            "the identity; its offset belongs in the previous link's Tw_e.")
+      .def(py::init([](const std::vector<tsr::TSR>& links) { return tsr::TSRChain(links); }), py::arg("tsrs"))
+      .def("__len__", &tsr::TSRChain::size)
+      .def("distance", [](const tsr::TSRChain& c, const Rows4& T) { return c.distance(pose_rows(T)).first; },
+           "The residual of a bounded inverse solve: an upper bound, 0 when a witness is found.")
+      .def("closest_transform",
+           [](const tsr::TSRChain& c, const Rows4& T) {
+             const auto [d, C] = c.closest_transform(pose_rows(T));
+             return std::make_pair(d, to_rows(tsr::from_sstsr(C)));
+           })
+      .def(
+          "sample",
+          [](const tsr::TSRChain& c, std::uint64_t seed, int count) {
+            Rng rng(seed);
+            std::vector<Rows4> out;
+            for (int i = 0; i < count; ++i) out.push_back(to_rows(tsr::from_sstsr(c.sample(rng))));
+            return out;
+          },
+          py::arg("seed"), py::arg("count") = 1, "Draw `count` poses from one RNG seeded with `seed`.");
   py::class_<ForwardKinematics, std::shared_ptr<ForwardKinematics>>(m, "ForwardKinematics")
       .def_property_readonly("dof", &ForwardKinematics::dof)
       .def("fk", [](const ForwardKinematics& f, const Config& q) { return to_rows(f.fk(q)); });
@@ -288,6 +309,14 @@ PYBIND11_MODULE(_native, m) {
 
   py::class_<tsr::TSRConfigurationSet, StateSet, std::shared_ptr<tsr::TSRConfigurationSet>>(m, "TSRConfigurationSet",
                                                                                             py::multiple_inheritance())
+      .def(py::init([](const tsr::TSRChain& region, std::shared_ptr<const ForwardKinematics> fk,
+                       std::shared_ptr<const IKSolver> ik, std::shared_ptr<const JointSpace> space, double tolerance,
+                       int max_projection_iters, double progress_tolerance) {
+             return std::make_shared<tsr::TSRConfigurationSet>(tsr::Region(region), std::move(fk), std::move(ik), std::move(space),
+                                                                tolerance, max_projection_iters, progress_tolerance);
+           }),
+           py::arg("region"), py::arg("fk"), py::arg("ik"), py::arg("space"), py::arg("tolerance") = 1e-3,
+           py::arg("max_projection_iters") = 50, py::arg("progress_tolerance") = 1e-6)
       .def(py::init([](const tsr::TSR& region, std::shared_ptr<const ForwardKinematics> fk, std::shared_ptr<const IKSolver> ik,
                        std::shared_ptr<const JointSpace> space, double tolerance, int max_projection_iters,
                        double progress_tolerance) {

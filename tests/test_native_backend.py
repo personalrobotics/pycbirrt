@@ -306,7 +306,7 @@ class TestTSRLowering:
         assert goal.contains(result.path[-1]) and all(above.contains(q) for q in result.path)
         assert np.array_equal(result.path[0], q0)
 
-    def test_chain_planar_ik_and_fk_disagreement_are_reported(self, ur5e):
+    def test_chain_lowers_natively_and_planar_ik_and_fk_disagreement_are_reported(self, ur5e):
         robot, ik, cfg = ur5e
         planner = CBiRRT(robot, ik, NoCollision(), cfg, backend="native")
         q0 = np.array([0.0, -1.2, 1.0, -1.4, -1.57, 0.0])
@@ -315,11 +315,12 @@ class TestTSRLowering:
 
         from tsr import TSRChain
 
-        # the grasp, then an identity link (sstsr >= 3.3 refuses a later link whose T0_w the chain would not read)
-        chain = TSRConfigurationSet(TSRChain(TSRs=[goal.tsr, TSR()]), robot, ik, planner.space)
-        with pytest.raises(native.NativeUnsupported) as info:
-            planner.solve(PlanningProblem(goal=chain, **base_problem), seed=0)
-        assert info.value.reasons == ["goal: TSRChain has no native form (TSR chains stay Python)"]
+        # A chain lowers natively since sstsr 3.3 (#184): the grasp, then a link free to spin about the flange's axis.
+        spin = TSR(T0_w=np.eye(4), Tw_e=np.eye(4), Bw=np.array([[0, 0]] * 5 + [[-np.pi, np.pi]]))
+        chain = TSRConfigurationSet(TSRChain(TSRs=[goal.tsr, spin]), robot, ik, planner.space)
+        result = planner.solve(PlanningProblem(goal=chain, **base_problem), seed=0)
+        assert result.success and result.backend == "native"
+        assert chain.contains(result.path[-1])  # judged by the Python chain
 
         planar_ik_goal = TSRConfigurationSet(goal.tsr, robot, PlanarIK(), planner.space)
         with pytest.raises(native.NativeUnsupported) as info:
@@ -339,6 +340,41 @@ class TestTSRLowering:
         with pytest.raises(native.NativeUnsupported) as info:
             planner.solve(PlanningProblem(goal=shifted_goal, **base_problem), seed=0)
         assert "robot model FK disagrees with the native IK model's" in info.value.reasons[0]
+
+    def _native_set(self, s, planner):
+        problem = PlanningProblem(space=planner.space, start=s, goal=s, validator=planner.collision)
+        reasons: list[str] = []
+        ctx = native._Lowering(problem, native._lower_space(planner.space))
+        lowered = native._lower_tsr_set(s, "goal", ctx, reasons)
+        assert reasons == []
+        return lowered
+
+    def test_native_chain_sets_keep_the_python_contract(self, ur5e):
+        """A single-link chain is an exact path, so it matches Python; a cold chain is held to properties (#184)."""
+        from tsr import TSRChain
+
+        robot, ik, cfg = ur5e
+        planner = CBiRRT(robot, ik, NoCollision(), cfg, backend="native")
+        grasp = self._grasp(robot, ik, planner, np.array([0.8, -1.0, 0.8, -1.3, -1.57, 0.4])).tsr
+        rng = np.random.default_rng(0)
+        lo, hi = map(np.asarray, robot.joint_limits)
+        qs = [rng.uniform(lo, hi) for _ in range(20)]
+
+        single = TSRConfigurationSet(TSRChain(TSRs=[grasp]), robot, ik, planner.space)
+        nsingle = self._native_set(single, planner)
+        for q in qs:
+            assert nsingle.distance(list(q)) == pytest.approx(single.distance(q), abs=1e-9)
+
+        spin = TSR(T0_w=np.eye(4), Tw_e=np.eye(4), Bw=np.array([[0, 0]] * 5 + [[-np.pi, np.pi]]))
+        chain = TSRConfigurationSet(TSRChain(TSRs=[grasp, spin]), robot, ik, planner.space)
+        nchain = self._native_set(chain, planner)
+        samples = [q for seed in range(5) for q in nchain.sample(seed)]
+        assert samples and all(chain.contains(np.array(q)) for q in samples)  # native samples are in Python's set
+        for q in samples[:5] + qs:
+            assert nchain.distance(list(q)) >= 0.0
+            p = nchain.project(list(q))
+            # projection lands in the set or reports failure, judged by the Python chain
+            assert p is None or chain.contains(np.array(p))
 
     def test_auto_backend_runs_tsr_problems_natively(self, ur5e):
         robot, ik, cfg = ur5e
