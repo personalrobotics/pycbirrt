@@ -339,6 +339,12 @@ def ur5e_mujoco_cases(base: dict[str, Any]) -> list[dict[str, Any]]:
             "UR5e + Robotiq holding the cylinder: finite start, place TSR over the table, gripper contact allowed",
             21,
         ),
+        (
+            "ur5e_mujoco_tsr_chain_crank",
+            "UR5e + Robotiq turning a crank 60 degrees: start, goal, and path constraint are one TSR chain (hinge, "
+            "then a grasp free to spin about the handle's bar), native since sstsr 3.3 (#184)",
+            0,
+        ),
     ]
     reason = None
     menagerie = os.environ.get("MUJOCO_MENAGERIE_PATH")
@@ -449,6 +455,50 @@ def ur5e_mujoco_cases(base: dict[str, Any]) -> list[dict[str, Any]]:
                 "goal": "place TSR over the table",
             },
             "planner": planner_b,
+        }
+    )
+
+    # C. a TSR chain as start, goal, and path constraint: turn a crank about a vertical axis above the table. The
+    # flange holds the handle from above and may spin about the handle's vertical bar; that axis is offset from the
+    # hinge, so the chain does not reduce to a single TSR. Its distance is sstsr's bounded inverse in both backends.
+    def crank(lo: float, hi: float) -> TSRChain:
+        hub = np.eye(4)
+        hub[:3, 3] = [0.35, -0.2, 0.6]
+        to_handle = np.eye(4)
+        to_handle[:3, :3] = np.diag([1.0, -1.0, -1.0])  # flange pointing down
+        to_handle[:3, 3] = [0.12, 0.0, 0.0]
+        hinge = TSR(T0_w=hub, Tw_e=to_handle, Bw=[[0, 0]] * 5 + [[lo, hi]])
+        spin = TSR(T0_w=np.eye(4), Tw_e=np.eye(4), Bw=[[0, 0]] * 5 + [[-np.pi, np.pi]])
+        return TSRChain(TSRs=[hinge, spin])
+
+    turn = np.pi / 3
+    cfg_c = CBiRRTConfig(**{**base, "step_size": 0.1, "edge_resolution": 0.05, "num_tree_roots": 20, "timeout": 120.0})
+    planner_c = CBiRRT(robot, ik, checker_a, cfg_c)
+    out.append(
+        {
+            "name": names[2][0],
+            "description": names[2][1],
+            "seed": names[2][2],
+            "config": cfg_c,
+            "problem": PlanningProblem(
+                space=planner_c.space,
+                start=_tsr_set(planner_c, crank(0.0, 0.0)),
+                goal=_tsr_set(planner_c, crank(turn, turn)),
+                path_constraint=_tsr_set(planner_c, crank(-0.02, turn + 0.02)),
+                validator=checker_a,
+            ),
+            "spec": {
+                "robot": "menagerie ur5e + robotiq_2f85",
+                "ssik": importlib.metadata.version("ssik"),
+                "mujoco": mujoco.__version__,
+                "solver_name": arm.solver_name,
+                "scene_mjb_sha256": scene.provenance["mjb_sha256"],
+                "snapshot_sha256": snap_a.sha256,
+                "start": "crank chain at 0",
+                "goal": "crank chain at 60 degrees",
+                "path_constraint": "crank chain within [-0.02, 60 degrees + 0.02]",
+            },
+            "planner": planner_c,
         }
     )
     return out

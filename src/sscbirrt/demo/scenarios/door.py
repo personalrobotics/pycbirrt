@@ -79,20 +79,6 @@ def opening(model: mujoco.MjModel, data: mujoco.MjData, q: np.ndarray) -> float:
     return float(np.arctan2(T_door[1, 0], T_door[0, 0]))
 
 
-def door_region(lo: float, hi: float) -> TSR:
-    """The same set as ``door_chain`` as one TSR: the grasp frame swung about the hinge. It exists because this
-    chain's first link only turns about the hinge and its second is fixed; a native core runs it (a chain stays
-    Python until sstsr ships chains in C++, personalrobotics/tsr#165, #184)."""
-    hinge, grasp = door_chain(0.0, 0.0).TSRs
-    turn = np.eye(4)
-    turn[:2, :2] = [[0.0, -1.0], [1.0, 0.0]]  # the grasp link's fixed yaw, facing the robot
-    return TSR(
-        T0_w=hinge.T0_w,
-        Tw_e=hinge.Tw_e @ turn @ grasp.Tw_e,
-        Bw=[[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [lo, hi]],
-    )
-
-
 def run(seed: int) -> Outcome:
     model = build_scene(table=False, door=True)
     data = mujoco.MjData(model)
@@ -113,11 +99,6 @@ def run(seed: int) -> Outcome:
     )  # fmt: skip
     if not opened.success:
         return Outcome(False, [f"open: no path: {opened.failure_reason}"], model, data)
-    # The same door as a single TSR, for the report: the native core's time on the identical set.
-    single = plan(
-        model, data, arm, start=door_region(0.0, 0.0), goal=door_region(OPEN, OPEN),
-        constraint=door_region(-0.02, OPEN + 0.02), holding=held, config=config, seed=seed,
-    )  # fmt: skip
 
     # Reach the handle from HOME first (the door closed), so the video starts from the arm at rest.
     reach = plan(model, data, arm, goal=opened.path[0], config=config, seed=seed)
@@ -132,8 +113,6 @@ def run(seed: int) -> Outcome:
         f"as a TSR chain: {opened.backend}, {opened.planning_time:.2f} s, {len(opened.path)} waypoints",
     ]
     report += [f"  not native because: {r}" for r in dict.fromkeys(opened.backend_reasons)]
-    if single.success:
-        report.append(f"the same set as one TSR: {single.backend}, {single.planning_time:.2f} s")
 
     clips = [
         Clip(path=reach.path, title="Reach the handle", lines=["The door is closed"]),

@@ -8,7 +8,32 @@
 
 namespace sscbirrt::tsr {
 
-TSRConfigurationSet::TSRConfigurationSet(TSR region, std::shared_ptr<const ForwardKinematics> fk,
+double region_distance(const Region& region, const Transform& T) {
+  const sstsr::Transform pose = to_sstsr(T);
+  if (const auto* chain = std::get_if<TSRChain>(&region)) return chain->distance(pose).first;
+  return std::get<TSR>(region).distance(pose);
+}
+
+std::pair<double, Transform> region_closest_transform(const Region& region, const Transform& T) {
+  const sstsr::Transform pose = to_sstsr(T);
+  const auto [dist, closest] = std::visit([&pose](const auto& r) { return r.closest_transform(pose); }, region);
+  return {dist, from_sstsr(closest)};
+}
+
+Transform region_sample(const Region& region, Rng& rng) {
+  return from_sstsr(std::visit([&rng](const auto& r) { return r.sample(rng); }, region));
+}
+
+double region_volume(const Region& region) {
+  if (const auto* chain = std::get_if<TSRChain>(&region)) {
+    double total = 0.0;
+    for (const TSR& link : chain->tsrs()) total += link.volume();
+    return total;
+  }
+  return std::get<TSR>(region).volume();
+}
+
+TSRConfigurationSet::TSRConfigurationSet(Region region, std::shared_ptr<const ForwardKinematics> fk,
                                          std::shared_ptr<const IKSolver> ik, std::shared_ptr<const JointSpace> space,
                                          double tolerance, int max_projection_iters, double progress_tolerance)
     : region_(std::move(region)),
@@ -38,12 +63,12 @@ bool TSRConfigurationSet::within_limits(ConfigView q) const {
   return true;
 }
 
-double TSRConfigurationSet::distance(ConfigView q) const { return region_.distance(fk_->fk(q)); }
+double TSRConfigurationSet::distance(ConfigView q) const { return region_distance(region_, fk_->fk(q)); }
 
 double TSRConfigurationSet::violation(ConfigView q) const { return std::max(0.0, distance(q) - tolerance_); }
 
 std::vector<Sample> TSRConfigurationSet::sample(Rng& rng) const {
-  const Transform pose = region_.sample(rng);
+  const Transform pose = region_sample(region_, rng);
   std::vector<Sample> out;
   for (Config& q : ik_->solve(pose, {})) {
     if (within_limits(q)) out.push_back(Sample{std::move(q), {}});
@@ -55,7 +80,7 @@ std::optional<Config> TSRConfigurationSet::project(ConfigView, ConfigView q_prop
   Config q = to_config(q_proposed);
   double prev_dist = std::numeric_limits<double>::infinity();
   for (int it = 0; it < max_projection_iters_; ++it) {
-    const auto [dist, target] = region_.closest_transform(fk_->fk(q));
+    const auto [dist, target] = region_closest_transform(region_, fk_->fk(q));
     if (dist <= tolerance_) return q;
     if (prev_dist - dist < progress_tolerance_) return std::nullopt;
     prev_dist = dist;
@@ -83,7 +108,7 @@ std::vector<double> tsr_weights(const std::vector<std::shared_ptr<const TSRConfi
   w.reserve(sets.size());
   bool any = false;
   for (const auto& s : sets) {
-    w.push_back(s->region().volume());
+    w.push_back(region_volume(s->region()));
     any = any || w.back() > 0.0;
   }
   if (!any) std::fill(w.begin(), w.end(), 1.0);

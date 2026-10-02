@@ -837,8 +837,8 @@ rule the reference needed sharpened changed in Python first.
   whose IK is an `SSIKSolver` wrapping an `ssik.Manipulator` of a verified
   family, with every other combination reported as unsupported.
 
-Not in v1.6.0: TSR chains (they use sstsr's bounded numerical inverse and
-stay Python), other IK backends, collision checkers (MuJoCo is v1.7.0, so the
+Not in v1.6.0: TSR chains (they used sstsr's bounded numerical inverse and
+stayed Python until #184, below), other IK backends, collision checkers (MuJoCo is v1.7.0, so the
 v1.6.0 corpus uses the native validators of v1.5.0), and treating a list of
 TSRs as anything but what the Python expression says.
 
@@ -853,10 +853,11 @@ sscbirrt._native ──► sscbirrt::ssik ──► sscbirrt::tsr ──► sscb
 | Target | Depends on | Contents |
 |---|---|---|
 | `sscbirrt::core` | standard library | as before, plus the `ForwardKinematics` and `IKSolver` interfaces and a `Transform` type |
-| `sscbirrt::tsr` | `sscbirrt::core` | `PoseRegion`, `TSR`, `TSRConfigurationSet`, volume weighting |
+| `sscbirrt::tsr` | `sscbirrt::core`, `sstsr::sstsr_cpp` (since #184) | `TSR` and `TSRChain` regions (sstsr's), `TSRConfigurationSet`, volume weighting |
 | `sscbirrt::ssik` | `sscbirrt::tsr`, `ssik::ssik_cpp`, `Eigen3::Eigen` | `SSIKArm`: kinematics and IK through ssik's family solvers |
 
-`core` and `tsr` stay standard-library only. The decision recorded in the
+`core` and `tsr` stay standard-library only (since #184, `tsr` also uses
+sstsr's C++, itself standard-library only; see the end of this document). The decision recorded in the
 first part, core without Eigen, therefore extends to the pose-region
 runtime: a 4x4 transform is `std::array<double, 16>` (row-major) with the
 handful of operations the TSR math needs (multiply, inverse of a rigid
@@ -1077,7 +1078,7 @@ governs what is found there.
 
 | Python | Native | Otherwise |
 |---|---|---|
-| `TSRConfigurationSet` with `tsr: TSR`, `ik` a `KinematicsIntegration` (since #147; `SSIKSolver` around an `ssik.Manipulator` whose `solver_name` is verified, `dof == 6`, is the shipped one) | `TSRConfigurationSet(TSR, arm, arm, space, tolerance, max_projection_iters, progress_tolerance)` with `arm = ik.native_kinematics()` | region is a `TSRChain`: "TSR chains have no native form"; `ik` not a `KinematicsIntegration`: "IK <type> is a Python object"; `native_kinematics()` raised `NativeUnsupported`: its reasons (SSIK: "SSIK family <name> is not in the native allowlist", "built without SSIK support"); returned something else: "not a sscbirrt ForwardKinematics and IKSolver" |
+| `TSRConfigurationSet` with `tsr: TSR`, `ik` a `KinematicsIntegration` (since #147; `SSIKSolver` around an `ssik.Manipulator` whose `solver_name` is verified, `dof == 6`, is the shipped one) | `TSRConfigurationSet(TSR, arm, arm, space, tolerance, max_projection_iters, progress_tolerance)` with `arm = ik.native_kinematics()` | `tsr` neither a `TSR` nor a `TSRChain` (since #184): "<type> has no native form"; `ik` not a `KinematicsIntegration`: "IK <type> is a Python object"; `native_kinematics()` raised `NativeUnsupported`: its reasons (SSIK: "SSIK family <name> is not in the native allowlist", "built without SSIK support"); returned something else: "not a sscbirrt ForwardKinematics and IKSolver" |
 
 Two consistency checks run at lowering, each a blocker with a reason if it
 fails. First, the Python set's `robot.forward_kinematics` and the SSIK
@@ -1128,7 +1129,7 @@ artifact compares them: outcome, validation, provenance where unique.
 | Python | Native | Relation |
 |---|---|---|
 | `tsr.TSR` | `sscbirrt::tsr::TSR` | same math and the same construction rules and tolerance (sstsr 3.2.0) |
-| `PoseRegion` protocol | `TSR` only | chains are not native; lowering says so |
+| `PoseRegion` protocol | `std::variant<sstsr::TSR, sstsr::TSRChain>` | since #184 both are sstsr's C++ |
 | `TSRConfigurationSet` | `sscbirrt::tsr::TSRConfigurationSet` | same rules; FK comes from the IK adapter rather than a separate robot model, checked equal at lowering |
 | `RobotModel.forward_kinematics`, `IKSolver.solve` | `ForwardKinematics`, `IKSolver` | same contracts |
 | `SSIKSolver` | `sscbirrt::ssik::SSIKArm` | same call into the same ssik family solver; families outside the allowlist are unsupported rather than silently different |
@@ -1549,3 +1550,36 @@ must hold without it. Beyond the rules above:
    adopted.
 5. **`mj_kinematics` in place of `mj_forward`** for the query: adopted,
    with the equivalence checked on the corpus.
+
+## TSRs from sstsr's C++ core (#184)
+
+sstsr 3.3 ships its TSR and TSR-chain rules as C++ in the wheel (headers
+and sources behind the CMake target `sstsr::sstsr_cpp`, found through
+`tsr.get_cmake_dir()`). `sscbirrt::tsr` now uses them instead of its own
+port of the single-TSR rules, which is deleted. One implementation of
+sstsr's contract, owned by sstsr; the conformance corpus above stays as a
+check of the binding against sstsr's Python.
+
+- **Regions.** `TSRConfigurationSet` holds a
+  `std::variant<sstsr::TSR, sstsr::TSRChain>` and keeps its algorithm:
+  distance, closest transform and sampling go to the region; IK, limits and
+  iterated projection are sscbirrt's, as in `tsr_set.py`. A chain's distance
+  is the residual of its inverse. No warm starts: the native set calls
+  exactly what the Python set calls.
+- **The chain contract is sstsr's.** On exact paths (a single link, every
+  link fixed) the C++ is bit-for-bit with the Python. The cold inverse is
+  projected Levenberg-Marquardt in C++ and L-BFGS-B in Python, held to
+  properties only: the residual is an upper bound, and "not found" is not
+  a certificate. Parity is therefore semantic, as everywhere else, and the
+  reference artifact gains a UR5e chain case (`ur5e_mujoco_tsr_chain_crank`)
+  whose start, goal and path constraint are one chain.
+- **Boundary.** `sscbirrt::core` keeps its own `Transform` and stays
+  standard-library only; a pose crosses into sstsr as a copy of the same
+  row-major 16 doubles. The planner's `Rng` is sstsr's engine type
+  (static-asserted), so seeded solves stay repeatable. The RPY helpers the
+  old port used are removed from the core.
+- **Build.** `sstsr>=3.3,<4` is a build and runtime requirement. CMake finds
+  `sstsr_cpp` from `SSCBIRRT_SSTSR_CMAKE_DIR` or by asking the interpreter,
+  with no version pin, and links it privately into `sscbirrt_tsr` only: its
+  sources compile into whatever links it. An editable sstsr install has no
+  CMake package; build against a wheel.

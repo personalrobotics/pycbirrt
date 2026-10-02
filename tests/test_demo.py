@@ -49,20 +49,11 @@ def test_transport_constraint_holds(capsys):
 
 
 def test_door_follows_the_arc(capsys):
-    """The chain constraint holds (the door angle stays in range) and the chain's Python fallback is reported."""
+    """The chain constraint holds (the door angle stays in range), planned natively through sstsr's C++ (#184)."""
     assert main(["door", "--no-video", "--seed", "0"]) == 0
     out = capsys.readouterr().out
-    assert "opened to 60 deg" in out and "as a TSR chain: python" in out
-    assert "TSR chains stay Python" in out and "the same set as one TSR: native" in out
-
-
-def test_door_single_tsr_matches_the_chain():
-    import numpy as np
-
-    from sscbirrt.demo.scenarios.door import OPEN, door_chain, door_region
-
-    for angle in (0.0, OPEN / 2, OPEN):
-        assert np.allclose(door_region(angle, angle).sample(), door_chain(angle, angle).sample(), atol=1e-12)
+    assert "opened to 60 deg" in out and "as a TSR chain: native" in out
+    assert "not native because" not in out
 
 
 def test_render_writes_a_playable_mp4(tmp_path, capsys):

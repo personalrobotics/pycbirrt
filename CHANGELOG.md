@@ -6,6 +6,32 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+TSR chains plan on the native backend (#184). sscbirrt's TSRs now come from
+sstsr's own C++ core (sstsr 3.3), which carries chains, so a chain goal,
+start or path constraint no longer falls back to Python. The door demo opens
+its door natively in under a second; it took about 7 s on Python.
+
+### Changed
+- `sstsr>=3.3,<4` is required, to build and to run. The native `TSR` is
+  sstsr's C++, and sscbirrt's own C++ port of the TSR rules is removed.
+- The native backend lowers `TSRChain` regions. Exact paths match the Python
+  bit-for-bit. Elsewhere a chain's distance is sstsr's bounded inverse, an
+  upper bound in both backends, held to the same properties rather than to
+  the same numbers. A chain whose later link has a non-identity `T0_w` is
+  refused by sstsr 3.3 itself (personalrobotics/tsr#169).
+- The door demo plans only its chain and drops the single-TSR comparison.
+  Its README GIF is re-rendered from the native plan.
+- The reference artifact gains `ur5e_mujoco_tsr_chain_crank`: a UR5e turning
+  a crank, with start, goal and path constraint one chain. It runs natively
+  under `auto`.
+
+### Removed
+- C++ consumers: the RPY helpers in `sscbirrt/transform.hpp`
+  (`rot_to_rpy`, `xyzrpy_to_trans` and their kin), which only the TSR port used,
+  and their `sscbirrt._native` bindings. `sscbirrt/sscbirrt.hpp` no longer
+  includes the TSR headers; include `sscbirrt/tsr/tsr_set.hpp`, which needs
+  `sstsr_cpp` (found by `find_package(sscbirrt)`).
+
 ## [3.1.0] - 2026-09-30
 
 sscbirrt becomes effortless to start with. `pip install "sscbirrt[demo]"`

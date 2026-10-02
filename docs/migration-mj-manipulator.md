@@ -64,8 +64,7 @@ first criterion), and it does not own the simulator or its threads.
 5. **Pin `mujoco==3.14.0`** for sscbirrt 1.7 through 3.1, the versions built against it; the
    native scene refuses another MuJoCo with a message naming the three
    versions it sees.
-6. **Unsupported means Python.** TSR chains, IK other than SSIK on a verified
-   family, and any Python validator make `backend="native"` raise
+6. **Unsupported means Python.** IK other than SSIK on a verified family, and any Python validator make `backend="native"` raise
    `NativeUnsupported` listing every blocker, and `backend="auto"` (the
    default, also for `sscbirrt.mujoco.plan`) selects the Python planner and records
    the reasons. The semantics are the same; the parity gate checks that.

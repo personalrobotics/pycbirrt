@@ -318,9 +318,9 @@ path = planner.plan(start_config, goal_tsrs=[door])
 ```
 
 For chains of two or more TSRs, membership and projection use sstsr's
-numerical inverse: each check costs a few milliseconds and can be a false
-negative on a hard chain. A chain as a goal is cheap; a chain as a path
-constraint pays that on every edge sample.
+bounded numerical inverse, so a check can be a false negative on a hard
+chain. With sstsr 3.3 that inverse is C++, and chains plan on the native
+backend like single TSRs: the door demo opens its door in under a second.
 
 ## Result
 
@@ -609,12 +609,12 @@ the stated reasons. The native core plans problems whose components all have
 a native form: finite sets, `AnyOf`/`AllOf` with the named strategies,
 `EmptySet`, the validators in `sscbirrt.testing`, any validator or IK solver
 that implements the integration protocols below (the MuJoCo scene and SSIK
-do), and `TSRConfigurationSet`s whose region is a single `TSR` and whose IK
+do), and `TSRConfigurationSet`s whose region is a `TSR` or `TSRChain` and whose IK
 has a native form (SSIK around an `ssik.Manipulator` of a verified family,
 the UR family `ikgeo.three_parallel`). TSRs and SSIK then run entirely in
-C++: the TSR math is checked against sstsr on a conformance corpus and the
-SSIK adapter against the Python one on the UR5e. Anything else (TSR chains,
-Python-only IK, predicates, Python-only validators, samplers, or motion
+C++: TSRs and TSR chains are sstsr's own C++ core (sstsr 3.3), and the SSIK
+adapter is checked against the Python one on the UR5e. Anything else
+(Python-only IK, predicates, Python-only validators, samplers, or motion
 validators) makes `backend="native"` raise `NativeUnsupported` listing every
 blocker, and the default fall back to Python with the same list on the
 result. Lowering also checks that the robot model's forward kinematics

@@ -162,18 +162,24 @@ class _Lowering:
 
 
 def _lower_tsr_set(s: TSRConfigurationSet, where: str, ctx: _Lowering, reasons: list[str]):
-    from tsr import TSR
+    from tsr import TSR, TSRChain
 
-    if not isinstance(s.tsr, TSR):
-        reasons.append(f"{where}: {type(s.tsr).__name__} has no native form (TSR chains stay Python)")
+    if not isinstance(s.tsr, (TSR, TSRChain)):
+        reasons.append(f"{where}: {type(s.tsr).__name__} has no native form")
         return None
     arm = ctx.arm_for(s, where, reasons)
     if arm is None:
         return None
     try:
-        region = _native.TSR(s.tsr.T0_w.tolist(), s.tsr.Tw_e.tolist(), s.tsr.Bw.tolist())
+        # TSRs and TSR chains are sstsr's own C++ (sstsr >= 3.3, #184): the same rules as the Python sstsr; a chain's
+        # cold inverse is held to sstsr's properties (an upper bound; "not found" is not a certificate).
+        if isinstance(s.tsr, TSRChain):
+            links = [_native.TSR(t.T0_w.tolist(), t.Tw_e.tolist(), t.Bw.tolist()) for t in s.tsr.TSRs]
+            region = _native.TSRChain(links)
+        else:
+            region = _native.TSR(s.tsr.T0_w.tolist(), s.tsr.Tw_e.tolist(), s.tsr.Bw.tolist())
     except ValueError as e:
-        reasons.append(f"{where}: TSR rejected by the native constructor: {e}")
+        reasons.append(f"{where}: {type(s.tsr).__name__} rejected by the native constructor: {e}")
         return None
     return _native.TSRConfigurationSet(
         region, arm, arm, ctx.nspace, float(s.tolerance), int(s.max_projection_iters), float(s.progress_tolerance)

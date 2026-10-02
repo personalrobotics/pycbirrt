@@ -30,11 +30,40 @@ target_compile_features(sscbirrt_core PUBLIC cxx_std_20)
 target_compile_options(sscbirrt_core PRIVATE -Wall -Wextra -Wpedantic -Werror)
 set_target_properties(sscbirrt_core PROPERTIES POSITION_INDEPENDENT_CODE ON OUTPUT_NAME sscbirrt EXPORT_NAME core)
 
-# The pose-region runtime: sstsr's TSR in C++, standard library only (v1.6.0 addendum).
-add_library(sscbirrt_tsr STATIC src/tsr/tsr.cpp src/tsr/tsr_set.cpp)
+# The pose-region runtime: TSRs and TSR chains are sstsr's own C++ (sstsr >= 3.3, #184), found through its CMake
+# package with no version pinned: pass -DSSCBIRRT_SSTSR_CMAKE_DIR=$(python -c "import tsr; print(tsr.get_cmake_dir())"),
+# put it on CMAKE_PREFIX_PATH, or let the build ask the interpreter. tsr.get_cmake_dir() needs a built sstsr wheel; an
+# editable install has no CMake package. sscbirrt::tsr adapts it to the core's types (the core stays standard library
+# only) and is the only target that links it: the package's INTERFACE_SOURCES compile into whatever links it.
+set(SSCBIRRT_SSTSR_CMAKE_DIR "" CACHE PATH "Directory holding sstsr_cppConfig.cmake (tsr.get_cmake_dir())")
+if(SSCBIRRT_SSTSR_CMAKE_DIR)
+  list(APPEND CMAKE_PREFIX_PATH "${SSCBIRRT_SSTSR_CMAKE_DIR}")
+else()
+  find_package(Python QUIET COMPONENTS Interpreter)
+  if(Python_EXECUTABLE)
+    execute_process(COMMAND "${Python_EXECUTABLE}" -c "import tsr; print(tsr.get_cmake_dir(), end='')"
+      OUTPUT_VARIABLE _sstsr_dir RESULT_VARIABLE _sstsr_rc ERROR_VARIABLE _sstsr_err)
+    if(_sstsr_rc EQUAL 0 AND _sstsr_dir)
+      list(APPEND CMAKE_PREFIX_PATH "${_sstsr_dir}")
+    endif()
+  endif()
+endif()
+find_package(sstsr_cpp CONFIG QUIET)
+if(NOT TARGET sstsr::sstsr_cpp)
+  message(FATAL_ERROR "sscbirrt needs sstsr's C++ core (sstsr >= 3.3): pip install 'sstsr>=3.3,<4' and pass "
+    "-DSSCBIRRT_SSTSR_CMAKE_DIR=$(python -c \"import tsr; print(tsr.get_cmake_dir())\"). ${_sstsr_err}")
+endif()
+message(STATUS "sscbirrt: sstsr C++ core from ${sstsr_cpp_DIR}")
+add_library(sscbirrt_tsr STATIC src/tsr/tsr_set.cpp)
 add_library(sscbirrt::tsr ALIAS sscbirrt_tsr)
-target_link_libraries(sscbirrt_tsr PUBLIC sscbirrt_core)
+target_link_libraries(sscbirrt_tsr PUBLIC sscbirrt_core PRIVATE sstsr::sstsr_cpp)
+target_include_directories(sscbirrt_tsr PUBLIC
+  $<BUILD_INTERFACE:$<TARGET_PROPERTY:sstsr::sstsr_cpp,INTERFACE_INCLUDE_DIRECTORIES>>)
 target_compile_options(sscbirrt_tsr PRIVATE -Wall -Wextra -Wpedantic -Werror)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  # sstsr's sources compile here under our -Werror; GCC 12/13 raise a known false -Warray-bounds on them.
+  target_compile_options(sscbirrt_tsr PRIVATE -Wno-array-bounds)
+endif()
 set_target_properties(sscbirrt_tsr PROPERTIES POSITION_INDEPENDENT_CODE ON OUTPUT_NAME sscbirrt_tsr EXPORT_NAME tsr)
 
 # Eigen for the SSIK adapter: the system's package when one is installed, else the pinned Eigen release,
@@ -226,8 +255,6 @@ if(SSCBIRRT_BUILD_TESTS)
   sscbirrt_test(test_sets)
   sscbirrt_test(test_motion)
   sscbirrt_test(test_planner)
-  sscbirrt_test(test_tsr)
-  target_link_libraries(test_tsr PRIVATE sscbirrt::tsr)
   sscbirrt_test(test_tsr_set)
   target_link_libraries(test_tsr_set PRIVATE sscbirrt::tsr)
   if(SSCBIRRT_HAS_MUJOCO)

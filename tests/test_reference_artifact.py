@@ -105,17 +105,17 @@ def test_native_backend_matches_the_artifact(tool):
         supported
     )
     by_name = {c["name"]: c for c in native["cases"]}
-    # The planar TSR cases use a Python IK, so they fall back with that reason; the chain case with its own.
-    assert by_name["tsr_chain_goal"]["unsupported_reasons"] == [
-        "goal: TSRChain has no native form (TSR chains stay Python)"
-    ]
+    # The planar TSR cases use a Python IK, so they fall back with that reason, the planar chain case included: chains
+    # themselves are native since sstsr 3.3 (#184).
+    assert by_name["tsr_chain_goal"]["unsupported_reasons"][0].startswith("goal: IK PlanarIK is a Python object")
     assert by_name["projected_constraint"]["unsupported_reasons"][0].startswith(
         "path_constraint: IK PlanarIK is a Python object"
     )
     if "ur5e_tsr_goal_union_with_path_tsr" in by_name and pytest.importorskip("sscbirrt._native").has_ssik():
         ur5e = by_name["ur5e_tsr_goal_union_with_path_tsr"]
         assert ur5e["status"] == "success" and ur5e["native_python_calls"] == 0  # the no-callback proof (#91)
-    for name in ("ur5e_mujoco_tsr_goal_among_obstacles", "ur5e_mujoco_held_object"):  # the v1.7.0 release cases (#88)
+    # the v1.7.0 release cases (#88) and the native TSR chain (#184)
+    for name in ("ur5e_mujoco_tsr_goal_among_obstacles", "ur5e_mujoco_held_object", "ur5e_mujoco_tsr_chain_crank"):
         case = by_name[name]
         if case["status"] != "skipped":
             assert case["status"] == "success" and case["native_python_calls"] == 0, name
@@ -129,7 +129,9 @@ def test_default_selection_matches_the_artifact_and_explains_every_python_choice
     auto = tool.generate("auto")
     ran = {c["name"]: c for c in auto["cases"] if c["status"] != "skipped"}
     assert ran["fixed_to_fixed"]["backend"] == "native" and ran["fixed_to_fixed"]["backend_reasons"] == []
-    assert ran["tsr_chain_goal"]["backend"] == "python"
-    assert ran["tsr_chain_goal"]["backend_reasons"] == ["goal: TSRChain has no native form (TSR chains stay Python)"]
+    assert ran["tsr_chain_goal"]["backend"] == "python"  # its IK is Python's; the chain itself would lower (#184)
+    assert ran["tsr_chain_goal"]["backend_reasons"][0].startswith("goal: IK PlanarIK is a Python object")
+    if "ur5e_mujoco_tsr_chain_crank" in ran:
+        assert ran["ur5e_mujoco_tsr_chain_crank"]["backend"] == "native"
     assert all(c["backend_reasons"] for c in ran.values() if c["backend"] == "python")
     assert tool.main(["--check", "--backend", "auto"]) == 0

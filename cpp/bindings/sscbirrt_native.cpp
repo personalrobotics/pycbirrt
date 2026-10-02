@@ -14,6 +14,8 @@
 #include "sscbirrt/sscbirrt.hpp"
 #if SSCBIRRT_HAS_SSIK
 #include "sscbirrt/ssik/ssik_arm.hpp"
+#include "sscbirrt/tsr/tsr.hpp"
+#include "sscbirrt/tsr/tsr_set.hpp"
 #endif
 
 namespace py = pybind11;
@@ -25,6 +27,7 @@ using Rows4 = std::array<std::array<double, 4>, 4>;
 using Rows6x2 = std::array<std::array<double, 2>, 6>;
 
 Transform from_rows(const Rows4& rows) { return Transform::from_rows(rows); }
+sstsr::Transform pose_rows(const Rows4& rows) { return tsr::to_sstsr(from_rows(rows)); }
 Rows4 to_rows(const Transform& T) {
   Rows4 out{};
   for (int r = 0; r < 4; ++r) {
@@ -247,32 +250,53 @@ PYBIND11_MODULE(_native, m) {
   m.def("why_inadmissible", [](const PlanningProblem& p, const Config& q) { return Planner::why_inadmissible(p, q); });
 
   // ----- pose regions (v1.6.0) ------------------------------------------------------------------
-  py::class_<tsr::TSR>(m, "TSR", "sstsr's TSR in C++; frames as 4x4 nested lists, Bw as 6x2.")
+  py::class_<tsr::TSR>(m, "TSR", "sstsr's own C++ TSR (sstsr >= 3.3); frames as 4x4 nested lists, Bw as 6x2.")
       .def(py::init([](const Rows4& T0_w, const Rows4& Tw_e, const Rows6x2& Bw) {
-             return tsr::TSR(from_rows(T0_w), from_rows(Tw_e), tsr::Bounds6{Bw});
+             return tsr::TSR(pose_rows(T0_w), pose_rows(Tw_e), tsr::Bounds6{Bw});
            }),
            py::arg("T0_w"), py::arg("Tw_e"), py::arg("Bw"))
-      .def("contains", [](const tsr::TSR& t, const Rows4& T) { return t.contains(from_rows(T)); })
-      .def("distance", [](const tsr::TSR& t, const Rows4& T) { return t.distance(from_rows(T)); })
-      .def("distance_bwopt", [](const tsr::TSR& t, const Rows4& T) { return t.distance_bwopt(from_rows(T)); })
+      .def("contains", [](const tsr::TSR& t, const Rows4& T) { return t.contains(pose_rows(T)); })
+      .def("distance", [](const tsr::TSR& t, const Rows4& T) { return t.distance(pose_rows(T)); })
+      .def("distance_bwopt", [](const tsr::TSR& t, const Rows4& T) { return t.distance_bwopt(pose_rows(T)); })
       .def("closest_transform",
            [](const tsr::TSR& t, const Rows4& T) {
-             const auto [d, C] = t.closest_transform(from_rows(T));
-             return std::make_pair(d, to_rows(C));
+             const auto [d, C] = t.closest_transform(pose_rows(T));
+             return std::make_pair(d, to_rows(tsr::from_sstsr(C)));
            })
-      .def("to_xyzrpy", [](const tsr::TSR& t, const Rows4& T) { return t.to_xyzrpy(from_rows(T)); })
+      .def("to_xyzrpy", [](const tsr::TSR& t, const Rows4& T) { return t.to_xyzrpy(pose_rows(T)); })
       .def(
           "sample",
           [](const tsr::TSR& t, std::uint64_t seed, int count) {
             Rng rng(seed);
             std::vector<Rows4> out;
-            for (int i = 0; i < count; ++i) out.push_back(to_rows(t.sample(rng)));
+            for (int i = 0; i < count; ++i) out.push_back(to_rows(tsr::from_sstsr(t.sample(rng))));
             return out;
           },
           py::arg("seed"), py::arg("count") = 1, "Draw `count` poses from one RNG seeded with `seed`.")
       .def("sample_xyzrpy", [](const tsr::TSR& t, std::uint64_t seed) { Rng rng(seed); return t.sample_xyzrpy(rng); })
       .def("volume", &tsr::TSR::volume)
       .def("continuous_bounds", [](const tsr::TSR& t) { return t.continuous_bounds().rows; });
+  py::class_<tsr::TSRChain>(m, "TSRChain",
+                            "sstsr's own C++ TSRChain (sstsr >= 3.3): TSRs composed in series. A later link's T0_w must be "
+                            "the identity; its offset belongs in the previous link's Tw_e.")
+      .def(py::init([](const std::vector<tsr::TSR>& links) { return tsr::TSRChain(links); }), py::arg("tsrs"))
+      .def("__len__", &tsr::TSRChain::size)
+      .def("distance", [](const tsr::TSRChain& c, const Rows4& T) { return c.distance(pose_rows(T)).first; },
+           "The residual of a bounded inverse solve: an upper bound, 0 when a witness is found.")
+      .def("closest_transform",
+           [](const tsr::TSRChain& c, const Rows4& T) {
+             const auto [d, C] = c.closest_transform(pose_rows(T));
+             return std::make_pair(d, to_rows(tsr::from_sstsr(C)));
+           })
+      .def(
+          "sample",
+          [](const tsr::TSRChain& c, std::uint64_t seed, int count) {
+            Rng rng(seed);
+            std::vector<Rows4> out;
+            for (int i = 0; i < count; ++i) out.push_back(to_rows(tsr::from_sstsr(c.sample(rng))));
+            return out;
+          },
+          py::arg("seed"), py::arg("count") = 1, "Draw `count` poses from one RNG seeded with `seed`.");
   py::class_<ForwardKinematics, std::shared_ptr<ForwardKinematics>>(m, "ForwardKinematics")
       .def_property_readonly("dof", &ForwardKinematics::dof)
       .def("fk", [](const ForwardKinematics& f, const Config& q) { return to_rows(f.fk(q)); });
@@ -285,10 +309,18 @@ PYBIND11_MODULE(_native, m) {
 
   py::class_<tsr::TSRConfigurationSet, StateSet, std::shared_ptr<tsr::TSRConfigurationSet>>(m, "TSRConfigurationSet",
                                                                                             py::multiple_inheritance())
+      .def(py::init([](const tsr::TSRChain& region, std::shared_ptr<const ForwardKinematics> fk,
+                       std::shared_ptr<const IKSolver> ik, std::shared_ptr<const JointSpace> space, double tolerance,
+                       int max_projection_iters, double progress_tolerance) {
+             return std::make_shared<tsr::TSRConfigurationSet>(tsr::Region(region), std::move(fk), std::move(ik), std::move(space),
+                                                                tolerance, max_projection_iters, progress_tolerance);
+           }),
+           py::arg("region"), py::arg("fk"), py::arg("ik"), py::arg("space"), py::arg("tolerance") = 1e-3,
+           py::arg("max_projection_iters") = 50, py::arg("progress_tolerance") = 1e-6)
       .def(py::init([](const tsr::TSR& region, std::shared_ptr<const ForwardKinematics> fk, std::shared_ptr<const IKSolver> ik,
                        std::shared_ptr<const JointSpace> space, double tolerance, int max_projection_iters,
                        double progress_tolerance) {
-             return std::make_shared<tsr::TSRConfigurationSet>(region, std::move(fk), std::move(ik), std::move(space), tolerance,
+             return std::make_shared<tsr::TSRConfigurationSet>(tsr::Region(region), std::move(fk), std::move(ik), std::move(space), tolerance,
                                                                 max_projection_iters, progress_tolerance);
            }),
            py::arg("region"), py::arg("fk"), py::arg("ik"), py::arg("space"), py::arg("tolerance") = 1e-3,
@@ -342,7 +374,5 @@ PYBIND11_MODULE(_native, m) {
   });
 #endif
 
-  m.def("rot_to_rpy", [](const Rows4& T) { return rot_to_rpy(from_rows(T)); });
-  m.def("xyzrpy_to_trans", [](const XyzRpy& v) { return to_rows(xyzrpy_to_trans(v)); });
   m.def("unit_draws", [](std::uint64_t seed, int n) { Rng rng(seed); std::vector<double> out; for (int i = 0; i < n; ++i) out.push_back(unit(rng)); return out; });
 }

@@ -80,16 +80,17 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
-      - name: Install Eigen and the ssik headers (for the SSIK adapter under sanitizers)
+      - name: Install Eigen, the ssik headers (for the SSIK adapter under sanitizers), and sstsr's C++ core
         run: |
           sudo apt-get update && sudo apt-get install -y libeigen3-dev
           uv venv "$RUNNER_TEMP/ssik-env"
-          uv pip install --python "$RUNNER_TEMP/ssik-env/bin/python" "ssik>=7.0,<8"
+          uv pip install --python "$RUNNER_TEMP/ssik-env/bin/python" "ssik>=7.0,<8" "sstsr>=3.3,<4"
           echo "SSIK_CMAKE_DIR=$("$RUNNER_TEMP/ssik-env/bin/python" -c 'import ssik; print(ssik.get_cmake_dir())')" >> "$GITHUB_ENV"
+          echo "SSTSR_CMAKE_DIR=$("$RUNNER_TEMP/ssik-env/bin/python" -c 'import tsr; print(tsr.get_cmake_dir())')" >> "$GITHUB_ENV"
           uv pip install --python "$RUNNER_TEMP/ssik-env/bin/python" "mujoco==3.14.0"
           echo "MUJOCO_DIR=$("$RUNNER_TEMP/ssik-env/bin/python" -c 'import mujoco, os; print(os.path.dirname(mujoco.__file__))')" >> "$GITHUB_ENV"
       - name: Configure
-        run: cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Debug -DSSCBIRRT_SANITIZE=ON -DSSCBIRRT_WITH_SSIK=ON -DSSCBIRRT_SSIK_CMAKE_DIR="$SSIK_CMAKE_DIR" -DSSCBIRRT_WITH_MUJOCO=ON -DSSCBIRRT_MUJOCO_DIR="$MUJOCO_DIR"
+        run: cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Debug -DSSCBIRRT_SANITIZE=ON -DSSCBIRRT_WITH_SSIK=ON -DSSCBIRRT_SSIK_CMAKE_DIR="$SSIK_CMAKE_DIR" -DSSCBIRRT_SSTSR_CMAKE_DIR="$SSTSR_CMAKE_DIR" -DSSCBIRRT_WITH_MUJOCO=ON -DSSCBIRRT_MUJOCO_DIR="$MUJOCO_DIR"
       - name: Build
         run: cmake --build build/cpp --parallel
       - name: Test
@@ -100,6 +101,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install sstsr's C++ core (a dependency of the installed package)
+        run: |
+          uv venv "$RUNNER_TEMP/sstsr-env"
+          uv pip install --python "$RUNNER_TEMP/sstsr-env/bin/python" "sstsr>=3.3,<4"
+          echo "SSTSR_CMAKE_DIR=$("$RUNNER_TEMP/sstsr-env/bin/python" -c 'import tsr; print(tsr.get_cmake_dir())')" >> "$GITHUB_ENV"
       - name: Install, then build and run the standalone consumer against the installed package
         run: cpp/examples/consumer/smoke.sh "$RUNNER_TEMP/sscbirrt"
 
