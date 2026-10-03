@@ -6,10 +6,17 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-10-02
+
 TSR chains plan on the native backend (#184). sscbirrt's TSRs now come from
 sstsr's own C++ core (sstsr 3.3), which carries chains, so a chain goal,
-start or path constraint no longer falls back to Python. The door demo opens
-its door natively in under a second; it took about 7 s on Python.
+start or path constraint no longer falls back to Python. The door demo plans
+its chain about 15-20 times faster than on Python.
+
+Migrating from 3.1.0: nothing to change in Python. Install pulls
+`sstsr>=3.3`. C++ consumers of the installed package need sstsr's CMake
+package findable (`tsr.get_cmake_dir()`, from a built wheel; an editable
+install has none).
 
 ### Changed
 - `sstsr>=3.3,<4` is required, to build and to run. The native `TSR` is
