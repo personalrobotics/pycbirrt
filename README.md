@@ -52,7 +52,7 @@ the MuJoCo Menagerie UR5e and Robotiq 2F-85 so the demos need no clone.
 
 From a checkout or the sdist, the extension compiles on install and needs
 CMake 3.16+ and a C++20 compiler; the build fetches scikit-build-core,
-pybind11, ninja, ssik, and mujoco itself, and Eigen if none is installed:
+pybind11, ninja, ssik, sstsr, and mujoco itself, and Eigen if none is installed:
 
 ```bash
 uv pip install -e ".[all]"          # every extra, the example dependencies, and the dev tools
@@ -95,15 +95,170 @@ configurations, a TSR, a list of TSRs (any of them, for a start or goal; all
 of them, for a constraint), or any [set](#what-a-set-is). `start` defaults to
 where the arm is now. `holding="can"` carries a body rigidly with the gripper
 and lets it touch the gripper, with the grasp taken from the current poses.
-Collision checking runs on a native copy of the MuJoCo world; the search runs
-natively whenever every piece has a native form and in Python otherwise, and
-`result.backend` and `result.backend_reasons` say which and why.
+The goal's `Bw` bounds the pose in the frame `T`, one `[min, max]` row each
+for x, y, z, roll, pitch and yaw ([Task Space Regions](#task-space-regions)).
+Collision checking runs on a native copy of the MuJoCo world. The search runs
+natively when every piece of the problem has a native form, and in Python
+otherwise. `result.backend` says which ran; `result.backend_reasons` is empty
+for a native solve and otherwise names each piece that kept it in Python
+([Backends](#backends-native-and-python)).
 
 For a gripper, the `tsr` package's hand models give the grasp regions:
 `tsr.Robotiq2F85().grasp_cylinder_side(radius, height)` returns templates for
 every side grasp of a cylinder, and `template.instantiate(T_world_cylinder_bottom)`
 places each as a TSR on the gripper's grasp frame. Pass them all as the goal
 and the planner chooses among them; `result.goal_index` says which.
+
+## Quick start without a simulator
+
+Three roles, three kinds of set: a finite start, a goal induced by a pose
+region, and a path constraint written for this problem that only implements
+membership. Run against the two-link reference arm in `sscbirrt.testing`.
+
+```python
+import numpy as np
+from tsr import TSR
+from sscbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem, TSRConfigurationSet
+from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK
+
+robot, ik, collision = PlanarArm(), PlanarIK(), NoCollision()
+planner = CBiRRT(robot, ik, collision, CBiRRTConfig(step_size=0.1, timeout=10.0))
+
+# Goal: end effector within 10 cm of (0, 1.5), orientation free
+T = np.eye(4)
+T[:3, 3] = [0.0, 1.5, 0.0]
+near = TSR(T0_w=T, Tw_e=np.eye(4), Bw=np.array([[-0.1, 0.1], [-0.1, 0.1], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]]))
+
+
+class RightOfWall:
+    """The end effector stays at x >= -0.2 along the whole path. Membership only."""
+
+    def contains(self, q):
+        return robot.forward_kinematics(q)[0, 3] >= -0.2
+
+
+problem = PlanningProblem(
+    space=planner.space,
+    start=FiniteSet([np.array([-0.5, 0.5])], metric=planner.space.distance),
+    goal=TSRConfigurationSet(near, robot, ik, planner.space),
+    validator=collision,
+    path_constraint=RightOfWall(),
+)
+result = planner.solve(problem, seed=0)
+result.success        # True
+result.path           # 47 waypoints; every one has end-effector x >= -0.2
+result.goal_source    # () : the goal is a single leaf, no choice to record
+result.backend        # "python": result.backend_reasons names PlanarIK and RightOfWall, which have no native form
+```
+
+The path constraint has no projector, so the planner rejects any extension
+that would leave it. Give the class a `project` method and extensions are
+pulled onto the set instead, which is what `TSRConfigurationSet` does.
+
+For problems whose sets are all TSRs or configuration lists, `CBiRRT.plan(...)`
+is the shorthand. It builds the `PlanningProblem` for you: configuration lists
+become a `FiniteSet` whose members are roots, TSR lists an `AnyOf` weighted by
+TSR volume, and several `constraint_tsrs` an `AllOf` with
+`MostViolatedProjection`. Its arguments differ from `sscbirrt.mujoco.plan`'s:
+TSRs go in `start_tsrs`, `goal_tsrs` and `constraint_tsrs`. In this fragment,
+`q_current`, `grasp_above`, `object_pose` and `upright` stand for your own values:
+
+```python
+result = planner.plan(
+    start=q_current,                       # or a list of configurations
+    goal_tsrs=[grasp_above(object_pose)],  # any of these regions
+    constraint_tsrs=[upright],             # all of these, along the whole path
+    seed=0,
+    return_details=True,
+)
+```
+
+Two search-strategy components are replaceable on the problem, each with a
+default. A custom `motion_validator` owns the whole edge check, and
+`RestrictedMotionValidator(base, accepts)` adds a restriction on top of the
+default discretized check. A custom `sampler` proposes the free-space
+targets the trees grow toward and defaults to the space's uniform sampling;
+replacing it trades away probabilistic completeness unless it has full
+support over the space. [docs/design.md](docs/design.md) has the
+definitions, the composition rules, what the planner requires of each role,
+the tolerances, and the reference behavior artifact that pins the planner's
+semantics (`python tools/reference_artifact.py --check`).
+
+## Result
+
+`sscbirrt.mujoco.plan` and `CBiRRT.solve` return a `PlanResult`; `CBiRRT.plan`
+returns the path, or the `PlanResult` with `return_details=True`:
+
+| Field | Meaning |
+|---|---|
+| `path` | joint waypoints from a start member to a goal member, or `None` |
+| `success`, `failure_reason` | `failure_reason` is `None` on success |
+| `start_source`, `goal_source` | provenance through the start and goal set expressions |
+| `start_index`, `goal_index` | index into `CBiRRT.plan`'s `start`/`goal` list or TSR list; 0 for single inputs |
+| `iterations`, `planning_time`, `tree_sizes` | search statistics |
+| `tree_start`, `tree_goal` | the two trees, for inspection |
+| `backend`, `backend_reasons` | `"native"` or `"python"`, and why not native when `"auto"` chose Python |
+| `provenance` | dependency versions, and for MuJoCo the scene and snapshot hashes and the SSIK family |
+| `stats` | the cost of the solve by component (counts and seconds) |
+
+### When planning fails
+
+A plan fails in one of two ways.
+
+**No start or goal configuration survives.** Before searching, the planner
+collects the roots of each tree: every explicit configuration, and every IK
+solution of every pose drawn from a region. A root must be inside the joint
+limits, valid (collision-free), and inside the path constraint, if there is
+one. If none survives for a role, `solve`, `CBiRRT.plan` and
+`sscbirrt.mujoco.plan` raise a `PlanningError`:
+`AllStartConfigurationsInCollision` or `AllGoalConfigurationsInCollision` when
+every candidate was in collision, and `AllStartConfigurationsInvalid` or
+`AllGoalConfigurationsInvalid` otherwise. The message counts each cause, for
+example `12 IK unreachable, 3 in collision`:
+
+| Cause in the message | What to check |
+|---|---|
+| IK unreachable | the region is out of the arm's reach, or the IK's frames do not match the robot model's |
+| outside joint space | the region needs joint values beyond the limits |
+| in collision | the scene at the start or goal, or a held object (`holding=`) touching something |
+| constraint violated | the start or goal is outside the path constraint, which every point of the path, ends included, must satisfy |
+
+**The search ends without connecting the trees.** The result has
+`success=False` and a `failure_reason` that starts with `Timeout`,
+`Max iterations` or `Aborted by user`, and gives the iteration count and tree
+sizes. Raise `timeout`, or `num_tree_roots` to start from more members of the
+sets. With a path constraint, a small tree that stops growing usually means
+projection onto the constraint keeps failing: check that the constraint
+leaves room to move between the start and the goal.
+
+`backend="native"` raises `NativeUnsupported`, listing every component without
+a native form, instead of planning; the default `backend="auto"` plans in
+Python with that list in `result.backend_reasons`.
+
+## How it works
+
+<p align="center">
+  <img src="docs/images/example1_result.png" alt="Basic planning" width="600">
+</p>
+
+Two trees grow at once, blue from the start set and green from the goal set.
+The right panel is configuration space; red regions are in collision.
+
+1. **Sample** a random configuration, or a member of the other role's set
+   with probability `goal_bias` / `start_bias`.
+2. **Extend** the nearest tree toward it in steps of `step_size`.
+3. **Project** each new configuration onto the path-admissible set when a
+   path constraint is present.
+4. **Connect** the trees when one reaches the other within
+   `connection_tolerance` along a validated edge.
+5. **Smooth** by shortcutting; a shortcut is kept only if it is shorter and
+   passes the same validation as a tree edge.
+
+<p align="center">
+  <img src="docs/images/example3_result.png" alt="Constrained planning" width="600">
+  <br>
+  <em>With a path constraint, the end effector stays within the yellow band throughout the motion.</em>
+</p>
 
 ## Why sets
 
@@ -172,77 +327,6 @@ Leaves provided: `FiniteSet(configs, tolerance, metric)`, `PredicateSet(fn)`,
 `EmptySet()`, and `TSRConfigurationSet(tsr, robot, ik, space)`, which is
 $\{q : \mathrm{FK}(q) \in \mathrm{TSR}\}$ with all four capabilities.
 
-## Quick start without a simulator
-
-Three roles, three kinds of set: a finite start, a goal induced by a pose
-region, and a path constraint written for this problem that only implements
-membership. Run against the two-link reference arm in `sscbirrt.testing`.
-
-```python
-import numpy as np
-from tsr import TSR
-from sscbirrt import CBiRRT, CBiRRTConfig, FiniteSet, PlanningProblem, TSRConfigurationSet
-from sscbirrt.testing import NoCollision, PlanarArm, PlanarIK
-
-robot, ik, collision = PlanarArm(), PlanarIK(), NoCollision()
-planner = CBiRRT(robot, ik, collision, CBiRRTConfig(step_size=0.1, timeout=10.0))
-
-# Goal: end effector within 10 cm of (0, 1.5), orientation free
-T = np.eye(4)
-T[:3, 3] = [0.0, 1.5, 0.0]
-near = TSR(T0_w=T, Tw_e=np.eye(4), Bw=np.array([[-0.1, 0.1], [-0.1, 0.1], [0, 0], [0, 0], [0, 0], [-np.pi, np.pi]]))
-
-
-class RightOfWall:
-    """The end effector stays at x >= -0.2 along the whole path. Membership only."""
-
-    def contains(self, q):
-        return robot.forward_kinematics(q)[0, 3] >= -0.2
-
-
-problem = PlanningProblem(
-    space=planner.space,
-    start=FiniteSet([np.array([-0.5, 0.5])], metric=planner.space.distance),
-    goal=TSRConfigurationSet(near, robot, ik, planner.space),
-    validator=collision,
-    path_constraint=RightOfWall(),
-)
-result = planner.solve(problem, seed=0)
-result.success        # True
-result.path           # 47 waypoints; every one has end-effector x >= -0.2
-result.goal_source    # () : the goal is a single leaf, no choice to record
-```
-
-The path constraint has no projector, so the planner rejects any extension
-that would leave it. Give the class a `project` method and extensions are
-pulled onto the set instead, which is what `TSRConfigurationSet` does.
-
-For problems whose sets are all TSRs or configuration lists, `plan(...)` is
-the shorthand. It lowers configuration lists to a `FiniteSet` whose members
-are roots, TSR lists to an `AnyOf` weighted by TSR volume, and several
-`constraint_tsrs` to an `AllOf` with `MostViolatedProjection`:
-
-```python
-result = planner.plan(
-    start=q_current,                       # or a list of configurations
-    goal_tsrs=[grasp_above(object_pose)],  # any of these regions
-    constraint_tsrs=[upright],             # all of these, along the whole path
-    seed=0,
-    return_details=True,
-)
-```
-
-Two search-strategy components are replaceable on the problem, each with a
-default. A custom `motion_validator` owns the whole edge check, and
-`RestrictedMotionValidator(base, accepts)` adds a restriction on top of the
-default discretized check. A custom `sampler` proposes the free-space
-targets the trees grow toward and defaults to the space's uniform sampling;
-replacing it trades away probabilistic completeness unless it has full
-support over the space. [docs/design.md](docs/design.md) has the
-definitions, the composition rules, what the planner requires of each role,
-the tolerances, and the reference behavior artifact that pins the planner's
-semantics (`python tools/reference_artifact.py --check`).
-
 ## Defining your own set
 
 A set is a class. Implement `contains`; add capabilities as the role needs
@@ -298,7 +382,8 @@ grasp_tsr = TSR(
 
 Several TSRs in `goal_tsrs` or `start_tsrs` form a union; sampling is
 proportional to each TSR's volume. Configuration lists and TSRs can be mixed
-in the same role:
+in the same role (the names below stand for your own configurations and
+TSRs):
 
 ```python
 path = planner.plan(start, goal_tsrs=[top_grasp_tsr, side_grasp_tsr])
@@ -308,7 +393,9 @@ path = planner.plan(start=[home], start_tsrs=[start_region], goal=[q_grasp], goa
 ```
 
 A `TSRChain` couples TSRs in series (a handle on a swinging door) and defines
-one region of end-effector poses. It goes anywhere a TSR goes:
+one region of end-effector poses. It goes anywhere a TSR goes. A complete,
+runnable chain is the door demo's `door_chain` in
+[`src/sscbirrt/demo/scenarios/door.py`](src/sscbirrt/demo/scenarios/door.py):
 
 ```python
 from tsr import TSRChain
@@ -317,58 +404,15 @@ door = TSRChain(TSRs=[hinge_tsr, handle_tsr])
 path = planner.plan(start_config, goal_tsrs=[door])
 ```
 
-For chains of two or more TSRs, membership and projection use sstsr's
-bounded numerical inverse, so a check can be a false negative on a hard
-chain. With sstsr 3.3 that inverse is C++, and chains plan on the native
-backend like single TSRs: the door demo opens its door in under a second.
-
-## Result
-
-`sscbirrt.mujoco.plan` and `CBiRRT.solve` return a `PlanResult`; `CBiRRT.plan`
-returns the path, or the `PlanResult` with `return_details=True`:
-
-| Field | Meaning |
-|---|---|
-| `path` | joint waypoints from a start member to a goal member, or `None` |
-| `success`, `failure_reason` | `failure_reason` is `None` on success |
-| `start_source`, `goal_source` | provenance through the start and goal set expressions |
-| `start_index`, `goal_index` | index into the legacy `start`/`goal` list or TSR list; 0 for single inputs |
-| `iterations`, `planning_time`, `tree_sizes` | search statistics |
-| `tree_start`, `tree_goal` | the two trees, for inspection |
-| `backend`, `backend_reasons` | `"native"` or `"python"`, and why not native when `"auto"` chose Python |
-| `provenance` | dependency versions, and for MuJoCo the scene and snapshot hashes and the SSIK family |
-| `stats` | the cost of the solve by component (counts and seconds) |
-
-## How it works
-
-<p align="center">
-  <img src="docs/images/example1_result.png" alt="Basic planning" width="600">
-</p>
-
-Two trees grow at once, blue from the start set and green from the goal set.
-The right panel is configuration space; red regions are in collision.
-
-1. **Sample** a random configuration, or a member of the other role's set
-   with probability `goal_bias` / `start_bias`.
-2. **Extend** the nearest tree toward it in steps of `step_size`.
-3. **Project** each new configuration onto the path-admissible set when a
-   path constraint is present.
-4. **Connect** the trees when one reaches the other within
-   `connection_tolerance` along a validated edge.
-5. **Smooth** by shortcutting; a shortcut is kept only if it is shorter and
-   passes the same validation as a tree edge.
-
-<p align="center">
-  <img src="docs/images/example3_result.png" alt="Constrained planning" width="600">
-  <br>
-  <em>With a path constraint, the end effector stays within the yellow band throughout the motion.</em>
-</p>
-
-<p align="center">
-  <img src="docs/images/pick_yellow_seed5.gif" alt="UR5e planning into a union of side-grasp regions" width="400">
-  <br>
-  <em>A goal that is a union of side-grasp regions over three cans (<code>sscbirrt-demo pick</code>).</em>
-</p>
+For a chain of two or more TSRs, membership and projection search
+numerically for the links' values (sstsr's bounded inverse). The search can
+miss a pose that is in the chain, but never accepts one that is not, so every
+configuration on a returned path is in the set. A miss costs coverage: fewer
+start or goal roots, and some extensions under a chain path constraint
+rejected. If a chain problem finds no roots or does not connect, raise
+`sample_draws` and `num_tree_roots`, or widen the chain's bounds where the
+task allows. Chains plan natively like single TSRs: the door demo's chain
+plans in about 0.3 s natively, against 5 to 7 s in Python.
 
 ## Configuration
 
@@ -473,11 +517,50 @@ class CollisionChecker(Protocol):
 
 Together with `StateSet`, these are the planner's extension points. Each has
 a native counterpart in the C++ core (`StateSet`, `StateValidator`,
-`ForwardKinematics`, `IKSolver`), and the shipped backends below are
+`ForwardKinematics`, `IKSolver`), and the shipped integrations below are
 implementations of them, not special cases; see
 [Adding an integration](#adding-an-integration).
 
-## Backends
+## Backends: native and Python
+
+The C++20 core in `cpp/` implements the same contract as the Python planner
+([docs/native-design.md](docs/native-design.md)). It is built into the wheel
+as `sscbirrt._native`, and since 2.0 the planner selects it by default:
+
+```python
+planner = CBiRRT(robot, ik, collision, config)                    # backend="auto": native where it can, else Python
+planner = CBiRRT(robot, ik, collision, config, backend="native")  # native or NativeUnsupported; never a silent fallback
+planner = CBiRRT(robot, ik, collision, config, backend="python")  # the reference implementation, always
+result = planner.solve(problem, seed=0)
+result.backend          # "native" or "python"
+result.backend_reasons  # under "auto": why Python was chosen, one entry per component; also logged at INFO
+```
+
+Selection is decided by the problem's components, never by which optional
+packages happen to import: a missing extension or adapter is itself one of
+the stated reasons. The native core plans problems whose components all have
+a native form: finite sets, `AnyOf`/`AllOf` with the named strategies,
+`EmptySet`, the validators in `sscbirrt.testing`, any validator or IK solver
+that implements the integration protocols below (the MuJoCo scene and SSIK
+do), and `TSRConfigurationSet`s whose region is a `TSR` or `TSRChain` and whose IK
+has a native form (SSIK around an `ssik.Manipulator` of a verified family,
+the UR family `ikgeo.three_parallel`). TSRs and SSIK then run entirely in
+C++: TSRs and TSR chains are sstsr's own C++ core (sstsr 3.3), and the SSIK
+adapter is checked against the Python one on the UR5e. Anything else
+(Python-only IK, predicates, Python-only validators, samplers, or motion
+validators) makes `backend="native"` raise `NativeUnsupported` listing every
+blocker, and the default fall back to Python with the same list on the
+result; [Adding an integration](#adding-an-integration) is how to give a
+component a native form. Before a native solve, sscbirrt translates the
+problem into the core's C++ objects ("lowering"); lowering also checks that the robot model's forward kinematics
+agrees with the native IK model's on the problem's explicit configurations.
+The native solve releases the GIL and calls no Python after entry. Same
+seed, same path within a backend; the two backends agree on outcomes and
+validated paths but not on waypoints, because they use different
+random-number engines. `tools/reference_artifact.py --backend {python,native,auto} --check`
+runs the behavior artifact through each selection.
+
+## Integrations
 
 sscbirrt ships three integrations. Each implements one interface the core
 defines and each lives in its own module, so none is required by the others:
@@ -552,14 +635,18 @@ come from the wrapped manipulator, for planning without a simulator.
 
 SSIK is the analytical IK backend. The EAIK backend, deprecated in 1.3.0, was
 removed in 2.0 with its `eaik` extra; `SSIKSolver(ssik.Manipulator.from_prebuilt("ur5e"))`
-replaces `EAIKSolver.for_ur5e(...)`, and the backend choice (`python`,
-`native`, `auto`) is independent of the IK library.
+replaces `EAIKSolver.for_ur5e(...)`.
 
 SSIK solves 6R and 7R arms in closed form, accepts a seed, and returns every
 in-limit winding of each geometric branch on joints wider than one turn, so
 the planner sees the complete TSR-induced configuration set. The adapter does
 no collision checking and applies no solution cap; joint limits are enforced
 by `JointSpace` and collision by the planner's validator.
+
+SSIK runs on the native backend for a 6-DOF `ssik.Manipulator` of a verified
+family, today the UR family (`ikgeo.three_parallel`). Any other arm, a 7R arm
+such as a Franka included, plans with SSIK on the Python backend, and
+`result.backend_reasons` says so.
 
 `sscbirrt.mujoco.Arm(..., mjcf=path)` builds SSIK for you, computes both
 frame offsets from the MuJoCo model (so the arm can stand anywhere in the
@@ -575,57 +662,28 @@ from sscbirrt.backends.ssik import SSIKSolver
 arm = ssik.Manipulator.from_mjcf(sscbirrt_assets.ur5e_xml(), base="world", ee="wrist_3_link")
 ik = SSIKSolver(arm, T_ee=site_offset_in_body(model, "attachment_site"))  # the site is on wrist_3_link
 
-# Or a prebuilt artifact (vendor nominal geometry) or a URDF
-from ssik.prebuilt import ur5e_ik
-ik = SSIKSolver(ur5e_ik)
+# Or the prebuilt model (vendor nominal geometry); ssik.Manipulator.from_urdf takes a URDF
+ik = SSIKSolver(ssik.Manipulator.from_prebuilt("ur5e"))
 ```
 
 The SSIK model and the `RobotModel` must agree on joint order and sign, base
 frame, end-effector frame, and which joints are continuous. If the frames
 differ by fixed transforms, pass `T_base` and `T_ee` so that
 `robot.forward_kinematics(q) == ik.fk(q)`, and assert that before planning.
-Prebuilt artifacts use the vendor's nominal geometry and can differ from a
+Prebuilt models use the vendor's nominal geometry and can differ from a
 simulator model by a millimeter, which matters at the default membership
 tolerance.
 
-### Native core (the default)
-
-The C++20 core in `cpp/` implements the same contract as the Python planner
-([docs/native-design.md](docs/native-design.md)). It is built into the wheel
-as `sscbirrt._native`, and since 2.0 the planner selects it by default:
-
-```python
-planner = CBiRRT(robot, ik, collision, config)                    # backend="auto": native where it can, else Python
-planner = CBiRRT(robot, ik, collision, config, backend="native")  # native or NativeUnsupported; never a silent fallback
-planner = CBiRRT(robot, ik, collision, config, backend="python")  # the reference implementation, always
-result = planner.solve(problem, seed=0)
-result.backend          # "native" or "python"
-result.backend_reasons  # under "auto": why Python was chosen, one entry per component; also logged at INFO
-```
-
-Selection is decided by the problem's components, never by which optional
-packages happen to import: a missing extension or adapter is itself one of
-the stated reasons. The native core plans problems whose components all have
-a native form: finite sets, `AnyOf`/`AllOf` with the named strategies,
-`EmptySet`, the validators in `sscbirrt.testing`, any validator or IK solver
-that implements the integration protocols below (the MuJoCo scene and SSIK
-do), and `TSRConfigurationSet`s whose region is a `TSR` or `TSRChain` and whose IK
-has a native form (SSIK around an `ssik.Manipulator` of a verified family,
-the UR family `ikgeo.three_parallel`). TSRs and SSIK then run entirely in
-C++: TSRs and TSR chains are sstsr's own C++ core (sstsr 3.3), and the SSIK
-adapter is checked against the Python one on the UR5e. Anything else
-(Python-only IK, predicates, Python-only validators, samplers, or motion
-validators) makes `backend="native"` raise `NativeUnsupported` listing every
-blocker, and the default fall back to Python with the same list on the
-result. Lowering also checks that the robot model's forward kinematics
-agrees with the native IK model's on the problem's explicit configurations.
-The native solve releases the GIL and calls no Python after entry. Same
-seed, same path within a backend; the two backends agree on outcomes and
-validated paths but not on waypoints, because they use different
-random-number engines. `tools/reference_artifact.py --backend {python,native,auto} --check`
-runs the behavior artifact through each selection.
-
 ### Adding an integration
+
+The native backend runs a solve only when every component has a native form.
+One Python-only validator, IK solver or set sends the whole solve, every
+sample, extension and collision check, to the Python planner: the cost is the
+whole speedup, not that component's share. The door demo shows the size. Its
+TSR chain had no native form before 3.2.0; the same problem now plans in
+about 0.3 s natively, against 5 to 7 s in Python. `result.backend_reasons`
+names each component that kept a solve in Python, so it is the list of what
+to port.
 
 The native lowering (`sscbirrt.backends.native`) recognizes validators and IK
 solvers by two protocols, never by type, so a new collision or IK backend
