@@ -2,7 +2,7 @@
 
 Written for the mj_manipulator maintainers, ahead of personalrobotics/mj_manipulator#174 and #175.
 
-sscbirrt 1.7 offers one boundary for planning against a live MuJoCo world: an
+Since 1.7, sscbirrt offers one boundary for planning against a live MuJoCo world: an
 owned scene, an immutable snapshot, a collision checker with mj_manipulator's
 contact policy implemented in C++, and one call that runs the whole solve
 natively. This guide maps what `Arm.create_planner` builds today onto that
@@ -61,11 +61,12 @@ first criterion), and it does not own the simulator or its threads.
 4. **One validator per solve.** Lowering creates a fresh validator with its
    own `mjData` for every solve; two solves in parallel never share one. Do
    not hand one `NativeCollisionChecker` to two threads' Python code either.
-5. **Pin `mujoco==3.14.0`** for sscbirrt 1.7 through 3.1, the versions built against it; the
+5. **Pin `mujoco==3.14.0`** for sscbirrt 1.7 through 3.2, the versions built against it; the
    native scene refuses another MuJoCo with a message naming the three
    versions it sees.
-6. **Unsupported means Python.** IK other than SSIK on a verified family, and any Python validator make `backend="native"` raise
-   `NativeUnsupported` listing every blocker, and `backend="auto"` (the
+6. **Unsupported means Python.** An IK solver or validator without a native
+   form (the README's "Adding an integration" says how to give it one) makes
+   `backend="native"` raise `NativeUnsupported` listing every blocker, and `backend="auto"` (the
    default, also for `sscbirrt.mujoco.plan`) selects the Python planner and records
    the reasons. The semantics are the same; the parity gate checks that.
 

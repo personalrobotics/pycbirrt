@@ -1,5 +1,13 @@
 # Native design: the SSCBiRRT C++20 contract
 
+> **Reading this for what is supported today?** This is a design record built
+> up release by release: each section states the scope *of its release*, and
+> later sections extend earlier ones. Today the native backend also plans
+> TSRs and TSR chains (sstsr's C++, the last section), runs SSIK for the UR
+> family and checks collisions in MuJoCo. The README's
+> [Backends](../README.md#backends-native-and-python) section is the current
+> summary.
+
 This document is the normative boundary for the native implementation of
 sscbirrt (#82). It translates the Python design in [design.md](design.md)
 into C++20 types without changing its semantics. The two backends are one
